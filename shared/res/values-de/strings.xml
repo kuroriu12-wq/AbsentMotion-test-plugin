@@ -2686,4 +2686,9 @@
     <string name="plugins_asks">Verlangt: %1$s</string>
     <string name="plugins_not_granted">In dieser Version nicht gewährt</string>
     <string name="plugins_version">Version %1$s</string>
+    <string name="effects_plugin_recipes">Plugin-Rezepte</string>
+    <string name="plugin_recipe_run">Ausführen</string>
+    <string name="plugin_recipe_none">Keine Plugin-Rezepte installiert.</string>
+    <string name="plugin_recipe_failed">Das Rezept wurde nicht ausgeführt. %1$s</string>
+    <string name="plugin_recipe_failed_step">Schritt %1$d: %2$s</string>
 </resources>

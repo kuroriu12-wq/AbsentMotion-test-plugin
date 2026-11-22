@@ -2752,4 +2752,9 @@
     <string name="plugins_asks">Wymaga: %1$s</string>
     <string name="plugins_not_granted">Nie przyznano w tej wersji</string>
     <string name="plugins_version">Wersja %1$s</string>
+    <string name="effects_plugin_recipes">Przepisy wtyczek</string>
+    <string name="plugin_recipe_run">Uruchom</string>
+    <string name="plugin_recipe_none">Brak zainstalowanych przepisów wtyczek.</string>
+    <string name="plugin_recipe_failed">Nie uruchomiono przepisu. %1$s</string>
+    <string name="plugin_recipe_failed_step">Krok %1$d: %2$s</string>
 </resources>

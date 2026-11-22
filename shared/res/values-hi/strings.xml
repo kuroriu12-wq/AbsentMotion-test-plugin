@@ -2686,4 +2686,9 @@
     <string name="plugins_asks">माँगता है: %1$s</string>
     <string name="plugins_not_granted">इस वर्शन में नहीं दिया गया</string>
     <string name="plugins_version">वर्शन %1$s</string>
+    <string name="effects_plugin_recipes">प्लगइन रेसिपी</string>
+    <string name="plugin_recipe_run">चलाएँ</string>
+    <string name="plugin_recipe_none">कोई प्लगइन रेसिपी इंस्टॉल नहीं है।</string>
+    <string name="plugin_recipe_failed">रेसिपी नहीं चली। %1$s</string>
+    <string name="plugin_recipe_failed_step">चरण %1$d: %2$s</string>
 </resources>

@@ -2653,4 +2653,9 @@
     <string name="plugins_asks">ขอสิทธิ์: %1$s</string>
     <string name="plugins_not_granted">ไม่ได้รับอนุญาตในเวอร์ชันนี้</string>
     <string name="plugins_version">เวอร์ชัน %1$s</string>
+    <string name="effects_plugin_recipes">สูตรปลั๊กอิน</string>
+    <string name="plugin_recipe_run">เรียกใช้</string>
+    <string name="plugin_recipe_none">ยังไม่มีสูตรปลั๊กอินที่ติดตั้ง</string>
+    <string name="plugin_recipe_failed">สูตรทำงานไม่สำเร็จ %1$s</string>
+    <string name="plugin_recipe_failed_step">ขั้นตอนที่ %1$d: %2$s</string>
 </resources>

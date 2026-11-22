@@ -5853,5 +5853,10 @@
  "plugins_failed": "Could not install this plugin",
  "plugins_asks": "Asks for: %1$s",
  "plugins_not_granted": "Not granted in this version",
- "plugins_version": "Version %1$s"
+ "plugins_version": "Version %1$s",
+ "effects_plugin_recipes": "Plugin recipes",
+ "plugin_recipe_run": "Run",
+ "plugin_recipe_none": "No plugin recipes installed.",
+ "plugin_recipe_failed": "The recipe did not run. %1$s",
+ "plugin_recipe_failed_step": "Step %1$d: %2$s"
 }

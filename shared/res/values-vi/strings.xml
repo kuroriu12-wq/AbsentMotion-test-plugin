@@ -2653,4 +2653,9 @@
     <string name="plugins_asks">Yêu cầu: %1$s</string>
     <string name="plugins_not_granted">Không được cấp ở phiên bản này</string>
     <string name="plugins_version">Phiên bản %1$s</string>
+    <string name="effects_plugin_recipes">Công thức plugin</string>
+    <string name="plugin_recipe_run">Chạy</string>
+    <string name="plugin_recipe_none">Chưa cài công thức plugin nào.</string>
+    <string name="plugin_recipe_failed">Công thức không chạy được. %1$s</string>
+    <string name="plugin_recipe_failed_step">Bước %1$d: %2$s</string>
 </resources>

@@ -2686,4 +2686,9 @@
     <string name="plugins_asks">درخواست می‌کند: %1$s</string>
     <string name="plugins_not_granted">در این نسخه داده نمی‌شود</string>
     <string name="plugins_version">نسخهٔ %1$s</string>
+    <string name="effects_plugin_recipes">دستورهای افزونه‌ها</string>
+    <string name="plugin_recipe_run">اجرا</string>
+    <string name="plugin_recipe_none">هیچ دستور افزونه‌ای نصب نشده است.</string>
+    <string name="plugin_recipe_failed">دستور اجرا نشد. %1$s</string>
+    <string name="plugin_recipe_failed_step">مرحلهٔ %1$d: %2$s</string>
 </resources>

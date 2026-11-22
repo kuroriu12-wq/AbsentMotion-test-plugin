@@ -2653,4 +2653,9 @@
     <string name="plugins_asks">Meminta: %1$s</string>
     <string name="plugins_not_granted">Tidak diberikan di versi ini</string>
     <string name="plugins_version">Versi %1$s</string>
+    <string name="effects_plugin_recipes">Resep plugin</string>
+    <string name="plugin_recipe_run">Jalankan</string>
+    <string name="plugin_recipe_none">Belum ada resep plugin terpasang.</string>
+    <string name="plugin_recipe_failed">Resep tidak berjalan. %1$s</string>
+    <string name="plugin_recipe_failed_step">Langkah %1$d: %2$s</string>
 </resources>

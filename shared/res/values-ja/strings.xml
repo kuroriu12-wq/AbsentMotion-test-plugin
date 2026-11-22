@@ -2653,4 +2653,9 @@
     <string name="plugins_asks">要求する権限: %1$s</string>
     <string name="plugins_not_granted">このバージョンでは許可されません</string>
     <string name="plugins_version">バージョン %1$s</string>
+    <string name="effects_plugin_recipes">プラグインのレシピ</string>
+    <string name="plugin_recipe_run">実行</string>
+    <string name="plugin_recipe_none">インストール済みのプラグインレシピはありません。</string>
+    <string name="plugin_recipe_failed">レシピを実行できませんでした。%1$s</string>
+    <string name="plugin_recipe_failed_step">ステップ %1$d：%2$s</string>
 </resources>

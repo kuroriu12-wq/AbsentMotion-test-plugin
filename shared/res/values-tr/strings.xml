@@ -2686,4 +2686,9 @@
     <string name="plugins_asks">İstediği izinler: %1$s</string>
     <string name="plugins_not_granted">Bu sürümde verilmez</string>
     <string name="plugins_version">Sürüm %1$s</string>
+    <string name="effects_plugin_recipes">Eklenti tarifleri</string>
+    <string name="plugin_recipe_run">Çalıştır</string>
+    <string name="plugin_recipe_none">Yüklü eklenti tarifi yok.</string>
+    <string name="plugin_recipe_failed">Tarif çalışmadı. %1$s</string>
+    <string name="plugin_recipe_failed_step">Adım %1$d: %2$s</string>
 </resources>

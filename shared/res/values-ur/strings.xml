@@ -2686,4 +2686,9 @@
     <string name="plugins_asks">مانگتا ہے: %1$s</string>
     <string name="plugins_not_granted">اس ورژن میں نہیں دیا گیا</string>
     <string name="plugins_version">ورژن %1$s</string>
+    <string name="effects_plugin_recipes">پلگ اِن کی ترکیبیں</string>
+    <string name="plugin_recipe_run">چلائیں</string>
+    <string name="plugin_recipe_none">کوئی پلگ اِن ترکیب انسٹال نہیں ہے۔</string>
+    <string name="plugin_recipe_failed">ترکیب نہیں چل سکی۔ %1$s</string>
+    <string name="plugin_recipe_failed_step">مرحلہ %1$d: %2$s</string>
 </resources>

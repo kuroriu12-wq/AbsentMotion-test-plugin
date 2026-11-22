@@ -2653,4 +2653,9 @@
     <string name="plugins_asks">요청한 권한: %1$s</string>
     <string name="plugins_not_granted">이 버전에서는 허용되지 않음</string>
     <string name="plugins_version">버전 %1$s</string>
+    <string name="effects_plugin_recipes">플러그인 레시피</string>
+    <string name="plugin_recipe_run">실행</string>
+    <string name="plugin_recipe_none">설치된 플러그인 레시피가 없습니다.</string>
+    <string name="plugin_recipe_failed">레시피를 실행하지 못했습니다. %1$s</string>
+    <string name="plugin_recipe_failed_step">%1$d단계: %2$s</string>
 </resources>

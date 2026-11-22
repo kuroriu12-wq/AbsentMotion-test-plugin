@@ -2653,4 +2653,9 @@
     <string name="plugins_asks">要求的權限：%1$s</string>
     <string name="plugins_not_granted">此版本不授予</string>
     <string name="plugins_version">版本 %1$s</string>
+    <string name="effects_plugin_recipes">外掛配方</string>
+    <string name="plugin_recipe_run">執行</string>
+    <string name="plugin_recipe_none">尚未安裝任何外掛配方。</string>
+    <string name="plugin_recipe_failed">配方未能執行。%1$s</string>
+    <string name="plugin_recipe_failed_step">第 %1$d 步：%2$s</string>
 </resources>

@@ -100,6 +100,9 @@ internal fun EffectsPanel(state: EditorState, modifier: Modifier) {
     LaunchedEffect(definition) { active = definition?.params?.firstOrNull { it.id == active?.id } }
     var menu by remember { mutableStateOf(false) }
     var choosing by remember { mutableStateOf(false) }
+    var recipesOpen by remember { mutableStateOf(false) }
+    val recipeContext = LocalContext.current
+    val hasRecipes = remember(menu) { menu && app.absentmotion.plugins.listRecipes(app.absentmotion.plugins.PluginStore(recipeContext)).isNotEmpty() }
     val usable = instance != null && definition?.available == true
     var pin by remember(layer.id, index) { mutableStateOf<String?>(null) }
     var adding by remember(layer.id, index) { mutableStateOf(false) }
@@ -135,6 +138,7 @@ internal fun EffectsPanel(state: EditorState, modifier: Modifier) {
     SideEffect { state.keyTarget = target; state.pointAdjust = adjust; state.layerPoints = points }
     DisposableEffect(Unit) { onDispose { state.pointAdjust = null; state.layerPoints = null } }
     if (state.easingOpen) { EasingPanel(state, modifier); return }
+    if (recipesOpen) PluginRecipeDialog(state) { recipesOpen = false }
     if (choosing) {
         CopyEffectsDialog(layer.effects.map { catalog.find(it["id"] ?: "")?.name ?: it["id"]?.substringAfterLast('.') ?: "" }, { choosing = false }) { ticked ->
             EffectClipboard.copy(layer.effects, ticked)
@@ -161,6 +165,7 @@ internal fun EffectsPanel(state: EditorState, modifier: Modifier) {
                             state.editSelected { EffectClipboard.effects.fold(it) { next, effect -> next.addEffect(effect) } }
                             menu = false
                         }
+                        MenuRow(stringResource(R.string.effects_plugin_recipes), enabled = hasRecipes, divider = true) { recipesOpen = true; menu = false }
                     }
                 }
             }

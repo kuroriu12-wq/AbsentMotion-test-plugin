@@ -13,6 +13,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -69,7 +70,6 @@ private fun rememberZipPicker(): ((File) -> Unit) -> Unit {
                 }
             }
             deliver(copy)
-            withContext(Dispatchers.IO) { copy.delete() }
         }
     }
     return { deliver ->
@@ -93,12 +93,19 @@ private fun copyAtMost(source: java.io.InputStream, sink: java.io.OutputStream, 
 @Composable
 internal fun PluginsScreen(model: PluginsModel, pickZip: ((File) -> Unit) -> Unit, onBack: () -> Unit) {
     var lastZip by remember { mutableStateOf<File?>(null) }
+    fun forget() {
+        lastZip?.delete()
+        lastZip = null
+    }
+    DisposableEffect(Unit) { onDispose { forget() } }
     ToolSheet(stringResource(R.string.tools_plugins), onBack) {
         Spacer(Modifier.height(20.dp))
         BigButton(stringResource(R.string.plugins_install), Modifier.fillMaxWidth(), HomeIcons.Plus) {
             pickZip { file ->
+                forget()
                 lastZip = file
                 model.install(file)
+                if (model.pendingReplace == null) forget()
             }
         }
         if (model.restartNeeded) {
@@ -112,16 +119,17 @@ internal fun PluginsScreen(model: PluginsModel, pickZip: ((File) -> Unit) -> Uni
     }
     model.pendingReplace?.let { pending ->
         AlertDialog(
-            onDismissRequest = { model.cancelReplace() },
+            onDismissRequest = { model.cancelReplace(); forget() },
             title = { Text(stringResource(R.string.plugins_replace_title), color = Am.Navy) },
             text = { Text(stringResource(R.string.plugins_replace_body, pending.incoming.name, pending.existing.version, pending.incoming.version), color = Am.Navy) },
             confirmButton = {
                 TextButton({
                     val zip = lastZip
                     if (zip != null && zip.isFile) model.confirmReplace(zip) else model.cancelReplace()
+                    forget()
                 }) { Text(stringResource(R.string.plugins_replace), color = Am.Accent) }
             },
-            dismissButton = { TextButton({ model.cancelReplace() }) { Text(stringResource(R.string.cancel), color = Am.Navy) } },
+            dismissButton = { TextButton({ model.cancelReplace(); forget() }) { Text(stringResource(R.string.cancel), color = Am.Navy) } },
             containerColor = Am.Card,
         )
     }

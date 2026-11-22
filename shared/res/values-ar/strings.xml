@@ -2818,4 +2818,9 @@
     <string name="plugins_asks">تطلب: %1$s</string>
     <string name="plugins_not_granted">غير ممنوح في هذا الإصدار</string>
     <string name="plugins_version">الإصدار %1$s</string>
+    <string name="effects_plugin_recipes">وصفات الإضافات</string>
+    <string name="plugin_recipe_run">تشغيل</string>
+    <string name="plugin_recipe_none">لا توجد وصفات إضافات مثبّتة.</string>
+    <string name="plugin_recipe_failed">لم يتم تشغيل الوصفة. %1$s</string>
+    <string name="plugin_recipe_failed_step">الخطوة %1$d: %2$s</string>
 </resources>

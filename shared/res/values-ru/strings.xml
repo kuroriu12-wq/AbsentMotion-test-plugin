@@ -2752,4 +2752,9 @@
     <string name="plugins_asks">Запрашивает: %1$s</string>
     <string name="plugins_not_granted">В этой версии не предоставляется</string>
     <string name="plugins_version">Версия %1$s</string>
+    <string name="effects_plugin_recipes">Рецепты плагинов</string>
+    <string name="plugin_recipe_run">Запустить</string>
+    <string name="plugin_recipe_none">Рецепты плагинов не установлены.</string>
+    <string name="plugin_recipe_failed">Рецепт не выполнен. %1$s</string>
+    <string name="plugin_recipe_failed_step">Шаг %1$d: %2$s</string>
 </resources>

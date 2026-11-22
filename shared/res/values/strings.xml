@@ -2712,4 +2712,9 @@
     <string name="plugins_asks">Asks for: %1$s</string>
     <string name="plugins_not_granted">Not granted in this version</string>
     <string name="plugins_version">Version %1$s</string>
+    <string name="effects_plugin_recipes">Plugin recipes</string>
+    <string name="plugin_recipe_run">Run</string>
+    <string name="plugin_recipe_none">No plugin recipes installed.</string>
+    <string name="plugin_recipe_failed">The recipe did not run. %1$s</string>
+    <string name="plugin_recipe_failed_step">Step %1$d: %2$s</string>
 </resources>

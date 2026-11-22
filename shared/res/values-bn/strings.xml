@@ -2686,4 +2686,9 @@
     <string name="plugins_asks">চাওয়া অনুমতি: %1$s</string>
     <string name="plugins_not_granted">এই সংস্করণে দেওয়া হয় না</string>
     <string name="plugins_version">সংস্করণ %1$s</string>
+    <string name="effects_plugin_recipes">প্লাগইন রেসিপি</string>
+    <string name="plugin_recipe_run">চালান</string>
+    <string name="plugin_recipe_none">কোনো প্লাগইন রেসিপি ইনস্টল করা নেই।</string>
+    <string name="plugin_recipe_failed">রেসিপি চলেনি। %1$s</string>
+    <string name="plugin_recipe_failed_step">ধাপ %1$d: %2$s</string>
 </resources>

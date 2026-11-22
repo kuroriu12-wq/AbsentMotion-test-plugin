@@ -2686,4 +2686,9 @@
     <string name="plugins_asks">Humihingi ng: %1$s</string>
     <string name="plugins_not_granted">Hindi ibinibigay sa bersyong ito</string>
     <string name="plugins_version">Bersyon %1$s</string>
+    <string name="effects_plugin_recipes">Mga recipe ng plugin</string>
+    <string name="plugin_recipe_run">Patakbuhin</string>
+    <string name="plugin_recipe_none">Walang naka-install na recipe ng plugin.</string>
+    <string name="plugin_recipe_failed">Hindi tumakbo ang recipe. %1$s</string>
+    <string name="plugin_recipe_failed_step">Hakbang %1$d: %2$s</string>
 </resources>
