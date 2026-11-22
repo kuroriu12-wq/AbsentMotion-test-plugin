@@ -5,7 +5,6 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** A project keeps a plugin's effect after the plugin is removed or disabled; the layer must still open and draw. */
 class PluginUnknownEffectTest {
     private fun scene(effect: String) =
         """<scene width="400" height="400" totalTime="999" fps="30" bgcolor="#ff000000"><shape id="1" startTime="0" endTime="999" fillType="color" s=".rect"><transform><location value="200,200,0" /></transform><fillColor value="#ffffffff" /><property name="size" type="vec2" value="100,50" />$effect</shape></scene>"""

@@ -4,7 +4,6 @@ import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
 
-/** One field of the form a recipe shows before it runs. [type] is `number`, `color`, `choice`, `text` or `switch`. */
 data class RecipeInput(
     val id: String,
     val label: String,
@@ -15,12 +14,10 @@ data class RecipeInput(
     val max: Float? = null,
 )
 
-/** One editing operation. A value written `$name` is replaced by the input called `name` when the recipe runs. */
 sealed interface RecipeStep {
     data class AddEffect(val effect: String, val preset: String?, val set: Map<String, String>) : RecipeStep
     data class SetEffectParam(val effect: String, val param: String, val value: String) : RecipeStep
 
-    /** [at] is in seconds from the start of the layer. */
     data class KeyframeEffectParam(val effect: String, val param: String, val at: List<Float>, val values: List<String>) : RecipeStep
 }
 
@@ -41,7 +38,6 @@ private fun scalar(value: Any?): String? = when (value) {
     else -> null
 }
 
-/** Parses and checks a recipe. Never throws; every problem found is reported, not only the first. */
 fun parseRecipe(json: String): RecipeParse {
     val root = try {
         JSONObject(json.removePrefix("﻿"))

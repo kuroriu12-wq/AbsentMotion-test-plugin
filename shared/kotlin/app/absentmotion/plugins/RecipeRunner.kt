@@ -18,16 +18,11 @@ import app.absentmotion.model.withKeyframes
 sealed interface RunResult {
     data class Done(val scene: Scene) : RunResult
 
-    /** [stepIndex] is null when the inputs were bad, otherwise the zero-based step that failed. */
     data class Failed(val stepIndex: Int?, val reason: String) : RunResult
 }
 
 private class InputProblem(message: String) : Exception(message)
 
-/**
- * Runs a recipe against a copy of the scene. The scene and its layers are immutable, so a failure at any step simply
- * returns [RunResult.Failed] and nothing is committed; the caller commits [RunResult.Done] once, as one undo step.
- */
 class RecipeRunner(private val catalog: EffectCatalog) {
     fun run(scene: Scene, layerId: Long, recipe: Recipe, inputs: Map<String, String>, sampleMs: Int): RunResult {
         val values = try {

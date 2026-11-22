@@ -15,7 +15,6 @@ class PluginEffectsTest {
     private val pack = File("../shared/assets/effects")
     private val builtIn = EffectCatalog.parse { File(pack, it).inputStream() }
 
-    /** The smallest built-in shader effect, renamed to [key]; [change] can then break it on purpose. */
     private fun effectJson(key: String = "pulse", change: (JSONObject) -> Unit = {}): String =
         JSONObject(File(pack, "sepia.json").readText()).also { it.put("id", key); change(it) }.toString()
 

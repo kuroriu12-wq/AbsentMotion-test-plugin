@@ -4,7 +4,6 @@ import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
 
-/** What a plugin's `manifest.json` declares. See the `Managerplugin` repo for the format. */
 data class PluginManifest(
     val id: String,
     val name: String,
@@ -16,7 +15,6 @@ data class PluginManifest(
     val scripts: List<String>,
 ) {
     companion object {
-        /** The only host API version this app supports; a manifest must match it exactly. */
         const val HOST_API = 1
     }
 }
@@ -30,15 +28,12 @@ private val IdPattern = Regex("[a-z0-9_]+(\\.[a-z0-9_]+)+")
 private val EffectKeyPattern = Regex("[A-Za-z0-9_]+")
 private val DrivePrefix = Regex("^[A-Za-z]:")
 
-/** True for an id the store may use as a folder name: `owner.name`, lowercase, no separators. */
 internal fun isValidPluginId(id: String): Boolean = IdPattern.matches(id)
 
-/** True for a relative path that cannot leave the package folder. */
 internal fun isSafePackagePath(path: String): Boolean =
     path.isNotEmpty() && !path.startsWith("/") && '\\' !in path && !DrivePrefix.containsMatchIn(path) &&
         path.split('/').none { it == ".." }
 
-/** Parses and checks a manifest. Never throws; every problem found is reported, not only the first. */
 fun parseManifest(json: String): ManifestResult {
     val root = try {
         JSONObject(json.removePrefix("﻿"))

@@ -5,7 +5,6 @@ import java.io.IOException
 import java.nio.file.Files
 import java.util.zip.ZipInputStream
 
-/** Caps on what one plugin package may unpack to. Size is counted while extracting, never taken from the zip header. */
 data class PackageLimits(val maxFiles: Int = 500, val maxBytes: Long = 20L * 1024 * 1024)
 
 sealed interface StageResult {
@@ -16,10 +15,6 @@ sealed interface StageResult {
 private class PackageRejected(val problems: List<String>) : Exception(problems.joinToString("; "))
 
 object PluginPackage {
-    /**
-     * Unpacks [zip] into a fresh folder under [stagingRoot] and checks it. On [StageResult.Rejected] no folder is left
-     * behind. Nothing is ever written outside the fresh folder.
-     */
     fun stage(zip: File, stagingRoot: File, limits: PackageLimits = PackageLimits()): StageResult {
         val dir = try {
             stagingRoot.mkdirs()

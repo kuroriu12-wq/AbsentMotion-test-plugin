@@ -12,11 +12,6 @@ sealed interface InstallResult {
     data class Rejected(val problems: List<String>) : InstallResult
 }
 
-/**
- * Installed plugins, one folder each under [root]. `state.json` lists the disabled ids, `.staging` holds a package while it
- * is checked and `.old` holds the previous version while a plugin is replaced. A plugin that cannot be read is listed with
- * a problem; it never throws and never blocks the others.
- */
 class PluginStore(private val root: File) {
     constructor(context: Context) : this(File(context.filesDir, "plugins"))
 
@@ -46,7 +41,6 @@ class PluginStore(private val root: File) {
             .map { describe(it, disabled) }
     }
 
-    /** The plugins that are switched on and load without a problem. */
     fun enabled(): List<Installed> = list().filter { it.enabled && it.problem == null }
 
     fun install(zip: File, replace: Boolean = false): InstallResult = synchronized(lock) { installLocked(zip, replace) }
@@ -63,7 +57,6 @@ class PluginStore(private val root: File) {
         }
         val target = File(root, incoming.id)
         if (target.exists()) {
-            // A plugin whose files are already broken is replaced without asking: there is nothing to keep.
             val existing = describe(target, emptySet()).manifest
             if (existing != null && !replace) {
                 staged.dir.deleteRecursively()
@@ -119,7 +112,6 @@ class PluginStore(private val root: File) {
         return Installed(manifest.takeIf { problem == null }, id, dir, id !in disabled, problem)
     }
 
-    /** Moves [fresh] into place of [target], keeping the old folder aside so a failure can put it back. */
     private fun swapIn(fresh: File, target: File): Boolean {
         old.mkdirs()
         val backup = File(old, target.name)
@@ -133,7 +125,6 @@ class PluginStore(private val root: File) {
         return true
     }
 
-    /** Cleans up after a crash: drops half-staged packages and puts back a plugin whose replacement did not finish. */
     private fun recover() {
         staging.deleteRecursively()
         for (leftover in old.listFiles().orEmpty()) {
@@ -159,7 +150,6 @@ class PluginStore(private val root: File) {
     }
 
     private companion object {
-        /** One lock for every store on the same folder, so a catalog read can never clean up an install that is still running. */
         val lock = Any()
     }
 }

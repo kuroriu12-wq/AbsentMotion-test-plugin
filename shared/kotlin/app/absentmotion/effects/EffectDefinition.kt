@@ -94,7 +94,6 @@ data class EffectDefinition(
     val shortcuts: List<EffectShortcut> = emptyList(),
     val shortcut: String? = null,
     val alsoIn: List<String> = emptyList(),
-    /** The id of the plugin this effect comes from, or null for a built-in effect. */
     val plugin: String? = null,
 ) {
     val available: Boolean get() = status == "ok"
