@@ -2806,4 +2806,16 @@
     </plurals>
     <string name="media_drive_add_folder">محرك أو مجلد</string>
     <string name="media_drive_cannot_open">تعذّر فتح أداة اختيار المجلد</string>
+    <string name="tools_plugins">الإضافات</string>
+    <string name="tools_plugins_about">تضيف وصفات وتأثيرات من ملف ‎.zip‎.</string>
+    <string name="plugins_install">تثبيت إضافة</string>
+    <string name="plugins_empty">لم يتم تثبيت أي إضافات بعد.</string>
+    <string name="plugins_restart">أعد تشغيل AbsentMotion لتطبيق تغييرات التأثيرات.</string>
+    <string name="plugins_replace_title">هل تريد استبدال هذه الإضافة؟</string>
+    <string name="plugins_replace_body">الإضافة %1$s مثبّتة بالإصدار %2$s. هل تريد استبدالها بالإصدار %3$s؟</string>
+    <string name="plugins_replace">استبدال</string>
+    <string name="plugins_failed">تعذّر تثبيت هذه الإضافة</string>
+    <string name="plugins_asks">تطلب: %1$s</string>
+    <string name="plugins_not_granted">غير ممنوح في هذا الإصدار</string>
+    <string name="plugins_version">الإصدار %1$s</string>
 </resources>

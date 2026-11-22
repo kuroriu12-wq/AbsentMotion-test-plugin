@@ -2674,4 +2674,16 @@
     </plurals>
     <string name="media_drive_add_folder">درایو یا پوشه</string>
     <string name="media_drive_cannot_open">انتخابگر پوشه باز نشد</string>
+    <string name="tools_plugins">افزونه‌ها</string>
+    <string name="tools_plugins_about">دستورها و جلوه‌ها را از یک فایل ‎.zip‎ اضافه می‌کند.</string>
+    <string name="plugins_install">نصب افزونه</string>
+    <string name="plugins_empty">هنوز افزونه‌ای نصب نشده است.</string>
+    <string name="plugins_restart">برای اعمال تغییرات جلوه‌ها، AbsentMotion را دوباره راه‌اندازی کنید.</string>
+    <string name="plugins_replace_title">این افزونه جایگزین شود؟</string>
+    <string name="plugins_replace_body">افزونهٔ %1$s با نسخهٔ %2$s نصب شده است. با نسخهٔ %3$s جایگزین شود؟</string>
+    <string name="plugins_replace">جایگزین کن</string>
+    <string name="plugins_failed">نصب این افزونه ممکن نشد</string>
+    <string name="plugins_asks">درخواست می‌کند: %1$s</string>
+    <string name="plugins_not_granted">در این نسخه داده نمی‌شود</string>
+    <string name="plugins_version">نسخهٔ %1$s</string>
 </resources>

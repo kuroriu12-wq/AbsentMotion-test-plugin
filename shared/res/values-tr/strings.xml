@@ -2674,4 +2674,16 @@
     </plurals>
     <string name="media_drive_add_folder">Sürücü veya klasör</string>
     <string name="media_drive_cannot_open">Klasör seçici açılamadı</string>
+    <string name="tools_plugins">Eklentiler</string>
+    <string name="tools_plugins_about">Bir .zip dosyasından tarifler ve efektler ekler.</string>
+    <string name="plugins_install">Eklenti yükle</string>
+    <string name="plugins_empty">Henüz yüklü eklenti yok.</string>
+    <string name="plugins_restart">Efekt değişikliklerinin uygulanması için AbsentMotion\'ı yeniden başlatın.</string>
+    <string name="plugins_replace_title">Bu eklenti değiştirilsin mi?</string>
+    <string name="plugins_replace_body">%1$s eklentisi %2$s sürümü olarak yüklü. %3$s sürümüyle değiştirilsin mi?</string>
+    <string name="plugins_replace">Değiştir</string>
+    <string name="plugins_failed">Bu eklenti yüklenemedi</string>
+    <string name="plugins_asks">İstediği izinler: %1$s</string>
+    <string name="plugins_not_granted">Bu sürümde verilmez</string>
+    <string name="plugins_version">Sürüm %1$s</string>
 </resources>

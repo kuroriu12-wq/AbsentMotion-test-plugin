@@ -2641,4 +2641,16 @@
     </plurals>
     <string name="media_drive_add_folder">Ổ đĩa hoặc thư mục</string>
     <string name="media_drive_cannot_open">Không mở được trình chọn thư mục</string>
+    <string name="tools_plugins">Plugin</string>
+    <string name="tools_plugins_about">Thêm công thức và hiệu ứng từ tệp .zip.</string>
+    <string name="plugins_install">Cài đặt plugin</string>
+    <string name="plugins_empty">Chưa cài plugin nào.</string>
+    <string name="plugins_restart">Hãy khởi động lại AbsentMotion để áp dụng các thay đổi hiệu ứng.</string>
+    <string name="plugins_replace_title">Thay thế plugin này?</string>
+    <string name="plugins_replace_body">Plugin %1$s đang được cài ở phiên bản %2$s. Thay bằng phiên bản %3$s?</string>
+    <string name="plugins_replace">Thay thế</string>
+    <string name="plugins_failed">Không thể cài đặt plugin này</string>
+    <string name="plugins_asks">Yêu cầu: %1$s</string>
+    <string name="plugins_not_granted">Không được cấp ở phiên bản này</string>
+    <string name="plugins_version">Phiên bản %1$s</string>
 </resources>

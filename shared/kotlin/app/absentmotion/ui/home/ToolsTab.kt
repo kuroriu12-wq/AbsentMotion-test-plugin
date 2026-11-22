@@ -323,6 +323,8 @@ internal fun ToolsTab(modifier: Modifier, store: ProjectStore, settings: AppSett
                 }
             }
         }
+        Spacer(Modifier.height(12.dp))
+        ToolCard(HomeIcons.Folder, stringResource(R.string.tools_plugins), stringResource(R.string.tools_plugins_about)) { open = 7 }
         Spacer(Modifier.height(28.dp))
         ToolsFooter()
         if (asking) AlertDialog(
@@ -342,6 +344,7 @@ internal fun ToolsTab(modifier: Modifier, store: ProjectStore, settings: AppSett
         4 -> ExtractAudioScreen { open = 0 }
         5 -> GifScreen { open = 0 }
         6 -> EnhanceImageScreen { open = 0 }
+        7 -> PluginsRoute { open = 0 }
     }
 }
 

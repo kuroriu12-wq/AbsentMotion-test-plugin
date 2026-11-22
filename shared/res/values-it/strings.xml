@@ -2707,4 +2707,16 @@
     </plurals>
     <string name="media_drive_add_folder">Unità o cartella</string>
     <string name="media_drive_cannot_open">Impossibile aprire la scelta della cartella</string>
+    <string name="tools_plugins">Plugin</string>
+    <string name="tools_plugins_about">Aggiunge ricette ed effetti da un file .zip.</string>
+    <string name="plugins_install">Installa un plugin</string>
+    <string name="plugins_empty">Nessun plugin installato.</string>
+    <string name="plugins_restart">Riavvia AbsentMotion per applicare le modifiche agli effetti.</string>
+    <string name="plugins_replace_title">Sostituire questo plugin?</string>
+    <string name="plugins_replace_body">Il plugin %1$s è installato nella versione %2$s. Sostituirlo con la versione %3$s?</string>
+    <string name="plugins_replace">Sostituisci</string>
+    <string name="plugins_failed">Impossibile installare questo plugin</string>
+    <string name="plugins_asks">Richiede: %1$s</string>
+    <string name="plugins_not_granted">Non concesso in questa versione</string>
+    <string name="plugins_version">Versione %1$s</string>
 </resources>

@@ -2641,4 +2641,16 @@
     </plurals>
     <string name="media_drive_add_folder">Pemacu atau folder</string>
     <string name="media_drive_cannot_open">Tidak dapat membuka pemilih folder</string>
+    <string name="tools_plugins">Plugin</string>
+    <string name="tools_plugins_about">Menambah resipi dan kesan daripada fail .zip.</string>
+    <string name="plugins_install">Pasang plugin</string>
+    <string name="plugins_empty">Belum ada plugin dipasang.</string>
+    <string name="plugins_restart">Mulakan semula AbsentMotion untuk menggunakan perubahan kesan.</string>
+    <string name="plugins_replace_title">Gantikan plugin ini?</string>
+    <string name="plugins_replace_body">Plugin %1$s dipasang sebagai versi %2$s. Gantikan dengan versi %3$s?</string>
+    <string name="plugins_replace">Gantikan</string>
+    <string name="plugins_failed">Plugin ini tidak dapat dipasang</string>
+    <string name="plugins_asks">Meminta: %1$s</string>
+    <string name="plugins_not_granted">Tidak diberikan dalam versi ini</string>
+    <string name="plugins_version">Versi %1$s</string>
 </resources>

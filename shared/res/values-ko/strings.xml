@@ -2641,4 +2641,16 @@
     </plurals>
     <string name="media_drive_add_folder">드라이브 또는 폴더</string>
     <string name="media_drive_cannot_open">폴더 선택기를 열 수 없습니다</string>
+    <string name="tools_plugins">플러그인</string>
+    <string name="tools_plugins_about">ZIP 파일에서 레시피와 효과를 추가합니다.</string>
+    <string name="plugins_install">플러그인 설치</string>
+    <string name="plugins_empty">설치된 플러그인이 아직 없습니다.</string>
+    <string name="plugins_restart">효과 변경 사항을 적용하려면 AbsentMotion을 다시 시작하세요.</string>
+    <string name="plugins_replace_title">이 플러그인을 교체할까요?</string>
+    <string name="plugins_replace_body">플러그인 %1$s이(가) %2$s 버전으로 설치되어 있습니다. %3$s 버전으로 교체할까요?</string>
+    <string name="plugins_replace">교체</string>
+    <string name="plugins_failed">이 플러그인을 설치할 수 없습니다</string>
+    <string name="plugins_asks">요청한 권한: %1$s</string>
+    <string name="plugins_not_granted">이 버전에서는 허용되지 않음</string>
+    <string name="plugins_version">버전 %1$s</string>
 </resources>

@@ -105,6 +105,14 @@ class PluginsModelTest {
         assertEquals(emptyList<String>(), model.items.map { it.id })
     }
 
+    @Test fun dismissMessageClearsIt() {
+        val model = model()
+        model.install(File(zipFolder, "gone.zip"))
+        assertNotNull(model.message)
+        model.dismissMessage()
+        assertNull(model.message)
+    }
+
     @Test fun aNewInstallClearsTheOldMessage() {
         val model = model()
         model.install(File(zipFolder, "gone.zip"))

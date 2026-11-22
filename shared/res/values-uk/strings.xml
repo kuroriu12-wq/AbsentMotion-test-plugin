@@ -2740,4 +2740,16 @@
     </plurals>
     <string name="media_drive_add_folder">Диск або папка</string>
     <string name="media_drive_cannot_open">Не вдалося відкрити вибір папки</string>
+    <string name="tools_plugins">Плагіни</string>
+    <string name="tools_plugins_about">Додає рецепти й ефекти з ZIP-файлу.</string>
+    <string name="plugins_install">Установити плагін</string>
+    <string name="plugins_empty">Плагінів ще не встановлено.</string>
+    <string name="plugins_restart">Перезапустіть AbsentMotion, щоб застосувати зміни ефектів.</string>
+    <string name="plugins_replace_title">Замінити цей плагін?</string>
+    <string name="plugins_replace_body">Плагін %1$s установлено у версії %2$s. Замінити його версією %3$s?</string>
+    <string name="plugins_replace">Замінити</string>
+    <string name="plugins_failed">Не вдалося встановити цей плагін</string>
+    <string name="plugins_asks">Запитує: %1$s</string>
+    <string name="plugins_not_granted">У цій версії не надається</string>
+    <string name="plugins_version">Версія %1$s</string>
 </resources>

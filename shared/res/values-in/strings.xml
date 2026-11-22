@@ -2641,4 +2641,16 @@
     </plurals>
     <string name="media_drive_add_folder">Drive atau folder</string>
     <string name="media_drive_cannot_open">Tidak dapat membuka pemilih folder</string>
+    <string name="tools_plugins">Plugin</string>
+    <string name="tools_plugins_about">Menambahkan resep dan efek dari berkas .zip.</string>
+    <string name="plugins_install">Pasang plugin</string>
+    <string name="plugins_empty">Belum ada plugin terpasang.</string>
+    <string name="plugins_restart">Mulai ulang AbsentMotion untuk menerapkan perubahan efek.</string>
+    <string name="plugins_replace_title">Ganti plugin ini?</string>
+    <string name="plugins_replace_body">Plugin %1$s terpasang dengan versi %2$s. Ganti dengan versi %3$s?</string>
+    <string name="plugins_replace">Ganti</string>
+    <string name="plugins_failed">Plugin ini tidak dapat dipasang</string>
+    <string name="plugins_asks">Meminta: %1$s</string>
+    <string name="plugins_not_granted">Tidak diberikan di versi ini</string>
+    <string name="plugins_version">Versi %1$s</string>
 </resources>

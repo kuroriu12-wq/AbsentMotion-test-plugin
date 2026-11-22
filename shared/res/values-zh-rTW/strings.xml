@@ -2641,4 +2641,16 @@
     </plurals>
     <string name="media_drive_add_folder">磁碟機或資料夾</string>
     <string name="media_drive_cannot_open">無法開啟資料夾選擇器</string>
+    <string name="tools_plugins">外掛</string>
+    <string name="tools_plugins_about">從 .zip 檔案新增配方與特效。</string>
+    <string name="plugins_install">安裝外掛</string>
+    <string name="plugins_empty">尚未安裝任何外掛。</string>
+    <string name="plugins_restart">重新啟動 AbsentMotion 以套用特效變更。</string>
+    <string name="plugins_replace_title">要取代這個外掛嗎？</string>
+    <string name="plugins_replace_body">外掛 %1$s 已安裝，版本為 %2$s。要取代為版本 %3$s 嗎？</string>
+    <string name="plugins_replace">取代</string>
+    <string name="plugins_failed">無法安裝此外掛</string>
+    <string name="plugins_asks">要求的權限：%1$s</string>
+    <string name="plugins_not_granted">此版本不授予</string>
+    <string name="plugins_version">版本 %1$s</string>
 </resources>

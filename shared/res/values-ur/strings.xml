@@ -2674,4 +2674,16 @@
     </plurals>
     <string name="media_drive_add_folder">ڈرائیو یا فولڈر</string>
     <string name="media_drive_cannot_open">فولڈر منتخب کرنے والا نہیں کھل سکا</string>
+    <string name="tools_plugins">پلگ اِنز</string>
+    <string name="tools_plugins_about">‏.zip‎ فائل سے ترکیبیں اور اثرات شامل کرتا ہے۔</string>
+    <string name="plugins_install">پلگ اِن انسٹال کریں</string>
+    <string name="plugins_empty">ابھی تک کوئی پلگ اِن انسٹال نہیں ہے۔</string>
+    <string name="plugins_restart">اثرات کی تبدیلیاں لاگو کرنے کے لیے AbsentMotion دوبارہ شروع کریں۔</string>
+    <string name="plugins_replace_title">یہ پلگ اِن تبدیل کریں؟</string>
+    <string name="plugins_replace_body">پلگ اِن %1$s ورژن %2$s کے طور پر انسٹال ہے۔ اسے ورژن %3$s سے تبدیل کریں؟</string>
+    <string name="plugins_replace">تبدیل کریں</string>
+    <string name="plugins_failed">یہ پلگ اِن انسٹال نہیں ہو سکا</string>
+    <string name="plugins_asks">مانگتا ہے: %1$s</string>
+    <string name="plugins_not_granted">اس ورژن میں نہیں دیا گیا</string>
+    <string name="plugins_version">ورژن %1$s</string>
 </resources>

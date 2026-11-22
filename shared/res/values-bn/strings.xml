@@ -2674,4 +2674,16 @@
     </plurals>
     <string name="media_drive_add_folder">ড্রাইভ বা ফোল্ডার</string>
     <string name="media_drive_cannot_open">ফোল্ডার বাছাই খোলা যায়নি</string>
+    <string name="tools_plugins">প্লাগইন</string>
+    <string name="tools_plugins_about">একটি .zip ফাইল থেকে রেসিপি ও ইফেক্ট যোগ করুন।</string>
+    <string name="plugins_install">প্লাগইন ইনস্টল করুন</string>
+    <string name="plugins_empty">এখনও কোনো প্লাগইন ইনস্টল করা হয়নি।</string>
+    <string name="plugins_restart">ইফেক্টের পরিবর্তন প্রয়োগ করতে AbsentMotion আবার চালু করুন।</string>
+    <string name="plugins_replace_title">এই প্লাগইন প্রতিস্থাপন করবেন?</string>
+    <string name="plugins_replace_body">প্লাগইন %1$s সংস্করণ %2$s হিসেবে ইনস্টল করা আছে। এটি সংস্করণ %3$s দিয়ে প্রতিস্থাপন করবেন?</string>
+    <string name="plugins_replace">প্রতিস্থাপন করুন</string>
+    <string name="plugins_failed">এই প্লাগইন ইনস্টল করা যায়নি</string>
+    <string name="plugins_asks">চাওয়া অনুমতি: %1$s</string>
+    <string name="plugins_not_granted">এই সংস্করণে দেওয়া হয় না</string>
+    <string name="plugins_version">সংস্করণ %1$s</string>
 </resources>

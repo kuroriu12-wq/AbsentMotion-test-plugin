@@ -2641,4 +2641,16 @@
     </plurals>
     <string name="media_drive_add_folder">ドライブ/フォルダ</string>
     <string name="media_drive_cannot_open">フォルダ選択を開けませんでした</string>
+    <string name="tools_plugins">プラグイン</string>
+    <string name="tools_plugins_about">ZIPファイルからレシピとエフェクトを追加します。</string>
+    <string name="plugins_install">プラグインをインストール</string>
+    <string name="plugins_empty">インストール済みのプラグインはまだありません。</string>
+    <string name="plugins_restart">エフェクトの変更を反映するには、AbsentMotionを再起動してください。</string>
+    <string name="plugins_replace_title">このプラグインを置き換えますか？</string>
+    <string name="plugins_replace_body">プラグイン %1$s はバージョン %2$s がインストールされています。バージョン %3$s に置き換えますか？</string>
+    <string name="plugins_replace">置き換える</string>
+    <string name="plugins_failed">このプラグインをインストールできませんでした</string>
+    <string name="plugins_asks">要求する権限: %1$s</string>
+    <string name="plugins_not_granted">このバージョンでは許可されません</string>
+    <string name="plugins_version">バージョン %1$s</string>
 </resources>

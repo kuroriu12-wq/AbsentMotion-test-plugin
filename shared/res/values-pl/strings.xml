@@ -2740,4 +2740,16 @@
     </plurals>
     <string name="media_drive_add_folder">Dysk lub folder</string>
     <string name="media_drive_cannot_open">Nie udało się otworzyć wyboru folderu</string>
+    <string name="tools_plugins">Wtyczki</string>
+    <string name="tools_plugins_about">Dodaje przepisy i efekty z pliku .zip.</string>
+    <string name="plugins_install">Zainstaluj wtyczkę</string>
+    <string name="plugins_empty">Nie zainstalowano jeszcze żadnych wtyczek.</string>
+    <string name="plugins_restart">Uruchom AbsentMotion ponownie, aby zastosować zmiany efektów.</string>
+    <string name="plugins_replace_title">Zastąpić tę wtyczkę?</string>
+    <string name="plugins_replace_body">Wtyczka %1$s jest zainstalowana w wersji %2$s. Zastąpić ją wersją %3$s?</string>
+    <string name="plugins_replace">Zastąp</string>
+    <string name="plugins_failed">Nie można zainstalować tej wtyczki</string>
+    <string name="plugins_asks">Wymaga: %1$s</string>
+    <string name="plugins_not_granted">Nie przyznano w tej wersji</string>
+    <string name="plugins_version">Wersja %1$s</string>
 </resources>

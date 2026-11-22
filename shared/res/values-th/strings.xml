@@ -2641,4 +2641,16 @@
     </plurals>
     <string name="media_drive_add_folder">ไดรฟ์หรือโฟลเดอร์</string>
     <string name="media_drive_cannot_open">เปิดตัวเลือกโฟลเดอร์ไม่ได้</string>
+    <string name="tools_plugins">ปลั๊กอิน</string>
+    <string name="tools_plugins_about">เพิ่มสูตรและเอฟเฟกต์จากไฟล์ .zip</string>
+    <string name="plugins_install">ติดตั้งปลั๊กอิน</string>
+    <string name="plugins_empty">ยังไม่มีปลั๊กอินที่ติดตั้ง</string>
+    <string name="plugins_restart">เริ่ม AbsentMotion ใหม่เพื่อใช้การเปลี่ยนแปลงเอฟเฟกต์</string>
+    <string name="plugins_replace_title">แทนที่ปลั๊กอินนี้หรือไม่</string>
+    <string name="plugins_replace_body">ปลั๊กอิน %1$s ติดตั้งอยู่เป็นเวอร์ชัน %2$s ต้องการแทนที่ด้วยเวอร์ชัน %3$s หรือไม่</string>
+    <string name="plugins_replace">แทนที่</string>
+    <string name="plugins_failed">ติดตั้งปลั๊กอินนี้ไม่ได้</string>
+    <string name="plugins_asks">ขอสิทธิ์: %1$s</string>
+    <string name="plugins_not_granted">ไม่ได้รับอนุญาตในเวอร์ชันนี้</string>
+    <string name="plugins_version">เวอร์ชัน %1$s</string>
 </resources>

@@ -2674,4 +2674,16 @@
     </plurals>
     <string name="media_drive_add_folder">Drive o folder</string>
     <string name="media_drive_cannot_open">Hindi mabuksan ang pagpili ng folder</string>
+    <string name="tools_plugins">Mga Plugin</string>
+    <string name="tools_plugins_about">Nagdaragdag ng mga recipe at effect mula sa .zip file.</string>
+    <string name="plugins_install">Mag-install ng plugin</string>
+    <string name="plugins_empty">Wala pang naka-install na plugin.</string>
+    <string name="plugins_restart">I-restart ang AbsentMotion para mailapat ang mga pagbabago sa effect.</string>
+    <string name="plugins_replace_title">Palitan ang plugin na ito?</string>
+    <string name="plugins_replace_body">Naka-install ang plugin na %1$s bilang bersyon %2$s. Palitan ito ng bersyon %3$s?</string>
+    <string name="plugins_replace">Palitan</string>
+    <string name="plugins_failed">Hindi ma-install ang plugin na ito</string>
+    <string name="plugins_asks">Humihingi ng: %1$s</string>
+    <string name="plugins_not_granted">Hindi ibinibigay sa bersyong ito</string>
+    <string name="plugins_version">Bersyon %1$s</string>
 </resources>

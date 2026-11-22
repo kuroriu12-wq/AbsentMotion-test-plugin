@@ -5841,5 +5841,17 @@
   "other": "%1$d files"
  },
  "media_drive_add_folder": "Drive or folder",
- "media_drive_cannot_open": "Could not open folder picker"
+ "media_drive_cannot_open": "Could not open folder picker",
+ "tools_plugins": "Plugins",
+ "tools_plugins_about": "Add recipes and effects from a .zip file.",
+ "plugins_install": "Install a plugin",
+ "plugins_empty": "No plugins installed yet.",
+ "plugins_restart": "Restart AbsentMotion to apply the effect changes.",
+ "plugins_replace_title": "Replace this plugin?",
+ "plugins_replace_body": "Plugin %1$s is installed as version %2$s. Replace it with version %3$s?",
+ "plugins_replace": "Replace",
+ "plugins_failed": "Could not install this plugin",
+ "plugins_asks": "Asks for: %1$s",
+ "plugins_not_granted": "Not granted in this version",
+ "plugins_version": "Version %1$s"
 }

@@ -2674,4 +2674,16 @@
     </plurals>
     <string name="media_drive_add_folder">Laufwerk oder Ordner</string>
     <string name="media_drive_cannot_open">Ordnerauswahl konnte nicht geöffnet werden</string>
+    <string name="tools_plugins">Plugins</string>
+    <string name="tools_plugins_about">Fügt Rezepte und Effekte aus einer ZIP-Datei hinzu.</string>
+    <string name="plugins_install">Plugin installieren</string>
+    <string name="plugins_empty">Noch keine Plugins installiert.</string>
+    <string name="plugins_restart">Starte AbsentMotion neu, damit die Effektänderungen wirksam werden.</string>
+    <string name="plugins_replace_title">Dieses Plugin ersetzen?</string>
+    <string name="plugins_replace_body">Das Plugin %1$s ist in Version %2$s installiert. Durch Version %3$s ersetzen?</string>
+    <string name="plugins_replace">Ersetzen</string>
+    <string name="plugins_failed">Dieses Plugin konnte nicht installiert werden</string>
+    <string name="plugins_asks">Verlangt: %1$s</string>
+    <string name="plugins_not_granted">In dieser Version nicht gewährt</string>
+    <string name="plugins_version">Version %1$s</string>
 </resources>

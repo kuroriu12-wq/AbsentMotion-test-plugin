@@ -2641,4 +2641,16 @@
     </plurals>
     <string name="media_drive_add_folder">驱动器或文件夹</string>
     <string name="media_drive_cannot_open">无法打开文件夹选择器</string>
+    <string name="tools_plugins">插件</string>
+    <string name="tools_plugins_about">从 .zip 文件添加配方和特效。</string>
+    <string name="plugins_install">安装插件</string>
+    <string name="plugins_empty">尚未安装任何插件。</string>
+    <string name="plugins_restart">重启 AbsentMotion 以应用特效更改。</string>
+    <string name="plugins_replace_title">要替换此插件吗？</string>
+    <string name="plugins_replace_body">插件 %1$s 已安装，版本为 %2$s。要替换为版本 %3$s 吗？</string>
+    <string name="plugins_replace">替换</string>
+    <string name="plugins_failed">无法安装此插件</string>
+    <string name="plugins_asks">请求的权限：%1$s</string>
+    <string name="plugins_not_granted">此版本不授予</string>
+    <string name="plugins_version">版本 %1$s</string>
 </resources>

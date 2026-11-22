@@ -33,6 +33,10 @@ class PluginsModel(private val store: PluginStore) {
         pendingReplace = null
     }
 
+    fun dismissMessage() {
+        message = null
+    }
+
     fun toggle(id: String) {
         val plugin = items.firstOrNull { it.id == id } ?: return
         attempt {

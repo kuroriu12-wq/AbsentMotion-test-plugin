@@ -2700,4 +2700,16 @@
     </plurals>
     <string name="media_drive_add_folder">Drive or folder</string>
     <string name="media_drive_cannot_open">Could not open folder picker</string>
+    <string name="tools_plugins">Plugins</string>
+    <string name="tools_plugins_about">Add recipes and effects from a .zip file.</string>
+    <string name="plugins_install">Install a plugin</string>
+    <string name="plugins_empty">No plugins installed yet.</string>
+    <string name="plugins_restart">Restart AbsentMotion to apply the effect changes.</string>
+    <string name="plugins_replace_title">Replace this plugin?</string>
+    <string name="plugins_replace_body">Plugin %1$s is installed as version %2$s. Replace it with version %3$s?</string>
+    <string name="plugins_replace">Replace</string>
+    <string name="plugins_failed">Could not install this plugin</string>
+    <string name="plugins_asks">Asks for: %1$s</string>
+    <string name="plugins_not_granted">Not granted in this version</string>
+    <string name="plugins_version">Version %1$s</string>
 </resources>
