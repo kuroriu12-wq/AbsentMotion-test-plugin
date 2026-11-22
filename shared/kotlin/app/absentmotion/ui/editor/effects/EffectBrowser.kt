@@ -299,7 +299,7 @@ private fun BrowserBody(state: EditorState) {
                 Column(Modifier.fillMaxSize().background(BrowserBg).pointerInput(Unit) {}.deskVerticalScroll()) {
                     EffectHero(catalog, effect)
                     Column(Modifier.padding(start = 16.dp, end = 16.dp, bottom = 16.dp)) {
-                    Row(Modifier.fillMaxWidth().height(48.dp).clickable { helpPage = "effects/${effect.page}.html" }.padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+                    if (effect.plugin == null) Row(Modifier.fillMaxWidth().height(48.dp).clickable { helpPage = "effects/${effect.page}.html" }.padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically) {
                         Icon(ExportIcons.Help, null, Modifier.size(22.dp), tint = Am.OnDark)
                         Text(stringResource(R.string.effect_help), Modifier.padding(start = 12.dp), color = Am.OnDark, fontSize = 15.sp)
                     }
@@ -548,6 +548,7 @@ private fun EffectHero(catalog: EffectCatalog, effect: EffectDefinition) {
             Column(Modifier.align(Alignment.BottomStart).padding(start = 16.dp, end = 16.dp, bottom = 8.dp)) {
                 Text(effect.name, color = Am.OnDark, fontSize = 26.sp, fontWeight = FontWeight.Bold, maxLines = 2, overflow = TextOverflow.Ellipsis)
                 Text(effect.description, Modifier.padding(top = 4.dp), color = Am.OnDark, fontSize = 15.sp)
+                effect.plugin?.let { Text(it, Modifier.padding(top = 4.dp), color = Am.OnDark.copy(alpha = 0.7f), fontSize = 13.sp, maxLines = 1, overflow = TextOverflow.Ellipsis) }
             }
         }
     }

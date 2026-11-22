@@ -275,7 +275,7 @@ private fun EffectHeader(state: EditorState, index: Int, effect: XmlNode, defini
                 }
             }
         }
-        if (definition != null) Box(Modifier.size(36.dp).clickable { help = true }, contentAlignment = Alignment.Center) {
+        if (definition != null && definition.plugin == null) Box(Modifier.size(36.dp).clickable { help = true }, contentAlignment = Alignment.Center) {
             DeskTip(stringResource(R.string.effect_help)) { Icon(ExportIcons.Help, stringResource(R.string.effect_help), Modifier.size(22.dp), tint = Am.OnDark) }
             HoldName(stringResource(R.string.effect_help))
         }

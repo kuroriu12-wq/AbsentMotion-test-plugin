@@ -5,6 +5,8 @@ import android.graphics.drawable.Drawable
 import app.absentmotion.R
 import app.absentmotion.i18n.currentLanguage
 import app.absentmotion.platform.Context
+import app.absentmotion.plugins.PluginStore
+import app.absentmotion.plugins.withPlugins
 import app.absentmotion.ui.editor.matchesSearch
 import org.json.JSONArray
 import org.json.JSONObject
@@ -66,6 +68,7 @@ data class EffectCatalog(
             app.absentmotion.i18n.LanguagePacks.prepare(context, tag)
             return parse(tag) { app.absentmotion.i18n.LanguagePacks.open(context, tag, "effects/$it") }
                 .let { if (it.message != null) it.copy(message = context.getString(R.string.effects_not_loaded)) else it }
+                .let { catalog -> if (catalog.message != null) catalog else runCatching { catalog.withPlugins(PluginStore(context).enabled(), tag) }.getOrDefault(catalog) }
         }
 
         fun parse(language: String = "en", open: (String) -> InputStream): EffectCatalog = runCatching {

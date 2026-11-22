@@ -33,11 +33,12 @@ class PluginStore(private val root: File) {
     private val stateFile = File(root, "state.json")
 
     init {
-        recover()
+        synchronized(lock) { recover() }
     }
 
-    @Synchronized
-    fun list(): List<Installed> {
+    fun list(): List<Installed> = synchronized(lock) { listLocked() }
+
+    private fun listLocked(): List<Installed> {
         val disabled = disabledIds()
         return root.listFiles().orEmpty()
             .filter { it.isDirectory && !it.name.startsWith(".") }
@@ -48,8 +49,9 @@ class PluginStore(private val root: File) {
     /** The plugins that are switched on and load without a problem. */
     fun enabled(): List<Installed> = list().filter { it.enabled && it.problem == null }
 
-    @Synchronized
-    fun install(zip: File, replace: Boolean = false): InstallResult {
+    fun install(zip: File, replace: Boolean = false): InstallResult = synchronized(lock) { installLocked(zip, replace) }
+
+    private fun installLocked(zip: File, replace: Boolean): InstallResult {
         val staged = when (val result = PluginPackage.stage(zip, staging)) {
             is StageResult.Rejected -> return InstallResult.Rejected(result.problems)
             is StageResult.Staged -> result
@@ -82,15 +84,17 @@ class PluginStore(private val root: File) {
         return InstallResult.Done(describe(target, disabledIds()))
     }
 
-    @Synchronized
-    fun setEnabled(id: String, enabled: Boolean) {
+    fun setEnabled(id: String, enabled: Boolean) = synchronized(lock) { setEnabledLocked(id, enabled) }
+
+    private fun setEnabledLocked(id: String, enabled: Boolean) {
         if (!isValidPluginId(id)) return
         val disabled = disabledIds()
         saveDisabled(if (enabled) disabled - id else disabled + id)
     }
 
-    @Synchronized
-    fun remove(id: String) {
+    fun remove(id: String) = synchronized(lock) { removeLocked(id) }
+
+    private fun removeLocked(id: String) {
         if (!isValidPluginId(id)) return
         File(root, id).deleteRecursively()
         val disabled = disabledIds()
@@ -152,5 +156,10 @@ class PluginStore(private val root: File) {
         val array = JSONArray()
         for (id in disabled.sorted()) array.put(id)
         writeAtomically(stateFile, JSONObject().put("disabled", array).toString())
+    }
+
+    private companion object {
+        /** One lock for every store on the same folder, so a catalog read can never clean up an install that is still running. */
+        val lock = Any()
     }
 }
