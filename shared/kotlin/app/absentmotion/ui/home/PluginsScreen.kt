@@ -58,18 +58,16 @@ private fun rememberZipPicker(): ((File) -> Unit) -> Unit {
         val deliver = waiting
         waiting = null
         if (uri != null && deliver != null) scope.launch {
-            val copy = withContext(Dispatchers.IO) {
+            withContext(Dispatchers.IO) {
                 val target = File(context.cacheDir, "plugin-${UUID.randomUUID()}.zip")
                 try {
-                    val input = context.contentResolver.openInputStream(uri) ?: return@withContext target.also { it.delete() }
-                    input.use { source -> target.outputStream().use { sink -> copyAtMost(source, sink, MaxZipBytes) } }
-                    target
+                    val input = context.contentResolver.openInputStream(uri)
+                    if (input == null) target.delete() else input.use { source -> target.outputStream().use { sink -> copyAtMost(source, sink, MaxZipBytes) } }
                 } catch (e: java.io.IOException) {
                     target.delete()
-                    target
                 }
+                deliver(target)
             }
-            deliver(copy)
         }
     }
     return { deliver ->
@@ -92,6 +90,7 @@ private fun copyAtMost(source: java.io.InputStream, sink: java.io.OutputStream, 
 
 @Composable
 internal fun PluginsScreen(model: PluginsModel, pickZip: ((File) -> Unit) -> Unit, onBack: () -> Unit) {
+    val scope = rememberCoroutineScope()
     var lastZip by remember { mutableStateOf<File?>(null) }
     fun forget() {
         lastZip?.delete()
@@ -125,8 +124,15 @@ internal fun PluginsScreen(model: PluginsModel, pickZip: ((File) -> Unit) -> Uni
             confirmButton = {
                 TextButton({
                     val zip = lastZip
-                    if (zip != null && zip.isFile) model.confirmReplace(zip) else model.cancelReplace()
-                    forget()
+                    if (zip != null && zip.isFile) {
+                        scope.launch(Dispatchers.IO) {
+                            model.confirmReplace(zip)
+                            forget()
+                        }
+                    } else {
+                        model.cancelReplace()
+                        forget()
+                    }
                 }) { Text(stringResource(R.string.plugins_replace), color = Am.Accent) }
             },
             dismissButton = { TextButton({ model.cancelReplace(); forget() }) { Text(stringResource(R.string.cancel), color = Am.Navy) } },
