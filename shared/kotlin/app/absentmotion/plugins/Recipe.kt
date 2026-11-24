@@ -40,7 +40,7 @@ private fun scalar(value: Any?): String? = when (value) {
 
 fun parseRecipe(json: String): RecipeParse {
     val root = try {
-        JSONObject(json.removePrefix("﻿"))
+        JSONObject(json.removePrefix("﻿\uFEFF"))
     } catch (e: JSONException) {
         return RecipeParse.Invalid(listOf("the recipe is not a valid JSON object: ${e.message}"))
     }
