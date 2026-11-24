@@ -36,7 +36,7 @@ internal fun isSafePackagePath(path: String): Boolean =
 
 fun parseManifest(json: String): ManifestResult {
     val root = try {
-        JSONObject(json.removePrefix("﻿\uFEFF"))
+        JSONObject(json.removePrefix("\uFEFF"))
     } catch (e: JSONException) {
         return ManifestResult.Invalid(listOf("manifest.json is not a valid JSON object: ${e.message}"))
     }
