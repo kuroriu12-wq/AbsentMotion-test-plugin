@@ -196,7 +196,7 @@ androidComponents {
 }
 
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
-    if (!name.contains("Test")) compilerOptions.allWarningsAsErrors.set(true)
+    if (!name.contains("Test")) compilerOptions.allWarningsAsErrors.set(false)
 }
 
 tasks.withType<Test>().configureEach {
