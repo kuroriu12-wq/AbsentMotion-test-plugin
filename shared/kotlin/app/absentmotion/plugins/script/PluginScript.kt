@@ -25,7 +25,8 @@ private const val MAX_SOURCE_BYTES = 512 * 1024
 private val ScriptId = Regex("[A-Za-z_][A-Za-z0-9_]*")
 
 private const val DEFINE_PRELUDE =
-    "var defineScript=function(spec){" +
+    "var console={log:function(){}};" +
+        "var defineScript=function(spec){" +
         "if(spec===null||typeof spec!=='object')throw new Error('defineScript needs an object');" +
         "if(typeof spec.run!=='function')throw new Error('defineScript needs a run function');" +
         "__defined(JSON.stringify({id:spec.id,name:spec.name,inputs:spec.inputs}));};"
