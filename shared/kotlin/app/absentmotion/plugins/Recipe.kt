@@ -51,65 +51,7 @@ fun parseRecipe(json: String): RecipeParse {
     val name = (root.opt("name") as? String)?.takeIf { it.isNotBlank() }
     if (name == null) problems += "name is required"
 
-    fun input(index: Int, raw: Any?): RecipeInput? {
-        val label = "input ${index + 1}"
-        val o = raw as? JSONObject ?: run {
-            problems += "$label must be an object"
-            return null
-        }
-        val before = problems.size
-        val inputId = (o.opt("id") as? String)?.takeIf { InputId.matches(it) }
-        if (inputId == null) problems += "$label: id must start with a letter or underscore and use letters, digits and underscores"
-        val text = (o.opt("label") as? String)?.takeIf { it.isNotBlank() }
-        if (text == null) problems += "$label: label is required"
-        val type = (o.opt("type") as? String)?.takeIf { it in InputTypes }
-        if (type == null) problems += "$label: type must be one of ${InputTypes.joinToString()}"
-        val default = scalar(o.opt("default"))
-        if (default == null) problems += "$label: default is required"
-
-        val options = ArrayList<String>()
-        if (o.has("options")) {
-            val array = o.opt("options") as? JSONArray
-            if (array == null) {
-                problems += "$label: options must be a list"
-            } else {
-                for (i in 0 until array.length()) {
-                    val option = array.opt(i) as? String
-                    if (option == null) problems += "$label: options[$i] must be a string" else options += option
-                }
-            }
-        }
-        fun bound(key: String): Float? {
-            if (!o.has(key)) return null
-            val number = (o.opt(key) as? Number)?.toFloat()?.takeIf { it.isFinite() }
-            if (number == null) problems += "$label: $key must be a number"
-            return number
-        }
-        val min = bound("min")
-        val max = bound("max")
-        if (min != null && max != null && min > max) problems += "$label: min is above max"
-
-        if (type == "number" && default != null && default.toFloatOrNull()?.isFinite() != true) problems += "$label: default must be a number"
-        if (type == "choice") {
-            if (options.isEmpty()) problems += "$label: a choice needs options"
-            else if (default != null && default !in options) problems += "$label: default must be one of the options"
-        }
-        if (problems.size > before || inputId == null || text == null || type == null || default == null) return null
-        return RecipeInput(inputId, text, type, default, options, min, max)
-    }
-
-    val inputs = ArrayList<RecipeInput>()
-    if (root.has("inputs")) {
-        val array = root.opt("inputs") as? JSONArray
-        if (array == null) {
-            problems += "inputs must be a list"
-        } else {
-            for (i in 0 until array.length()) {
-                val parsed = input(i, array.opt(i)) ?: continue
-                if (inputs.any { it.id == parsed.id }) problems += "input ${i + 1}: id '${parsed.id}' is used twice" else inputs += parsed
-            }
-        }
-    }
+    val inputs = parseRecipeInputs(root, problems)
     val inputIds = inputs.map { it.id }.toSet()
 
     fun step(index: Int, raw: Any?): RecipeStep? {
@@ -202,4 +144,67 @@ fun parseRecipe(json: String): RecipeParse {
 
     if (problems.isNotEmpty() || id == null || name == null) return RecipeParse.Invalid(problems)
     return RecipeParse.Valid(Recipe(id, name, inputs, steps))
+}
+
+internal fun parseRecipeInput(index: Int, raw: Any?, problems: MutableList<String>): RecipeInput? {
+    val label = "input ${index + 1}"
+    val o = raw as? JSONObject ?: run {
+        problems += "$label must be an object"
+        return null
+    }
+    val before = problems.size
+    val inputId = (o.opt("id") as? String)?.takeIf { InputId.matches(it) }
+    if (inputId == null) problems += "$label: id must start with a letter or underscore and use letters, digits and underscores"
+    val text = (o.opt("label") as? String)?.takeIf { it.isNotBlank() }
+    if (text == null) problems += "$label: label is required"
+    val type = (o.opt("type") as? String)?.takeIf { it in InputTypes }
+    if (type == null) problems += "$label: type must be one of ${InputTypes.joinToString()}"
+    val default = scalar(o.opt("default"))
+    if (default == null) problems += "$label: default is required"
+
+    val options = ArrayList<String>()
+    if (o.has("options")) {
+        val array = o.opt("options") as? JSONArray
+        if (array == null) {
+            problems += "$label: options must be a list"
+        } else {
+            for (i in 0 until array.length()) {
+                val option = array.opt(i) as? String
+                if (option == null) problems += "$label: options[$i] must be a string" else options += option
+            }
+        }
+    }
+    fun bound(key: String): Float? {
+        if (!o.has(key)) return null
+        val number = (o.opt(key) as? Number)?.toFloat()?.takeIf { it.isFinite() }
+        if (number == null) problems += "$label: $key must be a number"
+        return number
+    }
+    val min = bound("min")
+    val max = bound("max")
+    if (min != null && max != null && min > max) problems += "$label: min is above max"
+
+    if (type == "number" && default != null && default.toFloatOrNull()?.isFinite() != true) problems += "$label: default must be a number"
+    if (type == "choice") {
+        if (options.isEmpty()) problems += "$label: a choice needs options"
+        else if (default != null && default !in options) problems += "$label: default must be one of the options"
+    }
+    if (problems.size > before || inputId == null || text == null || type == null || default == null) return null
+    return RecipeInput(inputId, text, type, default, options, min, max)
+}
+
+internal fun parseRecipeInputs(root: JSONObject, problems: MutableList<String>): List<RecipeInput> {
+    val inputs = ArrayList<RecipeInput>()
+    if (root.has("inputs")) {
+        val array = root.opt("inputs") as? JSONArray
+        if (array == null) {
+            problems += "inputs must be a list"
+        } else {
+            for (i in 0 until array.length()) {
+                val parsed = parseRecipeInput(i, array.opt(i), problems) ?: continue
+                if (inputs.any { it.id == parsed.id }) problems += "input ${i + 1}: id '${parsed.id}' is used twice" else inputs += parsed
+            }
+        }
+    }
+    return inputs
 }
