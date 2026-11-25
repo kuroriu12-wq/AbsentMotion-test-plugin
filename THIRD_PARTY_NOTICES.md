@@ -675,6 +675,18 @@ inspected for a `META-INF/NOTICE` file.
 - URL: https://developer.android.com/jetpack/androidx/releases/camera and https://github.com/google/auto
 - Used in: the in-app camera (photo and video capture from the Add menu and from the new project sheet).
 
+### QuickJS and quickjs-kt
+
+- Version: `io.github.dokar3:quickjs-kt` 1.0.18 (Android) and `quickjs-kt-jvm` 1.0.18 (desktop and the Android unit tests), which bundle
+  the QuickJS JavaScript engine as `libquickjs.so` on Android (arm64-v8a, armeabi-v7a, x86_64) and as native libraries inside the
+  desktop jar. QuickJS itself is unchanged by AbsentMotion.
+- Licence: quickjs-kt is Apache-2.0 (appendix A.21). QuickJS is MIT (text in appendix A.33).
+- Copyright: quickjs-kt, Copyright (c) dokar3 and contributors, see upstream; QuickJS, Copyright (c) 2017-2021 Fabrice Bellard and
+  Copyright (c) 2017-2021 Charlie Gordon.
+- URL: https://github.com/dokar3/quickjs-kt and https://bellard.org/quickjs/
+- Used in: plugin scripts (`app.absentmotion.plugins.script`), which run a plugin's JavaScript file with a time limit, a memory
+  limit and only the host functions AbsentMotion hands to it.
+
 ### kotlinx.coroutines
 
 - Version: 1.9.0 (`kotlinx-coroutines-core` and `kotlinx-coroutines-android`, declared by the app at the version Compose resolves).
@@ -6391,4 +6403,28 @@ From `COPYING` of libva 2.22.0; the header files carry "Copyright (c) 2007-2009 
     ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
     TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
     SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+~~~~
+
+### A.33 QuickJS (MIT)
+
+From the `LICENSE` of QuickJS: "Copyright (c) 2017-2021 Fabrice Bellard" and "Copyright (c) 2017-2021 Charlie Gordon".
+
+~~~~
+    Permission is hereby granted, free of charge, to any person obtaining a copy
+    of this software and associated documentation files (the "Software"), to deal
+    in the Software without restriction, including without limitation the rights
+    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+    copies of the Software, and to permit persons to whom the Software is
+    furnished to do so, subject to the following conditions:
+
+    The above copyright notice and this permission notice shall be included in
+    all copies or substantial portions of the Software.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+    THE SOFTWARE.
 ~~~~

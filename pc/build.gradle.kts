@@ -62,6 +62,7 @@ dependencies {
     implementation(compose.desktop.currentOs)
     implementation(compose.material3)
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-swing:1.9.0")
+    implementation("io.github.dokar3:quickjs-kt-jvm:1.0.18")
     implementation("org.jetbrains.androidx.lifecycle:lifecycle-runtime-compose:2.9.6")
     implementation("org.json:json:20250517")
     implementation("net.sf.kxml:kxml2:2.3.0")
