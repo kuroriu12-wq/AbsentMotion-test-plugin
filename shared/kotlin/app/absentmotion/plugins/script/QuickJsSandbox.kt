@@ -9,6 +9,7 @@ import com.dokar.quickjs.quickJs
 import kotlinx.coroutines.runBlocking
 import org.json.JSONArray
 import org.json.JSONObject
+import java.util.UUID
 import java.util.concurrent.atomic.AtomicBoolean
 
 private const val MAX_REASON = 300
@@ -25,11 +26,12 @@ private const val BOOTSTRAP = """
     var hasOwn = Object.prototype.hasOwnProperty;
     var slice = Array.prototype.slice;
     var spec = parse(globalThis.__spec);
+    var token = spec.token;
     delete globalThis.__host;
     delete globalThis.__spec;
     function wrap(path) {
         return function () {
-            var reply = parse(host.call(path, stringify(slice.call(arguments))));
+            var reply = parse(host.call(token, path, stringify(slice.call(arguments))));
             if (hasOwn.call(reply, 'e')) throw new Error(reply.e);
             return reply.v;
         };
@@ -78,7 +80,7 @@ private fun fromJson(value: Any?): Any? = when (value) {
 @Suppress("UNCHECKED_CAST")
 private fun asHost(value: Function1<*, *>): HostFunction = value as HostFunction
 
-private class Prepared(val spec: String, val functions: Map<String, HostFunction>)
+private class Prepared(val spec: String, val token: String, val functions: Map<String, HostFunction>)
 
 private fun prepare(globals: Map<String, Any?>): Prepared {
     val functions = LinkedHashMap<String, HostFunction>()
@@ -109,7 +111,8 @@ private fun prepare(globals: Map<String, Any?>): Prepared {
         val rest = split(listOf(name), value)
         if (rest != null) data.put(name, rest)
     }
-    return Prepared(JSONObject().put("data", data).put("functions", paths).toString(), functions)
+    val token = UUID.randomUUID().toString()
+    return Prepared(JSONObject().put("data", data).put("functions", paths).put("token", token).toString(), token, functions)
 }
 
 private fun clip(message: String?, fallback: String): String {
@@ -152,10 +155,11 @@ class QuickJsSandbox(private val budget: ScriptBudget = ScriptBudget()) : Script
                     try {
                         define("__host") {
                             function("call") { args ->
-                                val path = args[0] as String
                                 val reply = JSONObject()
                                 try {
-                                    val callArgs = fromJson(JSONArray(args[1] as String)) as List<*>
+                                    require(args.size == 3 && args[0] == prepared.token) { "not available" }
+                                    val path = args[1] as String
+                                    val callArgs = fromJson(JSONArray(args[2] as String)) as List<*>
                                     val function = prepared.functions.getValue(path)
                                     reply.put("v", toJson(function(callArgs)))
                                 } catch (e: Throwable) {

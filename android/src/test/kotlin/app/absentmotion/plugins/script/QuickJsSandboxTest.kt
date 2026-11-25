@@ -93,7 +93,7 @@ class QuickJsSandboxTest {
     @Test fun noJavaOrAndroidIsReachable() {
         val names = listOf(
             "Packages", "java", "importClass", "require", "process", "setTimeout", "fetch", "Java", "android",
-            "__host", "__spec",
+            "__spec",
         )
         val source = "[" + names.joinToString(",") { "typeof $it" } + "].join(',')"
         val value = returned(run(source)) as String
@@ -106,10 +106,21 @@ class QuickJsSandboxTest {
             try { out.push(Function('return typeof java')()); } catch (e) { out.push('err'); }
             try { out.push((function () {}).constructor('return typeof Packages')()); } catch (e) { out.push('err'); }
             try { out.push((0, eval)('typeof java')); } catch (e) { out.push('err'); }
-            try { out.push(Function('return typeof __host')()); } catch (e) { out.push('err'); }
             out.join(',')
         """.trimIndent()
-        assertEquals("undefined,undefined,undefined,undefined", returned(run(source)))
+        assertEquals("undefined,undefined,undefined", returned(run(source)))
+    }
+
+    @Test fun rawBridgeObjectIsInert() {
+        val recorder = Recorder()
+        val source = """
+            var out = [];
+            try { out.push(String(__host.call('ctx.ping', '[]'))); } catch (e) { out.push('err'); }
+            try { out.push(String(__host.call('wrong', 'ctx.ping', '[]'))); } catch (e) { out.push('err'); }
+            out.join(',')
+        """.trimIndent()
+        returned(run(source, globals = recorder.globals()))
+        assertEquals(0, recorder.pings)
     }
 
     @Test fun hostObjectsAreFrozen() {
