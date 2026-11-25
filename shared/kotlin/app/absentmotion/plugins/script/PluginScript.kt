@@ -83,7 +83,7 @@ fun loadScripts(store: PluginStore, engine: ScriptEngine = QuickJsSandbox(Script
                     problems[key] = "the script is larger than ${MAX_SOURCE_BYTES / 1024} KB"
                     continue
                 }
-                file.readText().removePrefix("﻿")
+                file.readText().removePrefix("\uFEFF")
             } catch (e: Exception) {
                 problems[key] = "the script could not be read: ${e.message ?: e.javaClass.simpleName}"
                 continue
