@@ -91,7 +91,7 @@ class PluginManifestTest {
     }
 
     @Test fun everyProblemIsReportedNotJustTheFirst() {
-        val result = invalid(manifest(id = "Bad", api = "2", recipe = "../x"))!!
+        val result = invalid(manifest(id = "Bad", api = "9", recipe = "../x"))!!
         assertTrue(result.problems.size >= 3)
     }
 }
