@@ -50,6 +50,19 @@ class PluginPackageTest {
         assertTrue(result.problems.any { "recipes/a.json" in it })
     }
 
+    @Test fun packageWithMissingScriptFileIsRejected() {
+        val zip = zipOf(temp.root, "manifest.json" to manifest(scripts = listOf("scripts/a.js")))
+        val result = stage(zip) as StageResult.Rejected
+        assertTrue(result.problems.any { "scripts/a.js" in it })
+    }
+
+    @Test fun stagesAScriptPackage() {
+        val zip = zipOf(temp.root, "manifest.json" to manifest(scripts = listOf("scripts/a.js")), "scripts/a.js" to "1")
+        val result = stage(zip) as StageResult.Staged
+        assertEquals(2, result.manifest.api)
+        assertTrue(File(result.dir, "scripts/a.js").isFile)
+    }
+
     @Test fun rejectsNotAZipAndEmptyFile() {
         val text = File(temp.root, "not.zip").apply { writeText("this is not a zip") }
         val empty = File(temp.root, "empty.zip").apply { writeBytes(ByteArray(0)) }

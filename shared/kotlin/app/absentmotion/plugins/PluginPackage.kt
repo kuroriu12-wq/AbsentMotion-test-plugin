@@ -79,7 +79,7 @@ object PluginPackage {
             is ManifestResult.Invalid -> throw PackageRejected(parsed.problems)
             is ManifestResult.Valid -> parsed.manifest
         }
-        val declared = manifest.recipes + manifest.effects.map { "effects/$it.json" }
+        val declared = manifest.recipes + manifest.effects.map { "effects/$it.json" } + manifest.scripts
         val missing = declared.filter { !File(dir, it).isFile }
         if (missing.isNotEmpty()) throw PackageRejected(missing.map { "declared file '$it' is missing from the package" })
         return manifest

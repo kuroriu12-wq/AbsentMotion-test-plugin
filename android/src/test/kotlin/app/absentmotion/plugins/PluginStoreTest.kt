@@ -79,11 +79,20 @@ class PluginStoreTest {
         assertNotNull(listed.problem)
     }
 
-    @Test fun scriptsAreRejectedUntilSupported() {
+    @Test fun scriptPluginInstallsAndLists() {
         val store = PluginStore(root)
-        val zip = zipOf(zips(), "manifest.json" to manifest(scripts = listOf("scripts/main.lua")), "scripts/main.lua" to "-- hi")
+        val zip = zipOf(zips(), "manifest.json" to manifest(scripts = listOf("scripts/main.js")), "scripts/main.js" to "1")
+        val done = store.install(zip) as InstallResult.Done
+        assertEquals(listOf("scripts/main.js"), done.plugin.manifest!!.scripts)
+        assertEquals(listOf("kuep.test"), store.enabled().map { it.id })
+        assertTrue(File(root, "kuep.test/scripts/main.js").isFile)
+    }
+
+    @Test fun scriptPluginWithApi1IsRejected() {
+        val store = PluginStore(root)
+        val zip = zipOf(zips(), "manifest.json" to manifest(scripts = listOf("scripts/main.js"), api = 1), "scripts/main.js" to "1")
         val result = store.install(zip) as InstallResult.Rejected
-        assertTrue(result.problems.any { "scripts" in it })
+        assertTrue(result.problems.any { "scripts need api 2" in it })
         assertEquals(emptyList<String>(), store.list().map { it.id })
     }
 

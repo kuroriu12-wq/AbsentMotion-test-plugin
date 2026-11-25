@@ -51,10 +51,6 @@ class PluginStore(private val root: File) {
             is StageResult.Staged -> result
         }
         val incoming = staged.manifest
-        if (incoming.scripts.isNotEmpty()) {
-            staged.dir.deleteRecursively()
-            return InstallResult.Rejected(listOf("scripts are not supported by this version of AbsentMotion yet"))
-        }
         val target = File(root, incoming.id)
         if (target.exists()) {
             val existing = describe(target, emptySet()).manifest

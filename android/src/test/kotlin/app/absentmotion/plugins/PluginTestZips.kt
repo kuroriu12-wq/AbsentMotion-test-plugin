@@ -12,9 +12,10 @@ object PluginTestZips {
         recipes: List<String> = emptyList(),
         effects: List<String> = emptyList(),
         scripts: List<String> = emptyList(),
+        api: Int = if (scripts.isEmpty()) 1 else 2,
     ): String {
         fun list(items: List<String>) = items.joinToString(",", "[", "]") { JSONObject.quote(it) }
-        return """{"id":${JSONObject.quote(id)},"name":"Test","version":${JSONObject.quote(version)},"api":1,"permissions":[],""" +
+        return """{"id":${JSONObject.quote(id)},"name":"Test","version":${JSONObject.quote(version)},"api":$api,"permissions":[],""" +
             """"contributes":{"recipes":${list(recipes)},"effects":${list(effects)},"scripts":${list(scripts)}}}"""
     }
 

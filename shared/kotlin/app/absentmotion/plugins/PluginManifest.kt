@@ -15,7 +15,8 @@ data class PluginManifest(
     val scripts: List<String>,
 ) {
     companion object {
-        const val HOST_API = 1
+        const val HOST_API = 2
+        val SUPPORTED_API: Set<Int> = setOf(1, 2)
     }
 }
 
@@ -56,9 +57,9 @@ fun parseManifest(json: String): ManifestResult {
 
     val api = root.opt("api")
     if (api !is Int) {
-        problems += "api must be the integer ${PluginManifest.HOST_API}"
-    } else if (api != PluginManifest.HOST_API) {
-        problems += "api $api is not supported; this app supports api ${PluginManifest.HOST_API}"
+        problems += "api must be the integer 1 or 2"
+    } else if (api !in PluginManifest.SUPPORTED_API) {
+        problems += "api $api is not supported; this app supports api 1 and 2"
     }
 
     fun strings(owner: JSONObject, key: String, label: String, required: Boolean): List<String> {
@@ -91,7 +92,11 @@ fun parseManifest(json: String): ManifestResult {
         effects = strings(contributes, "effects", "contributes.effects", required = false)
         scripts = strings(contributes, "scripts", "contributes.scripts", required = false)
         for (path in recipes) if (!isSafePackagePath(path)) problems += "recipe path '$path' must stay inside the package"
-        for (path in scripts) if (!isSafePackagePath(path)) problems += "script path '$path' must stay inside the package"
+        for (path in scripts) {
+            if (!isSafePackagePath(path)) problems += "script path '$path' must stay inside the package"
+            else if (!path.endsWith(".js")) problems += "script path '$path' must end in .js"
+        }
+        if (scripts.isNotEmpty() && api == 1) problems += "scripts need api 2"
         for (key in effects) if (!EffectKeyPattern.matches(key)) problems += "effect key '$key' may only use letters, digits and underscores"
     }
 
