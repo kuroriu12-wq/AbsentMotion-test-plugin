@@ -173,4 +173,37 @@ class Physics2dScriptTest {
         val result = done(run(scene(bare), listOf(1)))
         assertEquals(400f - 0.05f * 400f, path(result, 1).last().second, 1f)
     }
+
+    private fun unsized(id: Long, x: Float, y: Float, tilt: Float = 0f): Layer =
+        shapeLayer(id = id, end = 6000, attrs = mapOf("s" to ".star"), children = listOf(transform(at(x, y), XmlNode("rotation", linkedMapOf("value" to "${-tilt}")))))
+
+    @Test fun layerWithoutSizeCollidesAsItsMeasuredBox() {
+        val layers = scene(unsized(1, 200f, 300f), body(2, 200f, 50f, seconds = 6))
+        val boxes = mapOf(1L to floatArrayOf(100f, 290f, 300f, 310f))
+        val result = done(runner.run(layers, listOf(1, 2), script, mapOf("pin" to "true"), 0, boxes))
+        assertEquals(270f, path(result, 2).last().second, 0.6f)
+        assertEquals(1, path(result, 1).toSet().size)
+    }
+
+    @Test fun measuredBoxOffCentreKeepsTheLayerWhereItWas() {
+        val layers = scene(unsized(1, 150f, 300f), body(2, 200f, 50f, seconds = 6))
+        val boxes = mapOf(1L to floatArrayOf(100f, 290f, 300f, 310f))
+        val result = done(runner.run(layers, listOf(1, 2), script, mapOf("pin" to "true"), 0, boxes))
+        assertEquals(150f, path(result, 1).last().first, 0.01f)
+        assertEquals(300f, path(result, 1).last().second, 0.01f)
+        assertEquals(270f, path(result, 2).last().second, 0.6f)
+    }
+
+    @Test fun logNamesTheShapeUsedForEachLayer() {
+        val layers = scene(unsized(1, 200f, 300f), body(2, 200f, 50f, seconds = 6))
+        val boxes = mapOf(1L to floatArrayOf(100f, 290f, 300f, 310f))
+        val log = (runner.run(layers, listOf(1, 2), script, emptyMap(), 0, boxes) as ScriptResult.Done).log
+        assertTrue(log.toString(), log.any { "box 200 x 20" in it })
+        assertTrue(log.toString(), log.any { "circle of radius 20" in it })
+    }
+
+    @Test fun layerWithoutSizeOrBoundsFallsBackToACircle() {
+        val log = (run(scene(unsized(1, 200f, 100f)), listOf(1)) as ScriptResult.Done).log
+        assertTrue(log.toString(), log.any { "no size known" in it })
+    }
 }

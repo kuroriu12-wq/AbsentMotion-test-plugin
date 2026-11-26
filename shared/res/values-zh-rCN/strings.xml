@@ -2662,4 +2662,8 @@
     <string name="plugin_script_changed">脚本运行期间项目发生了变化。请重新运行。</string>
     <string name="plugin_script_failed">脚本未能运行。%1$s</string>
     <string name="plugin_script_line">第 %1$d 行：%2$s</string>
+    <string name="plugin_author">作者：%1$s</string>
+    <string name="plugin_help">使用方法</string>
+    <string name="plugin_help_hide">隐藏</string>
+    <string name="plugin_help_none">这个插件没有使用说明页面。</string>
 </resources>

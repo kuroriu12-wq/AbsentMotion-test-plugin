@@ -2761,4 +2761,8 @@
     <string name="plugin_script_changed">Projekt zmienił się podczas działania skryptu. Uruchom go ponownie.</string>
     <string name="plugin_script_failed">Skrypt nie został uruchomiony. %1$s</string>
     <string name="plugin_script_line">Wiersz %1$d: %2$s</string>
+    <string name="plugin_author">Autor: %1$s</string>
+    <string name="plugin_help">Jak używać</string>
+    <string name="plugin_help_hide">Ukryj</string>
+    <string name="plugin_help_none">Ta wtyczka nie ma strony z instrukcją.</string>
 </resources>

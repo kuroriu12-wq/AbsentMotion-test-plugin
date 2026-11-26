@@ -2662,4 +2662,8 @@
     <string name="plugin_script_changed">Projek berubah semasa skrip berjalan. Jalankan semula.</string>
     <string name="plugin_script_failed">Skrip tidak berjalan. %1$s</string>
     <string name="plugin_script_line">Baris %1$d: %2$s</string>
+    <string name="plugin_author">Oleh %1$s</string>
+    <string name="plugin_help">Cara guna</string>
+    <string name="plugin_help_hide">Sembunyi</string>
+    <string name="plugin_help_none">Plugin ini tiada halaman cara guna.</string>
 </resources>

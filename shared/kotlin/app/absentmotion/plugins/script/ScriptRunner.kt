@@ -19,6 +19,7 @@ class ScriptRunner(private val catalog: EffectCatalog, private val engine: () ->
         script: PluginScript,
         inputs: Map<String, String>,
         sampleMs: Int,
+        bounds: Map<Long, FloatArray> = emptyMap(),
         cancelled: () -> Boolean = { false },
     ): ScriptResult {
         if (selection.isEmpty()) return ScriptResult.Failed("select at least one layer first", null, emptyList())
@@ -36,7 +37,7 @@ class ScriptRunner(private val catalog: EffectCatalog, private val engine: () ->
             }
         }
         val pending = PendingScene(scene)
-        val host = ScriptHost(pending, selection, sampleMs, typed, catalog)
+        val host = ScriptHost(pending, selection, sampleMs, typed, catalog, bounds = bounds)
         val globals = try {
             host.context()
         } catch (e: IllegalArgumentException) {

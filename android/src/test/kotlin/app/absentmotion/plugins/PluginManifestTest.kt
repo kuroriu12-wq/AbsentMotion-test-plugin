@@ -94,4 +94,26 @@ class PluginManifestTest {
         val result = invalid(manifest(id = "Bad", api = "9", recipe = "../x"))!!
         assertTrue(result.problems.size >= 3)
     }
+
+    private fun withMeta(meta: String) =
+        """{"id":"kuep.meta","name":"Meta","version":"1.0","api":2,"permissions":[],$meta"contributes":{"recipes":[],"effects":[],"scripts":[]}}"""
+
+    @Test fun descriptionAuthorAndHomepageAreOptional() {
+        val bare = parseManifest(valid) as ManifestResult.Valid
+        assertEquals("", bare.manifest.description)
+        assertEquals("", bare.manifest.author)
+        assertEquals("", bare.manifest.homepage)
+        val full = parseManifest(withMeta(""""description":" Moves things. ","author":"Kuep","homepage":"https://example.com/p",""")) as ManifestResult.Valid
+        assertEquals("Moves things.", full.manifest.description)
+        assertEquals("Kuep", full.manifest.author)
+        assertEquals("https://example.com/p", full.manifest.homepage)
+    }
+
+    @Test fun badDescriptionAuthorOrHomepageIsReported() {
+        val tooLong = "x".repeat(301)
+        assertTrue(invalid(withMeta(""""description":"$tooLong",""")) != null)
+        assertTrue(invalid(withMeta(""""author":7,""")) != null)
+        assertTrue(invalid(withMeta(""""homepage":"http://example.com",""")) != null)
+        assertTrue(invalid(withMeta(""""homepage":"javascript:alert(1)",""")) != null)
+    }
 }

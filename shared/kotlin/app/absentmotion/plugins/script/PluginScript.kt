@@ -2,6 +2,7 @@ package app.absentmotion.plugins.script
 
 import app.absentmotion.plugins.PluginStore
 import app.absentmotion.plugins.RecipeInput
+import app.absentmotion.plugins.optionalText
 import app.absentmotion.plugins.parseRecipeInputs
 import org.json.JSONException
 import org.json.JSONObject
@@ -14,6 +15,7 @@ data class PluginScript(
     val name: String,
     val inputs: List<RecipeInput>,
     val source: String,
+    val description: String = "",
 )
 
 data class ScriptListing(val scripts: List<PluginScript>, val problems: Map<String, String>)
@@ -29,9 +31,9 @@ private const val DEFINE_PRELUDE =
         "var defineScript=function(spec){" +
         "if(spec===null||typeof spec!=='object')throw new Error('defineScript needs an object');" +
         "if(typeof spec.run!=='function')throw new Error('defineScript needs a run function');" +
-        "__defined(JSON.stringify({id:spec.id,name:spec.name,inputs:spec.inputs}));};"
+        "__defined(JSON.stringify({id:spec.id,name:spec.name,description:spec.description,inputs:spec.inputs}));};"
 
-private class Defined(val id: String, val name: String, val inputs: List<RecipeInput>)
+private class Defined(val id: String, val name: String, val description: String, val inputs: List<RecipeInput>)
 
 private fun parseDefined(record: String): Pair<Defined?, List<String>> {
     val o = try {
@@ -44,9 +46,10 @@ private fun parseDefined(record: String): Pair<Defined?, List<String>> {
     if (id == null) problems += "id must start with a letter or underscore and use letters, digits and underscores"
     val name = (o.opt("name") as? String)?.takeIf { it.isNotBlank() }
     if (name == null) problems += "name is required"
+    val description = optionalText(o, "description", 200, "description", problems)
     val inputs = parseRecipeInputs(o, problems)
     if (problems.isNotEmpty() || id == null || name == null) return null to problems
-    return Defined(id, name, inputs) to emptyList()
+    return Defined(id, name, description, inputs) to emptyList()
 }
 
 private fun load(source: String, path: String, engine: ScriptEngine): Pair<Defined?, String?> {
@@ -95,7 +98,7 @@ fun loadScripts(store: PluginStore, engine: ScriptEngine = QuickJsSandbox(Script
             } else if (!seen.add(defined.id)) {
                 problems[key] = "another script in this plugin already uses the id '${defined.id}'"
             } else {
-                scripts += PluginScript(plugin, path, defined.id, defined.name, defined.inputs, source)
+                scripts += PluginScript(plugin, path, defined.id, defined.name, defined.inputs, source, defined.description)
             }
         }
     }

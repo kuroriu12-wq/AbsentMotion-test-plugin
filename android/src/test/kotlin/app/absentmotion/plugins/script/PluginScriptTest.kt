@@ -184,4 +184,19 @@ class PluginScriptTest {
         val problem = loadScripts(store, quick).problems.getValue("kuep.test/scripts/a.js")
         assertTrue(problem, problem.contains("larger than"))
     }
+
+    @Test fun scriptDescriptionIsKeptAndLimited() {
+        install(scripts = arrayOf("scripts/a.js" to "defineScript({ id: 'a', name: 'A', description: 'Does a thing.', run() {} });"))
+        assertEquals("Does a thing.", listScripts(store, quick).single().description)
+    }
+
+    @Test fun scriptWithoutDescriptionHasEmptyOne() {
+        install(scripts = arrayOf("scripts/a.js" to "defineScript({ id: 'a', name: 'A', run() {} });"))
+        assertEquals("", listScripts(store, quick).single().description)
+    }
+
+    @Test fun tooLongScriptDescriptionIsSkipped() {
+        val problem = problemOf("defineScript({ id: 'a', name: 'A', description: 'x'.repeat(201), run() {} });")
+        assertTrue(problem, "description" in problem)
+    }
 }

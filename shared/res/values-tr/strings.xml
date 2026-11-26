@@ -2695,4 +2695,8 @@
     <string name="plugin_script_changed">Komut dosyası çalışırken proje değişti. Yeniden çalıştırın.</string>
     <string name="plugin_script_failed">Komut dosyası çalıştırılamadı. %1$s</string>
     <string name="plugin_script_line">Satır %1$d: %2$s</string>
+    <string name="plugin_author">Yazan: %1$s</string>
+    <string name="plugin_help">Nasıl kullanılır</string>
+    <string name="plugin_help_hide">Gizle</string>
+    <string name="plugin_help_none">Bu eklentinin kullanım sayfası yok.</string>
 </resources>

@@ -2695,4 +2695,8 @@
     <string name="plugin_script_changed">स्क्रिप्ट चलने के दौरान प्रोजेक्ट बदल गया। इसे फिर से चलाएँ।</string>
     <string name="plugin_script_failed">स्क्रिप्ट नहीं चली। %1$s</string>
     <string name="plugin_script_line">पंक्ति %1$d: %2$s</string>
+    <string name="plugin_author">%1$s द्वारा</string>
+    <string name="plugin_help">इस्तेमाल कैसे करें</string>
+    <string name="plugin_help_hide">छिपाएँ</string>
+    <string name="plugin_help_none">इस प्लगइन में इस्तेमाल का तरीका नहीं दिया गया है।</string>
 </resources>

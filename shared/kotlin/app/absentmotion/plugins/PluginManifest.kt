@@ -13,6 +13,9 @@ data class PluginManifest(
     val recipes: List<String>,
     val effects: List<String>,
     val scripts: List<String>,
+    val description: String = "",
+    val author: String = "",
+    val homepage: String = "",
 ) {
     companion object {
         const val HOST_API = 2
@@ -28,6 +31,20 @@ sealed interface ManifestResult {
 private val IdPattern = Regex("[a-z0-9_]+(\\.[a-z0-9_]+)+")
 private val EffectKeyPattern = Regex("[A-Za-z0-9_]+")
 private val DrivePrefix = Regex("^[A-Za-z]:")
+
+internal fun optionalText(owner: JSONObject, key: String, max: Int, label: String, problems: MutableList<String>): String {
+    if (!owner.has(key) || owner.isNull(key)) return ""
+    val text = (owner.opt(key) as? String)?.trim()
+    if (text == null) {
+        problems += "$label must be text"
+        return ""
+    }
+    if (text.length > max) {
+        problems += "$label is longer than $max characters"
+        return ""
+    }
+    return text
+}
 
 internal fun isValidPluginId(id: String): Boolean = IdPattern.matches(id)
 
@@ -61,6 +78,11 @@ fun parseManifest(json: String): ManifestResult {
     } else if (api !in PluginManifest.SUPPORTED_API) {
         problems += "api $api is not supported; this app supports api 1 and 2"
     }
+
+    val description = optionalText(root, "description", 300, "description", problems)
+    val author = optionalText(root, "author", 80, "author", problems)
+    val homepage = optionalText(root, "homepage", 200, "homepage", problems)
+    if (homepage.isNotEmpty() && !homepage.startsWith("https://")) problems += "homepage must start with https://"
 
     fun strings(owner: JSONObject, key: String, label: String, required: Boolean): List<String> {
         if (!owner.has(key)) {
@@ -103,5 +125,5 @@ fun parseManifest(json: String): ManifestResult {
     if (problems.isNotEmpty() || id == null || name == null || version == null || api !is Int) {
         return ManifestResult.Invalid(problems)
     }
-    return ManifestResult.Valid(PluginManifest(id, name, version, api, permissions, recipes, effects, scripts))
+    return ManifestResult.Valid(PluginManifest(id, name, version, api, permissions, recipes, effects, scripts, description, author, homepage))
 }

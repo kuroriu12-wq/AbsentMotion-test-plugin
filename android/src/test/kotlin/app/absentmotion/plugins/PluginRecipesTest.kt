@@ -87,4 +87,35 @@ class PluginRecipesTest {
         assertEquals(emptyList<String>(), listTools(store, quick).map { it.name })
         assertEquals(false, hasTools(store))
     }
+
+    @Test fun toolsCarryTheirDescriptions() {
+        val store = store()
+        val described = """{"id":"a","name":"Recipe a","description":"Adds a glitch.","steps":[{"do":"addEffect","effect":"absent.glitch"}]}"""
+        val scriptWithText = "defineScript({ id: \"s\", name: \"Script s\", description: \"Does s.\", run: function (ctx) {} });"
+        installMixed(store, "kuep.text", mapOf("a" to described), mapOf("s" to scriptWithText))
+        assertEquals(listOf("Adds a glitch.", "Does s."), listTools(store, quick).map { it.description })
+    }
+
+    @Test fun helpPageIsReadWhenPresent() {
+        val store = store()
+        val entries = arrayOf("manifest.json" to manifest("kuep.help"), "help.md" to "\uFEFF  # Use it\n\nSelect two layers.\n")
+        assertEquals(true, store.install(zipOf(zipFolder, *entries)) is InstallResult.Done)
+        assertEquals("# Use it\n\nSelect two layers.", pluginHelp(store.list().single { it.id == "kuep.help" }))
+    }
+
+    @Test fun missingOrBlankHelpIsNull() {
+        val store = store()
+        assertEquals(true, store.install(zipOf(zipFolder, "manifest.json" to manifest("kuep.nohelp"))) is InstallResult.Done)
+        assertEquals(null, pluginHelp(store.list().single { it.id == "kuep.nohelp" }))
+        val blank = arrayOf("manifest.json" to manifest("kuep.blank"), "help.md" to "  \n")
+        assertEquals(true, store.install(zipOf(zipFolder, *blank)) is InstallResult.Done)
+        assertEquals(null, pluginHelp(store.list().single { it.id == "kuep.blank" }))
+    }
+
+    @Test fun hugeHelpIsCut() {
+        val store = store()
+        val entries = arrayOf("manifest.json" to manifest("kuep.big"), "help.md" to "a".repeat(50_000))
+        assertEquals(true, store.install(zipOf(zipFolder, *entries)) is InstallResult.Done)
+        assertEquals(20_000, pluginHelp(store.list().single { it.id == "kuep.big" })!!.length)
+    }
 }

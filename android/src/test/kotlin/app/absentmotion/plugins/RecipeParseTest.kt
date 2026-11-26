@@ -97,4 +97,13 @@ class RecipeParseTest {
         }
         assertTrue(parseRecipe("﻿" + recipe(strength, add)) is RecipeParse.Valid)
     }
+
+    @Test fun descriptionIsOptionalAndLimited() {
+        val plainRecipe = (parseRecipe(recipe(steps = plain)) as RecipeParse.Valid).recipe
+        assertEquals("", plainRecipe.description)
+        val described = (parseRecipe("""{"id":"shake","name":"Shake","description":" Shakes the layer. ","steps":[$plain]}""") as RecipeParse.Valid).recipe
+        assertEquals("Shakes the layer.", described.description)
+        assertTrue(invalid("""{"id":"shake","name":"Shake","description":"${"x".repeat(201)}","steps":[$plain]}""") != null)
+        assertTrue(invalid("""{"id":"shake","name":"Shake","description":4,"steps":[$plain]}""") != null)
+    }
 }

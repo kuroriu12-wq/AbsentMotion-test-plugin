@@ -2728,4 +2728,8 @@
     <string name="plugin_script_changed">Il progetto è cambiato durante l’esecuzione dello script. Eseguilo di nuovo.</string>
     <string name="plugin_script_failed">Lo script non è stato eseguito. %1$s</string>
     <string name="plugin_script_line">Riga %1$d: %2$s</string>
+    <string name="plugin_author">Di %1$s</string>
+    <string name="plugin_help">Come si usa</string>
+    <string name="plugin_help_hide">Nascondi</string>
+    <string name="plugin_help_none">Questo plugin non ha una pagina di istruzioni.</string>
 </resources>

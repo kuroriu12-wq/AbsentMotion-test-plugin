@@ -2662,4 +2662,8 @@
     <string name="plugin_script_changed">โปรเจกต์เปลี่ยนไประหว่างที่สคริปต์ทำงาน โปรดเรียกใช้อีกครั้ง</string>
     <string name="plugin_script_failed">เรียกใช้สคริปต์ไม่สำเร็จ %1$s</string>
     <string name="plugin_script_line">บรรทัด %1$d: %2$s</string>
+    <string name="plugin_author">โดย %1$s</string>
+    <string name="plugin_help">วิธีใช้</string>
+    <string name="plugin_help_hide">ซ่อน</string>
+    <string name="plugin_help_none">ปลั๊กอินนี้ไม่มีหน้าวิธีใช้</string>
 </resources>

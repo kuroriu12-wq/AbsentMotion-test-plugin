@@ -21,7 +21,7 @@ sealed interface RecipeStep {
     data class KeyframeEffectParam(val effect: String, val param: String, val at: List<Float>, val values: List<String>) : RecipeStep
 }
 
-data class Recipe(val id: String, val name: String, val inputs: List<RecipeInput>, val steps: List<RecipeStep>)
+data class Recipe(val id: String, val name: String, val inputs: List<RecipeInput>, val steps: List<RecipeStep>, val description: String = "")
 
 sealed interface RecipeParse {
     data class Valid(val recipe: Recipe) : RecipeParse
@@ -142,8 +142,9 @@ fun parseRecipe(json: String): RecipeParse {
         for (i in 0 until stepsArray.length()) step(i, stepsArray.opt(i))?.let { steps += it }
     }
 
+    val description = optionalText(root, "description", 200, "description", problems)
     if (problems.isNotEmpty() || id == null || name == null) return RecipeParse.Invalid(problems)
-    return RecipeParse.Valid(Recipe(id, name, inputs, steps))
+    return RecipeParse.Valid(Recipe(id, name, inputs, steps, description))
 }
 
 internal fun parseRecipeInput(index: Int, raw: Any?, problems: MutableList<String>): RecipeInput? {

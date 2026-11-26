@@ -2695,4 +2695,8 @@
     <string name="plugin_script_changed">Das Projekt hat sich geändert, während das Skript lief. Führe es erneut aus.</string>
     <string name="plugin_script_failed">Das Skript wurde nicht ausgeführt. %1$s</string>
     <string name="plugin_script_line">Zeile %1$d: %2$s</string>
+    <string name="plugin_author">Von %1$s</string>
+    <string name="plugin_help">Anleitung</string>
+    <string name="plugin_help_hide">Ausblenden</string>
+    <string name="plugin_help_none">Dieses Plugin hat keine Anleitungsseite.</string>
 </resources>

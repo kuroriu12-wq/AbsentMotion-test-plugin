@@ -97,8 +97,13 @@ internal fun PluginRecipeDialog(state: EditorState, onClose: () -> Unit) {
         stop.set(false)
         running = true
         scope.launch {
+            val boxes = HashMap<Long, FloatArray>()
+            for (id in ids) {
+                val layer = start.layer(id) ?: continue
+                state.engine.layerBounds(id, layer.startTime)?.let { boxes[id] = it }
+            }
             val result = withContext(Dispatchers.Default) {
-                ScriptRunner(catalog) { QuickJsSandbox() }.run(start, ids, script, given, sampleMs) { stop.get() }
+                ScriptRunner(catalog) { QuickJsSandbox() }.run(start, ids, script, given, sampleMs, boxes) { stop.get() }
             }
             running = false
             when (result) {
@@ -129,9 +134,11 @@ internal fun PluginRecipeDialog(state: EditorState, onClose: () -> Unit) {
                         Modifier.fillMaxWidth().clickable { chosen = entry; failure = null }.padding(vertical = 8.dp),
                     ) {
                         Text(entry.name, color = Am.OnDark, fontSize = 15.sp)
+                        if (entry.description.isNotEmpty()) Text(entry.description, color = Am.OnDark, fontSize = 13.sp, lineHeight = 17.sp)
                         Text(entry.plugin.manifest?.name ?: entry.plugin.id, color = Am.OnDarkDim, fontSize = 12.sp)
                     }
                 } else {
+                    if (picked.description.isNotEmpty()) Text(picked.description, Modifier.padding(bottom = 6.dp), color = Am.OnDarkDim, fontSize = 13.sp, lineHeight = 17.sp)
                     for (input in picked.inputs) RecipeField(input, values[input.id] ?: input.default) { values[input.id] = it }
                     if (running) Text(stringResource(R.string.plugin_script_running), Modifier.padding(top = 8.dp), color = Am.OnDarkDim, fontSize = 14.sp)
                     failure?.let { failed ->

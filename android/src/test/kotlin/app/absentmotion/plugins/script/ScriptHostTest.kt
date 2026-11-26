@@ -159,4 +159,16 @@ class ScriptHostTest {
         succeeded(run(host, "'use strict'; var failed = 0; try { ctx.log = null; } catch (e) { failed++; } try { ctx.scene.width = 1; } catch (e) { failed++; } try { ctx.selection()[0].id = 5; } catch (e) { failed++; } try { globalThis.__ops = null; } catch (e) { failed++; } ctx.log(String(failed) + ' ' + typeof globalThis.__ops + ' ' + typeof globalThis.__init);"))
         assertEquals(listOf("3 object undefined"), host.log)
     }
+
+    @Test fun boundsComeFromTheGivenBoxesOrAreNull() {
+        val host = ScriptHost(PendingScene(sceneWith(shapeLayer(id = 1), shapeLayer(id = 2))), listOf(1L, 2L), 0, emptyMap(), catalog, bounds = mapOf(1L to floatArrayOf(10f, 20f, 110f, 70f)))
+        succeeded(run(host, "var l = ctx.selection(); ctx.log(JSON.stringify(l[0].bounds())); ctx.log(JSON.stringify(l[1].bounds()));"))
+        assertEquals(listOf("{\"left\":10,\"top\":20,\"right\":110,\"bottom\":70}", "null"), host.log)
+    }
+
+    @Test fun nonFiniteBoundsAreIgnored() {
+        val host = ScriptHost(PendingScene(sceneWith(shapeLayer(id = 1))), listOf(1L), 0, emptyMap(), catalog, bounds = mapOf(1L to floatArrayOf(Float.NaN, 0f, 1f, 1f)))
+        succeeded(run(host, "ctx.log(JSON.stringify(ctx.selection()[0].bounds()));"))
+        assertEquals(listOf("null"), host.log)
+    }
 }

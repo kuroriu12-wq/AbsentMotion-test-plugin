@@ -2827,4 +2827,8 @@
     <string name="plugin_script_changed">تغيّر المشروع أثناء تشغيل السكربت. شغّله مرة أخرى.</string>
     <string name="plugin_script_failed">لم يتم تشغيل السكربت. %1$s</string>
     <string name="plugin_script_line">السطر %1$d: %2$s</string>
+    <string name="plugin_author">بواسطة %1$s</string>
+    <string name="plugin_help">طريقة الاستخدام</string>
+    <string name="plugin_help_hide">إخفاء</string>
+    <string name="plugin_help_none">هذه الإضافة ليس لها صفحة شرح للاستخدام.</string>
 </resources>

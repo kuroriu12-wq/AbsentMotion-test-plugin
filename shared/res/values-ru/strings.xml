@@ -2761,4 +2761,8 @@
     <string name="plugin_script_changed">Проект изменился во время работы скрипта. Запустите его снова.</string>
     <string name="plugin_script_failed">Скрипт не выполнен. %1$s</string>
     <string name="plugin_script_line">Строка %1$d: %2$s</string>
+    <string name="plugin_author">Автор: %1$s</string>
+    <string name="plugin_help">Как пользоваться</string>
+    <string name="plugin_help_hide">Скрыть</string>
+    <string name="plugin_help_none">У этого плагина нет страницы с инструкцией.</string>
 </resources>

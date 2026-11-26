@@ -48,6 +48,7 @@ private val RUN_PRELUDE = listOf(
     "return freezeObject({",
     "id: info.id, kind: info.kind, name: info.name, shape: info.shape, start: info.start, finish: info.finish, locked: info.locked,",
     "size: function () { return host.size(id); },",
+    "bounds: function () { return host.bounds(id); },",
     "position: function (t) { return host.position(id, t); },",
     "rotation: function (t) { return host.rotation(id, t); },",
     "scale: function (t) { return host.scale(id, t); },",
@@ -77,6 +78,7 @@ class ScriptHost(
     private val inputs: Map<String, Any>,
     catalog: EffectCatalog,
     private val limits: HostLimits = HostLimits(),
+    private val bounds: Map<Long, FloatArray> = emptyMap(),
 ) {
     private val ops = LayerOps(catalog)
     private val lines = ArrayList<String>()
@@ -97,6 +99,7 @@ class ScriptHost(
                 "log" to guarded("ctx.log") { addLog(it.firstOrNull()) },
                 "layer" to guarded("layer") { describe(layerOf(it.getOrNull(0), write = false)) },
                 "size" to guarded("size") { sizeOf(layerOf(it.getOrNull(0), write = false)) },
+                "bounds" to guarded("bounds") { boundsOf(layerOf(it.getOrNull(0), write = false)) },
                 "position" to guarded("position") { positionAt(layerOf(it.getOrNull(0), write = false), it.getOrNull(1)) },
                 "rotation" to guarded("rotation") { rotationAt(layerOf(it.getOrNull(0), write = false), it.getOrNull(1)) },
                 "scale" to guarded("scale") { scaleAt(layerOf(it.getOrNull(0), write = false), it.getOrNull(1)) },
@@ -146,6 +149,11 @@ class ScriptHost(
 
     private fun sizeOf(layer: Layer): Map<String, Any?>? =
         layer.prop("size")?.takeIf { it.size >= 2 }?.let { mapOf("width" to it[0].toDouble(), "height" to it[1].toDouble()) }
+
+    private fun boundsOf(layer: Layer): Map<String, Any?>? =
+        bounds[layer.id]?.takeIf { it.size >= 4 && it.all(Float::isFinite) }?.let {
+            mapOf("left" to it[0].toDouble(), "top" to it[1].toDouble(), "right" to it[2].toDouble(), "bottom" to it[3].toDouble())
+        }
 
     private fun layerAt(layer: Layer, seconds: Any?): Layer =
         layer.at(layer.startTime + (finite(seconds, "the time") * 1000).roundToInt(), pending.scene.fps)

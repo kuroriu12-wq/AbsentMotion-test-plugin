@@ -2662,4 +2662,8 @@
     <string name="plugin_script_changed">스크립트를 실행하는 동안 프로젝트가 변경되었습니다. 다시 실행하세요.</string>
     <string name="plugin_script_failed">스크립트를 실행하지 못했습니다. %1$s</string>
     <string name="plugin_script_line">%1$d번째 줄: %2$s</string>
+    <string name="plugin_author">제작: %1$s</string>
+    <string name="plugin_help">사용 방법</string>
+    <string name="plugin_help_hide">숨기기</string>
+    <string name="plugin_help_none">이 플러그인에는 사용 방법 페이지가 없습니다.</string>
 </resources>

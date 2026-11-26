@@ -2728,4 +2728,8 @@
     <string name="plugin_script_changed">El proyecto cambió mientras se ejecutaba el script. Ejecútalo de nuevo.</string>
     <string name="plugin_script_failed">El script no se ejecutó. %1$s</string>
     <string name="plugin_script_line">Línea %1$d: %2$s</string>
+    <string name="plugin_author">Por %1$s</string>
+    <string name="plugin_help">Cómo usarlo</string>
+    <string name="plugin_help_hide">Ocultar</string>
+    <string name="plugin_help_none">Este plugin no tiene página de instrucciones.</string>
 </resources>

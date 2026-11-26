@@ -2695,4 +2695,8 @@
     <string name="plugin_script_changed">اسکرپٹ چلنے کے دوران پروجیکٹ بدل گیا۔ اسے دوبارہ چلائیں۔</string>
     <string name="plugin_script_failed">اسکرپٹ نہیں چل سکا۔ %1$s</string>
     <string name="plugin_script_line">سطر %1$d: %2$s</string>
+    <string name="plugin_author">‏%1$s کی طرف سے</string>
+    <string name="plugin_help">استعمال کا طریقہ</string>
+    <string name="plugin_help_hide">چھپائیں</string>
+    <string name="plugin_help_none">اس پلگ اِن میں استعمال کے طریقے کا صفحہ نہیں ہے۔</string>
 </resources>

@@ -16,6 +16,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
@@ -32,6 +33,7 @@ import app.absentmotion.platform.LocalContext
 import app.absentmotion.platform.rememberLauncherForActivityResult
 import app.absentmotion.plugins.PluginStore
 import app.absentmotion.plugins.PluginsModel
+import app.absentmotion.plugins.pluginHelp
 import app.absentmotion.ui.editor.panels.ThinSwitch
 import app.absentmotion.ui.theme.Am
 import kotlinx.coroutines.Dispatchers
@@ -153,6 +155,8 @@ internal fun PluginsScreen(model: PluginsModel, pickZip: ((File) -> Unit) -> Uni
 @Composable
 private fun PluginRow(plugin: PluginStore.Installed, onToggle: () -> Unit, onRemove: () -> Unit) {
     val manifest = plugin.manifest
+    var helpOpen by remember { mutableStateOf(false) }
+    val help by produceState<String?>(null, helpOpen) { value = if (helpOpen) withContext(Dispatchers.IO) { pluginHelp(plugin) } else null }
     Column(Modifier.fillMaxWidth().padding(bottom = 10.dp).clip(RoundedCornerShape(12.dp)).background(Am.Card).padding(horizontal = 16.dp, vertical = 12.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
@@ -162,6 +166,8 @@ private fun PluginRow(plugin: PluginStore.Installed, onToggle: () -> Unit, onRem
             }
             ThinSwitch(on = plugin.enabled && plugin.problem == null, enabled = plugin.problem == null) { onToggle() }
         }
+        if (manifest != null && manifest.description.isNotEmpty()) Text(manifest.description, Modifier.padding(top = 6.dp), color = Am.Navy, fontSize = 14.sp, lineHeight = 18.sp)
+        if (manifest != null && manifest.author.isNotEmpty()) Text(stringResource(R.string.plugin_author, manifest.author), Modifier.padding(top = 4.dp), color = Am.HomeDim, fontSize = 13.sp)
         if (plugin.problem != null) Text(plugin.problem, Modifier.padding(top = 6.dp), color = Am.Accent, fontSize = 14.sp, lineHeight = 18.sp)
         if (manifest != null && manifest.permissions.isNotEmpty()) {
             Text(
@@ -169,7 +175,9 @@ private fun PluginRow(plugin: PluginStore.Installed, onToggle: () -> Unit, onRem
                 Modifier.padding(top = 6.dp), color = Am.HomeDim, fontSize = 13.sp, lineHeight = 17.sp,
             )
         }
+        if (helpOpen) Text(help ?: stringResource(R.string.plugin_help_none), Modifier.padding(top = 8.dp), color = Am.Navy, fontSize = 14.sp, lineHeight = 19.sp)
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+            if (manifest != null) TextButton({ helpOpen = !helpOpen }) { Text(stringResource(if (helpOpen) R.string.plugin_help_hide else R.string.plugin_help), color = Am.Navy) }
             TextButton(onRemove) { Text(stringResource(R.string.delete), color = Am.Navy) }
         }
     }

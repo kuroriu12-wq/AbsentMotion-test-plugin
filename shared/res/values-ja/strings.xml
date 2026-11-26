@@ -2662,4 +2662,8 @@
     <string name="plugin_script_changed">スクリプトの実行中にプロジェクトが変更されました。もう一度実行してください。</string>
     <string name="plugin_script_failed">スクリプトを実行できませんでした。%1$s</string>
     <string name="plugin_script_line">%1$d行目: %2$s</string>
+    <string name="plugin_author">作者: %1$s</string>
+    <string name="plugin_help">使い方</string>
+    <string name="plugin_help_hide">隠す</string>
+    <string name="plugin_help_none">このプラグインには使い方のページがありません。</string>
 </resources>

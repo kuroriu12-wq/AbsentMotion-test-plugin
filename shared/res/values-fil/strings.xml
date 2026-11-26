@@ -2695,4 +2695,8 @@
     <string name="plugin_script_changed">Nagbago ang proyekto habang tumatakbo ang script. Patakbuhin ulit.</string>
     <string name="plugin_script_failed">Hindi tumakbo ang script. %1$s</string>
     <string name="plugin_script_line">Linya %1$d: %2$s</string>
+    <string name="plugin_author">Ni %1$s</string>
+    <string name="plugin_help">Paano gamitin</string>
+    <string name="plugin_help_hide">Itago</string>
+    <string name="plugin_help_none">Walang pahina ng paggamit ang plugin na ito.</string>
 </resources>

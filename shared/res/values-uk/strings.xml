@@ -2761,4 +2761,8 @@
     <string name="plugin_script_changed">Проєкт змінився, поки працював скрипт. Запустіть його ще раз.</string>
     <string name="plugin_script_failed">Скрипт не виконано. %1$s</string>
     <string name="plugin_script_line">Рядок %1$d: %2$s</string>
+    <string name="plugin_author">Автор: %1$s</string>
+    <string name="plugin_help">Як користуватися</string>
+    <string name="plugin_help_hide">Сховати</string>
+    <string name="plugin_help_none">У цього плагіна немає сторінки з інструкцією.</string>
 </resources>

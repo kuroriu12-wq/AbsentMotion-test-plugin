@@ -2721,4 +2721,8 @@
     <string name="plugin_script_changed">The project changed while the script ran. Run it again.</string>
     <string name="plugin_script_failed">The script did not run. %1$s</string>
     <string name="plugin_script_line">Line %1$d: %2$s</string>
+    <string name="plugin_author">By %1$s</string>
+    <string name="plugin_help">How to use</string>
+    <string name="plugin_help_hide">Hide</string>
+    <string name="plugin_help_none">This plugin has no how-to-use page.</string>
 </resources>

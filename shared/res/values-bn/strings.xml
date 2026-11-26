@@ -2695,4 +2695,8 @@
     <string name="plugin_script_changed">স্ক্রিপ্ট চলার সময় প্রকল্পটি বদলে গেছে। আবার চালান।</string>
     <string name="plugin_script_failed">স্ক্রিপ্টটি চলেনি। %1$s</string>
     <string name="plugin_script_line">লাইন %1$d: %2$s</string>
+    <string name="plugin_author">%1$s-এর তৈরি</string>
+    <string name="plugin_help">কীভাবে ব্যবহার করবেন</string>
+    <string name="plugin_help_hide">লুকান</string>
+    <string name="plugin_help_none">এই প্লাগইনে ব্যবহারের নির্দেশিকা পাতা নেই।</string>
 </resources>

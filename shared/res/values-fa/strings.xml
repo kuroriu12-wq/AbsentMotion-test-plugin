@@ -2695,4 +2695,8 @@
     <string name="plugin_script_changed">پروژه هنگام اجرای اسکریپت تغییر کرد. دوباره اجرا کنید.</string>
     <string name="plugin_script_failed">اسکریپت اجرا نشد. %1$s</string>
     <string name="plugin_script_line">خط %1$d: %2$s</string>
+    <string name="plugin_author">از %1$s</string>
+    <string name="plugin_help">راهنمای استفاده</string>
+    <string name="plugin_help_hide">پنهان کردن</string>
+    <string name="plugin_help_none">این افزونه صفحه راهنمای استفاده ندارد.</string>
 </resources>
