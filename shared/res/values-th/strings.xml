@@ -2658,4 +2658,8 @@
     <string name="plugin_recipe_none">ยังไม่มีสูตรปลั๊กอินที่ติดตั้ง</string>
     <string name="plugin_recipe_failed">สูตรทำงานไม่สำเร็จ %1$s</string>
     <string name="plugin_recipe_failed_step">ขั้นตอนที่ %1$d: %2$s</string>
+    <string name="plugin_script_running">กำลังเรียกใช้…</string>
+    <string name="plugin_script_changed">โปรเจกต์เปลี่ยนไประหว่างที่สคริปต์ทำงาน โปรดเรียกใช้อีกครั้ง</string>
+    <string name="plugin_script_failed">เรียกใช้สคริปต์ไม่สำเร็จ %1$s</string>
+    <string name="plugin_script_line">บรรทัด %1$d: %2$s</string>
 </resources>

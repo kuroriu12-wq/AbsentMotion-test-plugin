@@ -2724,4 +2724,8 @@
     <string name="plugin_recipe_none">Aucune recette de plugin installée.</string>
     <string name="plugin_recipe_failed">La recette n’a pas été exécutée. %1$s</string>
     <string name="plugin_recipe_failed_step">Étape %1$d : %2$s</string>
+    <string name="plugin_script_running">Exécution…</string>
+    <string name="plugin_script_changed">Le projet a changé pendant l’exécution du script. Relancez-le.</string>
+    <string name="plugin_script_failed">Le script n’a pas été exécuté. %1$s</string>
+    <string name="plugin_script_line">Ligne %1$d : %2$s</string>
 </resources>

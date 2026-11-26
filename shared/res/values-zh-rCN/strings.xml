@@ -2658,4 +2658,8 @@
     <string name="plugin_recipe_none">尚未安装任何插件配方。</string>
     <string name="plugin_recipe_failed">配方未能运行。%1$s</string>
     <string name="plugin_recipe_failed_step">第 %1$d 步：%2$s</string>
+    <string name="plugin_script_running">正在运行…</string>
+    <string name="plugin_script_changed">脚本运行期间项目发生了变化。请重新运行。</string>
+    <string name="plugin_script_failed">脚本未能运行。%1$s</string>
+    <string name="plugin_script_line">第 %1$d 行：%2$s</string>
 </resources>

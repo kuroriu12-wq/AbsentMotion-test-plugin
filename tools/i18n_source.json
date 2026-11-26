@@ -5858,5 +5858,9 @@
  "plugin_recipe_run": "Run",
  "plugin_recipe_none": "No plugin recipes installed.",
  "plugin_recipe_failed": "The recipe did not run. %1$s",
- "plugin_recipe_failed_step": "Step %1$d: %2$s"
+ "plugin_recipe_failed_step": "Step %1$d: %2$s",
+ "plugin_script_running": "Running…",
+ "plugin_script_changed": "The project changed while the script ran. Run it again.",
+ "plugin_script_failed": "The script did not run. %1$s",
+ "plugin_script_line": "Line %1$d: %2$s"
 }

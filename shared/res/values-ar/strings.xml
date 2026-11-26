@@ -2823,4 +2823,8 @@
     <string name="plugin_recipe_none">لا توجد وصفات إضافات مثبّتة.</string>
     <string name="plugin_recipe_failed">لم يتم تشغيل الوصفة. %1$s</string>
     <string name="plugin_recipe_failed_step">الخطوة %1$d: %2$s</string>
+    <string name="plugin_script_running">قيد التشغيل…</string>
+    <string name="plugin_script_changed">تغيّر المشروع أثناء تشغيل السكربت. شغّله مرة أخرى.</string>
+    <string name="plugin_script_failed">لم يتم تشغيل السكربت. %1$s</string>
+    <string name="plugin_script_line">السطر %1$d: %2$s</string>
 </resources>

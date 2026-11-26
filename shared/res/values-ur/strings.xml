@@ -2691,4 +2691,8 @@
     <string name="plugin_recipe_none">کوئی پلگ اِن ترکیب انسٹال نہیں ہے۔</string>
     <string name="plugin_recipe_failed">ترکیب نہیں چل سکی۔ %1$s</string>
     <string name="plugin_recipe_failed_step">مرحلہ %1$d: %2$s</string>
+    <string name="plugin_script_running">چل رہا ہے…</string>
+    <string name="plugin_script_changed">اسکرپٹ چلنے کے دوران پروجیکٹ بدل گیا۔ اسے دوبارہ چلائیں۔</string>
+    <string name="plugin_script_failed">اسکرپٹ نہیں چل سکا۔ %1$s</string>
+    <string name="plugin_script_line">سطر %1$d: %2$s</string>
 </resources>

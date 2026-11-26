@@ -2658,4 +2658,8 @@
     <string name="plugin_recipe_none">Belum ada resep plugin terpasang.</string>
     <string name="plugin_recipe_failed">Resep tidak berjalan. %1$s</string>
     <string name="plugin_recipe_failed_step">Langkah %1$d: %2$s</string>
+    <string name="plugin_script_running">Berjalan…</string>
+    <string name="plugin_script_changed">Proyek berubah saat skrip berjalan. Jalankan lagi.</string>
+    <string name="plugin_script_failed">Skrip tidak berjalan. %1$s</string>
+    <string name="plugin_script_line">Baris %1$d: %2$s</string>
 </resources>

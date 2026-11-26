@@ -2658,4 +2658,8 @@
     <string name="plugin_recipe_none">Chưa cài công thức plugin nào.</string>
     <string name="plugin_recipe_failed">Công thức không chạy được. %1$s</string>
     <string name="plugin_recipe_failed_step">Bước %1$d: %2$s</string>
+    <string name="plugin_script_running">Đang chạy…</string>
+    <string name="plugin_script_changed">Dự án đã thay đổi trong lúc tập lệnh chạy. Hãy chạy lại.</string>
+    <string name="plugin_script_failed">Không chạy được tập lệnh. %1$s</string>
+    <string name="plugin_script_line">Dòng %1$d: %2$s</string>
 </resources>

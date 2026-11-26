@@ -2691,4 +2691,8 @@
     <string name="plugin_recipe_none">هیچ دستور افزونه‌ای نصب نشده است.</string>
     <string name="plugin_recipe_failed">دستور اجرا نشد. %1$s</string>
     <string name="plugin_recipe_failed_step">مرحلهٔ %1$d: %2$s</string>
+    <string name="plugin_script_running">در حال اجرا…</string>
+    <string name="plugin_script_changed">پروژه هنگام اجرای اسکریپت تغییر کرد. دوباره اجرا کنید.</string>
+    <string name="plugin_script_failed">اسکریپت اجرا نشد. %1$s</string>
+    <string name="plugin_script_line">خط %1$d: %2$s</string>
 </resources>

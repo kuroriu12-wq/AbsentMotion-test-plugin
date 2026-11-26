@@ -2691,4 +2691,8 @@
     <string name="plugin_recipe_none">Walang naka-install na recipe ng plugin.</string>
     <string name="plugin_recipe_failed">Hindi tumakbo ang recipe. %1$s</string>
     <string name="plugin_recipe_failed_step">Hakbang %1$d: %2$s</string>
+    <string name="plugin_script_running">Tumatakbo…</string>
+    <string name="plugin_script_changed">Nagbago ang proyekto habang tumatakbo ang script. Patakbuhin ulit.</string>
+    <string name="plugin_script_failed">Hindi tumakbo ang script. %1$s</string>
+    <string name="plugin_script_line">Linya %1$d: %2$s</string>
 </resources>

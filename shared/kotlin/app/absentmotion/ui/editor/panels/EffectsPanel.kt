@@ -102,7 +102,7 @@ internal fun EffectsPanel(state: EditorState, modifier: Modifier) {
     var choosing by remember { mutableStateOf(false) }
     var recipesOpen by remember { mutableStateOf(false) }
     val recipeContext = LocalContext.current
-    val hasRecipes = remember(menu) { menu && app.absentmotion.plugins.listRecipes(app.absentmotion.plugins.PluginStore(recipeContext)).isNotEmpty() }
+    val hasRecipes = remember(menu) { menu && app.absentmotion.plugins.hasTools(app.absentmotion.plugins.PluginStore(recipeContext)) }
     val usable = instance != null && definition?.available == true
     var pin by remember(layer.id, index) { mutableStateOf<String?>(null) }
     var adding by remember(layer.id, index) { mutableStateOf(false) }

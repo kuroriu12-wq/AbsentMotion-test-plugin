@@ -2757,4 +2757,8 @@
     <string name="plugin_recipe_none">Brak zainstalowanych przepisów wtyczek.</string>
     <string name="plugin_recipe_failed">Nie uruchomiono przepisu. %1$s</string>
     <string name="plugin_recipe_failed_step">Krok %1$d: %2$s</string>
+    <string name="plugin_script_running">Uruchamianie…</string>
+    <string name="plugin_script_changed">Projekt zmienił się podczas działania skryptu. Uruchom go ponownie.</string>
+    <string name="plugin_script_failed">Skrypt nie został uruchomiony. %1$s</string>
+    <string name="plugin_script_line">Wiersz %1$d: %2$s</string>
 </resources>

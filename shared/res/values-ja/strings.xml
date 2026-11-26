@@ -2658,4 +2658,8 @@
     <string name="plugin_recipe_none">インストール済みのプラグインレシピはありません。</string>
     <string name="plugin_recipe_failed">レシピを実行できませんでした。%1$s</string>
     <string name="plugin_recipe_failed_step">ステップ %1$d：%2$s</string>
+    <string name="plugin_script_running">実行中…</string>
+    <string name="plugin_script_changed">スクリプトの実行中にプロジェクトが変更されました。もう一度実行してください。</string>
+    <string name="plugin_script_failed">スクリプトを実行できませんでした。%1$s</string>
+    <string name="plugin_script_line">%1$d行目: %2$s</string>
 </resources>

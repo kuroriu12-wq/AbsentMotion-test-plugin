@@ -2757,4 +2757,8 @@
     <string name="plugin_recipe_none">Рецептів плагінів не встановлено.</string>
     <string name="plugin_recipe_failed">Рецепт не виконано. %1$s</string>
     <string name="plugin_recipe_failed_step">Крок %1$d: %2$s</string>
+    <string name="plugin_script_running">Виконується…</string>
+    <string name="plugin_script_changed">Проєкт змінився, поки працював скрипт. Запустіть його ще раз.</string>
+    <string name="plugin_script_failed">Скрипт не виконано. %1$s</string>
+    <string name="plugin_script_line">Рядок %1$d: %2$s</string>
 </resources>

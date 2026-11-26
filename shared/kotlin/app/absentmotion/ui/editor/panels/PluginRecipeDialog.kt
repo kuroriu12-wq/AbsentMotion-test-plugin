@@ -15,10 +15,13 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -34,62 +37,127 @@ import androidx.compose.ui.unit.sp
 import app.absentmotion.R
 import app.absentmotion.editor.EditorState
 import app.absentmotion.platform.LocalContext
-import app.absentmotion.plugins.PluginRecipe
+import app.absentmotion.editor.commitScript
+import app.absentmotion.editor.scriptSelection
+import app.absentmotion.plugins.PluginTool
 import app.absentmotion.plugins.PluginStore
 import app.absentmotion.plugins.RecipeInput
 import app.absentmotion.plugins.RecipeRunner
 import app.absentmotion.plugins.RunResult
-import app.absentmotion.plugins.listRecipes
+import app.absentmotion.plugins.listTools
+import app.absentmotion.plugins.script.PluginScript
+import app.absentmotion.plugins.script.QuickJsSandbox
+import app.absentmotion.plugins.script.ScriptResult
+import app.absentmotion.plugins.script.ScriptRunner
 import app.absentmotion.ui.theme.Am
 import app.absentmotion.ui.theme.withUiFont
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.util.concurrent.atomic.AtomicBoolean
+
+private class RunFailure(val reason: String, val script: Boolean, val step: Int? = null, val line: Int? = null, val changed: Boolean = false)
 
 @Composable
 internal fun PluginRecipeDialog(state: EditorState, onClose: () -> Unit) {
     val context = LocalContext.current
-    val recipes = remember { listRecipes(PluginStore(context)) }
+    val tools by produceState<List<PluginTool>?>(null) { value = withContext(Dispatchers.Default) { listTools(PluginStore(context)) } }
     val catalog by state.engine.effects.collectAsState()
-    var chosen by remember { mutableStateOf<PluginRecipe?>(null) }
-    var failure by remember { mutableStateOf<RunResult.Failed?>(null) }
-    val values = remember(chosen) { mutableStateMapOf<String, String>().also { map -> chosen?.recipe?.inputs?.forEach { map[it.id] = it.default } } }
+    val scope = rememberCoroutineScope()
+    val stop = remember { AtomicBoolean(false) }
+    DisposableEffect(Unit) { onDispose { stop.set(true) } }
+    var chosen by remember { mutableStateOf<PluginTool?>(null) }
+    var failure by remember { mutableStateOf<RunFailure?>(null) }
+    var running by remember { mutableStateOf(false) }
+    var finished by remember { mutableStateOf(false) }
+    var log by remember { mutableStateOf<List<String>>(emptyList()) }
+    val values = remember(chosen) { mutableStateMapOf<String, String>().also { map -> chosen?.inputs?.forEach { map[it.id] = it.default } } }
     val picked = chosen
-    fun run() {
+    fun runRecipe(recipe: PluginTool.OfRecipe) {
         val layer = state.selected ?: return
-        val recipe = picked?.recipe ?: return
         state.playing = false
-        when (val result = RecipeRunner(catalog).run(state.scene, layer.id, recipe, values.toMap(), state.sampleMs)) {
+        when (val result = RecipeRunner(catalog).run(state.scene, layer.id, recipe.entry.recipe, values.toMap(), state.sampleMs)) {
             is RunResult.Done -> {
                 state.edit { result.scene }
                 onClose()
             }
-            is RunResult.Failed -> failure = result
+            is RunResult.Failed -> failure = RunFailure(result.reason, false, step = result.stepIndex)
+        }
+    }
+    fun runScript(script: PluginScript) {
+        val ids = state.scriptSelection()
+        val start = state.scene
+        val sampleMs = state.sampleMs
+        val given = values.toMap()
+        state.playing = false
+        failure = null
+        log = emptyList()
+        stop.set(false)
+        running = true
+        scope.launch {
+            val result = withContext(Dispatchers.Default) {
+                ScriptRunner(catalog) { QuickJsSandbox() }.run(start, ids, script, given, sampleMs) { stop.get() }
+            }
+            running = false
+            when (result) {
+                is ScriptResult.Done -> when {
+                    !state.commitScript(start, result.scene) -> failure = RunFailure("", true, changed = true)
+                    result.log.isEmpty() -> onClose()
+                    else -> {
+                        log = result.log
+                        finished = true
+                    }
+                }
+                is ScriptResult.Failed -> if (!stop.get()) {
+                    failure = RunFailure(result.reason, true, line = result.line)
+                    log = result.log
+                }
+            }
         }
     }
     AlertDialog(
-        onDismissRequest = onClose,
-        title = { Text(picked?.recipe?.name ?: stringResource(R.string.effects_plugin_recipes)) },
+        onDismissRequest = { if (!running) onClose() },
+        title = { Text(picked?.name ?: stringResource(R.string.effects_plugin_recipes)) },
         text = {
             Column(Modifier.heightIn(max = 320.dp).verticalScroll(rememberScrollState())) {
                 if (picked == null) {
-                    if (recipes.isEmpty()) Text(stringResource(R.string.plugin_recipe_none), color = Am.OnDarkDim, fontSize = 14.sp)
-                    for (entry in recipes) Column(
+                    val found = tools
+                    if (found != null && found.isEmpty()) Text(stringResource(R.string.plugin_recipe_none), color = Am.OnDarkDim, fontSize = 14.sp)
+                    for (entry in found.orEmpty()) Column(
                         Modifier.fillMaxWidth().clickable { chosen = entry; failure = null }.padding(vertical = 8.dp),
                     ) {
-                        Text(entry.recipe.name, color = Am.OnDark, fontSize = 15.sp)
+                        Text(entry.name, color = Am.OnDark, fontSize = 15.sp)
                         Text(entry.plugin.manifest?.name ?: entry.plugin.id, color = Am.OnDarkDim, fontSize = 12.sp)
                     }
                 } else {
-                    for (input in picked.recipe.inputs) RecipeField(input, values[input.id] ?: input.default) { values[input.id] = it }
+                    for (input in picked.inputs) RecipeField(input, values[input.id] ?: input.default) { values[input.id] = it }
+                    if (running) Text(stringResource(R.string.plugin_script_running), Modifier.padding(top = 8.dp), color = Am.OnDarkDim, fontSize = 14.sp)
                     failure?.let { failed ->
-                        val reason = failed.stepIndex?.let { stringResource(R.string.plugin_recipe_failed_step, it + 1, failed.reason) } ?: failed.reason
-                        Text(stringResource(R.string.plugin_recipe_failed, reason), Modifier.padding(top = 8.dp), color = Am.Accent, fontSize = 14.sp)
+                        val reason = when {
+                            failed.changed -> stringResource(R.string.plugin_script_changed)
+                            failed.step != null -> stringResource(R.string.plugin_recipe_failed_step, failed.step + 1, failed.reason)
+                            failed.line != null -> stringResource(R.string.plugin_script_line, failed.line, failed.reason)
+                            else -> failed.reason
+                        }
+                        val message = if (failed.changed) reason else stringResource(if (failed.script) R.string.plugin_script_failed else R.string.plugin_recipe_failed, reason)
+                        Text(message, Modifier.padding(top = 8.dp), color = Am.Accent, fontSize = 14.sp)
                     }
+                    for (line in log) Text(line, Modifier.padding(top = 4.dp), color = Am.OnDarkDim, fontSize = 12.sp)
                 }
             }
         },
         confirmButton = {
-            if (picked != null) TextButton({ run() }) { Text(stringResource(R.string.plugin_recipe_run), color = Am.Accent) }
+            if (picked != null && finished) TextButton(onClose) { Text(stringResource(R.string.done), color = Am.Accent) }
+            else if (picked != null && !running) TextButton({
+                when (picked) {
+                    is PluginTool.OfRecipe -> runRecipe(picked)
+                    is PluginTool.OfScript -> runScript(picked.script)
+                }
+            }) { Text(stringResource(R.string.plugin_recipe_run), color = Am.Accent) }
         },
-        dismissButton = { TextButton(onClose) { Text(stringResource(R.string.cancel), color = Am.Accent) } },
+        dismissButton = {
+            if (!finished) TextButton({ if (running) stop.set(true) else onClose() }) { Text(stringResource(R.string.cancel), color = Am.Accent) }
+        },
         containerColor = Am.Field, titleContentColor = Am.OnDark, textContentColor = Am.OnDark,
     )
 }

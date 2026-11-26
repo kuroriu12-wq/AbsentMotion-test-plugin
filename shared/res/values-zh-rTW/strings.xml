@@ -2658,4 +2658,8 @@
     <string name="plugin_recipe_none">尚未安裝任何外掛配方。</string>
     <string name="plugin_recipe_failed">配方未能執行。%1$s</string>
     <string name="plugin_recipe_failed_step">第 %1$d 步：%2$s</string>
+    <string name="plugin_script_running">執行中…</string>
+    <string name="plugin_script_changed">指令碼執行期間專案已變更。請重新執行。</string>
+    <string name="plugin_script_failed">指令碼未能執行。%1$s</string>
+    <string name="plugin_script_line">第 %1$d 行：%2$s</string>
 </resources>

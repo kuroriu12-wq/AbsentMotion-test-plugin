@@ -2717,4 +2717,8 @@
     <string name="plugin_recipe_none">No plugin recipes installed.</string>
     <string name="plugin_recipe_failed">The recipe did not run. %1$s</string>
     <string name="plugin_recipe_failed_step">Step %1$d: %2$s</string>
+    <string name="plugin_script_running">Running…</string>
+    <string name="plugin_script_changed">The project changed while the script ran. Run it again.</string>
+    <string name="plugin_script_failed">The script did not run. %1$s</string>
+    <string name="plugin_script_line">Line %1$d: %2$s</string>
 </resources>

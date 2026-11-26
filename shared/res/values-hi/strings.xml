@@ -2691,4 +2691,8 @@
     <string name="plugin_recipe_none">कोई प्लगइन रेसिपी इंस्टॉल नहीं है।</string>
     <string name="plugin_recipe_failed">रेसिपी नहीं चली। %1$s</string>
     <string name="plugin_recipe_failed_step">चरण %1$d: %2$s</string>
+    <string name="plugin_script_running">चल रहा है…</string>
+    <string name="plugin_script_changed">स्क्रिप्ट चलने के दौरान प्रोजेक्ट बदल गया। इसे फिर से चलाएँ।</string>
+    <string name="plugin_script_failed">स्क्रिप्ट नहीं चली। %1$s</string>
+    <string name="plugin_script_line">पंक्ति %1$d: %2$s</string>
 </resources>

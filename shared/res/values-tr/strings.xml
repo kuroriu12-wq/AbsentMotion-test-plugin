@@ -2691,4 +2691,8 @@
     <string name="plugin_recipe_none">Yüklü eklenti tarifi yok.</string>
     <string name="plugin_recipe_failed">Tarif çalışmadı. %1$s</string>
     <string name="plugin_recipe_failed_step">Adım %1$d: %2$s</string>
+    <string name="plugin_script_running">Çalışıyor…</string>
+    <string name="plugin_script_changed">Komut dosyası çalışırken proje değişti. Yeniden çalıştırın.</string>
+    <string name="plugin_script_failed">Komut dosyası çalıştırılamadı. %1$s</string>
+    <string name="plugin_script_line">Satır %1$d: %2$s</string>
 </resources>
