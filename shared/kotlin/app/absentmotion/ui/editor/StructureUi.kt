@@ -304,6 +304,8 @@ internal fun MultiBar(state: EditorState, modifier: Modifier) {
     var animation by remember { mutableStateOf<Set<Long>?>(null) }
     transition?.let { TransitionSheet(state, it) { transition = null } }
     animation?.let { AnimationSheet(state, it) { animation = null } }
+    var pluginsOpen by remember { mutableStateOf(false) }
+    if (pluginsOpen) app.absentmotion.ui.editor.panels.PluginRecipeDialog(state) { pluginsOpen = false }
     BoxWithConstraints(modifier.padding(6.dp)) {
     val cell = minOf(40.dp, maxWidth / 8.7f)
     Row(Modifier.fillMaxSize().clip(RoundedCornerShape(3.dp)).background(Am.PanelInset), verticalAlignment = Alignment.CenterVertically) {
@@ -339,6 +341,11 @@ internal fun MultiBar(state: EditorState, modifier: Modifier) {
                         moreMenu = false
                         state.playing = false
                         state.presetsOpen = true
+                    }
+                    if (remember { app.absentmotion.plugins.hasTools(app.absentmotion.plugins.PluginStore(context)) }) MenuRow(stringResource(R.string.effects_plugin_recipes)) {
+                        moreMenu = false
+                        state.playing = false
+                        pluginsOpen = true
                     }
                     val style = copiedLayerForStyle != null
                     for (part in StylePart.entries) MenuRow(stringResource(PasteLabels.getValue(part)), enabled = style) {

@@ -37,6 +37,7 @@ import androidx.compose.ui.unit.sp
 import app.absentmotion.R
 import app.absentmotion.editor.EditorState
 import app.absentmotion.platform.LocalContext
+import app.absentmotion.editor.MultiSelect
 import app.absentmotion.editor.commitScript
 import app.absentmotion.editor.scriptSelection
 import app.absentmotion.plugins.PluginTool
@@ -61,7 +62,8 @@ private class RunFailure(val reason: String, val script: Boolean, val step: Int?
 @Composable
 internal fun PluginRecipeDialog(state: EditorState, onClose: () -> Unit) {
     val context = LocalContext.current
-    val tools by produceState<List<PluginTool>?>(null) { value = withContext(Dispatchers.Default) { listTools(PluginStore(context)) } }
+    val several = MultiSelect.active
+    val tools by produceState<List<PluginTool>?>(null) { value = withContext(Dispatchers.Default) { listTools(PluginStore(context)).filter { !several || it is PluginTool.OfScript } } }
     val catalog by state.engine.effects.collectAsState()
     val scope = rememberCoroutineScope()
     val stop = remember { AtomicBoolean(false) }
