@@ -46,10 +46,11 @@ private val RUN_PRELUDE = listOf(
     "function handle(id) {",
     "var info = host.layer(id);",
     "return freezeObject({",
-    "id: info.id, kind: info.kind, name: info.name, start: info.start, finish: info.finish, locked: info.locked,",
+    "id: info.id, kind: info.kind, name: info.name, shape: info.shape, start: info.start, finish: info.finish, locked: info.locked,",
     "size: function () { return host.size(id); },",
     "position: function (t) { return host.position(id, t); },",
     "rotation: function (t) { return host.rotation(id, t); },",
+    "scale: function (t) { return host.scale(id, t); },",
     "setKeys: function (property, times, values) { host.setKeys(id, property, times, values); },",
     "addEffect: function (effect, params) { host.addEffect(id, effect, params === undefined ? {} : params); },",
     "setEffectParam: function (effect, param, value) { host.setEffectParam(id, effect, param, value); },",
@@ -98,6 +99,7 @@ class ScriptHost(
                 "size" to guarded("size") { sizeOf(layerOf(it.getOrNull(0), write = false)) },
                 "position" to guarded("position") { positionAt(layerOf(it.getOrNull(0), write = false), it.getOrNull(1)) },
                 "rotation" to guarded("rotation") { rotationAt(layerOf(it.getOrNull(0), write = false), it.getOrNull(1)) },
+                "scale" to guarded("scale") { scaleAt(layerOf(it.getOrNull(0), write = false), it.getOrNull(1)) },
                 "setKeys" to guarded("setKeys") { setKeys(it) },
                 "addEffect" to guarded("addEffect") { addEffect(it) },
                 "setEffectParam" to guarded("setEffectParam") { setEffectParam(it) },
@@ -136,6 +138,7 @@ class ScriptHost(
         "id" to layer.id,
         "kind" to layer.kind,
         "name" to layer.label,
+        "shape" to layer.shape,
         "start" to layer.startTime / 1000.0,
         "finish" to layer.endTime / 1000.0,
         "locked" to layer.locked,
@@ -153,6 +156,11 @@ class ScriptHost(
     }
 
     private fun rotationAt(layer: Layer, seconds: Any?): Double = layerAt(layer, seconds).rotation.toDouble()
+
+    private fun scaleAt(layer: Layer, seconds: Any?): Map<String, Any?> {
+        val at = layerAt(layer, seconds).scale
+        return mapOf("x" to at[0].toDouble(), "y" to at[1].toDouble())
+    }
 
     private fun times(raw: Any?, layer: Layer): List<Float> {
         val list = raw as? List<*> ?: throw IllegalArgumentException("times must be a list of numbers")

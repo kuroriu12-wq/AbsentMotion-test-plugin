@@ -59,6 +59,13 @@ class ScriptHostTest {
         assertEquals(listOf("[400,400,30,1,\"shape\",0,2,false,3]"), host.log)
     }
 
+    @Test fun shapeAndScaleAreReadable() {
+        val layer = shapeLayer(attrs = mapOf("s" to ".circle"), children = listOf(XmlNode("transform", emptyMap(), listOf(XmlNode("scale", linkedMapOf("value" to "2,3"))))))
+        val host = hostFor(sceneWith(layer))
+        succeeded(run(host, "var l = ctx.selection()[0]; var s = l.scale(0); ctx.log(l.shape + ',' + s.x + ',' + s.y);"))
+        assertEquals(listOf(".circle,2,3"), host.log)
+    }
+
     @Test fun positionAndRotationRoundTrip() {
         val host = hostFor(sceneWith(transformed(location = "100,200,0", rotation = "-30")))
         succeeded(run(host, "var l = ctx.selection()[0]; var p = l.position(0); ctx.log(p.x + ',' + p.y + ',' + l.rotation(0)); l.setKeys('rotation', [0, 1], [10, 45]); l.setKeys('position', [0], [{ x: 5, y: 6 }]);"))
