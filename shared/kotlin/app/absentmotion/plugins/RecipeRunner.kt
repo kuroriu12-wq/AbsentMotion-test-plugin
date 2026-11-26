@@ -10,14 +10,12 @@ sealed interface RunResult {
     data class Failed(val stepIndex: Int?, val reason: String) : RunResult
 }
 
-private class InputProblem(message: String) : Exception(message)
-
 class RecipeRunner(catalog: EffectCatalog) {
     private val ops = LayerOps(catalog)
 
     fun run(scene: Scene, layerId: Long, recipe: Recipe, inputs: Map<String, String>, sampleMs: Int): RunResult {
         val values = try {
-            resolve(recipe, inputs)
+            resolveInputs(recipe.inputs, inputs)
         } catch (e: InputProblem) {
             return RunResult.Failed(null, e.message ?: "the inputs are not valid")
         }
@@ -44,29 +42,6 @@ class RecipeRunner(catalog: EffectCatalog) {
         is RecipeStep.SetEffectParam -> ops.setEffectParam(layer, step.effect, step.param, substitute(step.value, values))
         is RecipeStep.KeyframeEffectParam ->
             ops.keyframeEffectParam(layer, step.effect, step.param, step.at, step.values.map { substitute(it, values) })
-    }
-
-    private fun resolve(recipe: Recipe, given: Map<String, String>): Map<String, String> = recipe.inputs.associate { input ->
-        val raw = given[input.id] ?: input.default
-        try {
-            checkInput(input, raw)
-        } catch (e: IllegalArgumentException) {
-            throw InputProblem("${input.label}: ${e.message}")
-        }
-        input.id to raw
-    }
-
-    private fun checkInput(input: RecipeInput, raw: String) {
-        when (input.type) {
-            "number" -> {
-                val number = parseNumber(raw)
-                input.min?.let { require(number >= it) { "must be at least $it" } }
-                input.max?.let { require(number <= it) { "must be at most $it" } }
-            }
-            "switch" -> require(raw == "true" || raw == "false") { "must be true or false" }
-            "choice" -> require(raw in input.options) { "must be one of ${input.options.joinToString()}" }
-            "color" -> requireColour(raw)
-        }
     }
 
     private fun substitute(raw: String, values: Map<String, String>): String =

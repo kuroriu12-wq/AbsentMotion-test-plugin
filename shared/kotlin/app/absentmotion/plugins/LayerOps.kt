@@ -26,6 +26,31 @@ internal fun parseNumber(raw: String): Float {
 
 internal fun requireColour(raw: String) = require(ColourPattern.matches(raw)) { "'$raw' is not a colour like #rrggbb" }
 
+internal class InputProblem(message: String) : Exception(message)
+
+internal fun resolveInputs(inputs: List<RecipeInput>, given: Map<String, String>): Map<String, String> = inputs.associate { input ->
+    val raw = given[input.id] ?: input.default
+    try {
+        checkInput(input, raw)
+    } catch (e: IllegalArgumentException) {
+        throw InputProblem("${input.label}: ${e.message}")
+    }
+    input.id to raw
+}
+
+private fun checkInput(input: RecipeInput, raw: String) {
+    when (input.type) {
+        "number" -> {
+            val number = parseNumber(raw)
+            input.min?.let { require(number >= it) { "must be at least $it" } }
+            input.max?.let { require(number <= it) { "must be at most $it" } }
+        }
+        "switch" -> require(raw == "true" || raw == "false") { "must be true or false" }
+        "choice" -> require(raw in input.options) { "must be one of ${input.options.joinToString()}" }
+        "color" -> requireColour(raw)
+    }
+}
+
 class LayerOps(private val catalog: EffectCatalog) {
     fun addEffect(layer: Layer, effect: String, preset: String?, set: Map<String, String>): Layer {
         val definition = definition(effect)
