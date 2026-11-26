@@ -84,7 +84,7 @@ class ScriptRunnerTest {
     @Test fun cancelFails() {
         val started = System.nanoTime()
         val cancelled = { System.nanoTime() - started > 150_000_000L }
-        val result = runner().run(scene, listOf(1), scriptOf("while (true) {}"), emptyMap(), 0, cancelled) as ScriptResult.Failed
+        val result = runner().run(scene, listOf(1), scriptOf("while (true) {}"), emptyMap(), 0, cancelled = cancelled) as ScriptResult.Failed
         assertTrue(result.reason, result.reason.contains("cancelled"))
     }
 
