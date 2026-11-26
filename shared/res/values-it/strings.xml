@@ -2732,4 +2732,5 @@
     <string name="plugin_help">Come si usa</string>
     <string name="plugin_help_hide">Nascondi</string>
     <string name="plugin_help_none">Questo plugin non ha una pagina di istruzioni.</string>
+    <string name="plugin_script_selected">Livelli selezionati: %1$d</string>
 </resources>

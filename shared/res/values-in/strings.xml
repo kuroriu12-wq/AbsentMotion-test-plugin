@@ -2666,4 +2666,5 @@
     <string name="plugin_help">Cara pakai</string>
     <string name="plugin_help_hide">Sembunyikan</string>
     <string name="plugin_help_none">Plugin ini tidak punya halaman cara pakai.</string>
+    <string name="plugin_script_selected">Layer dipilih: %1$d</string>
 </resources>

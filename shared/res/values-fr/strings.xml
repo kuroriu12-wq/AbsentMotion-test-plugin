@@ -2732,4 +2732,5 @@
     <string name="plugin_help">Mode d’emploi</string>
     <string name="plugin_help_hide">Masquer</string>
     <string name="plugin_help_none">Ce plugin n’a pas de page d’aide.</string>
+    <string name="plugin_script_selected">Calques sélectionnés : %1$d</string>
 </resources>

@@ -2666,4 +2666,5 @@
     <string name="plugin_help">使用方法</string>
     <string name="plugin_help_hide">隐藏</string>
     <string name="plugin_help_none">这个插件没有使用说明页面。</string>
+    <string name="plugin_script_selected">已选择的图层：%1$d</string>
 </resources>

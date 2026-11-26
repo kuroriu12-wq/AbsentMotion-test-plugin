@@ -2732,4 +2732,5 @@
     <string name="plugin_help">Como usar</string>
     <string name="plugin_help_hide">Ocultar</string>
     <string name="plugin_help_none">Este plugin não tem página de instruções.</string>
+    <string name="plugin_script_selected">Camadas selecionadas: %1$d</string>
 </resources>

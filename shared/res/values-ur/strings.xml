@@ -2699,4 +2699,5 @@
     <string name="plugin_help">استعمال کا طریقہ</string>
     <string name="plugin_help_hide">چھپائیں</string>
     <string name="plugin_help_none">اس پلگ اِن میں استعمال کے طریقے کا صفحہ نہیں ہے۔</string>
+    <string name="plugin_script_selected">منتخب لیئرز: %1$d</string>
 </resources>

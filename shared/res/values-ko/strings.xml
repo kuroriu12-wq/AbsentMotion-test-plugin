@@ -2666,4 +2666,5 @@
     <string name="plugin_help">사용 방법</string>
     <string name="plugin_help_hide">숨기기</string>
     <string name="plugin_help_none">이 플러그인에는 사용 방법 페이지가 없습니다.</string>
+    <string name="plugin_script_selected">선택한 레이어: %1$d</string>
 </resources>

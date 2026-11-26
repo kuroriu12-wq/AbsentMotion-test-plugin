@@ -128,6 +128,7 @@ internal fun PluginRecipeDialog(state: EditorState, onClose: () -> Unit) {
         text = {
             Column(Modifier.heightIn(max = 320.dp).verticalScroll(rememberScrollState())) {
                 if (picked == null) {
+                    if (several) Text(stringResource(R.string.plugin_script_selected, MultiSelect.ids.size), Modifier.padding(bottom = 6.dp), color = Am.OnDarkDim, fontSize = 13.sp)
                     val found = tools
                     if (found != null && found.isEmpty()) Text(stringResource(R.string.plugin_recipe_none), color = Am.OnDarkDim, fontSize = 14.sp)
                     for (entry in found.orEmpty()) Column(

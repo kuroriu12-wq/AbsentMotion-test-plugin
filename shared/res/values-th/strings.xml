@@ -2666,4 +2666,5 @@
     <string name="plugin_help">วิธีใช้</string>
     <string name="plugin_help_hide">ซ่อน</string>
     <string name="plugin_help_none">ปลั๊กอินนี้ไม่มีหน้าวิธีใช้</string>
+    <string name="plugin_script_selected">เลเยอร์ที่เลือก: %1$d</string>
 </resources>

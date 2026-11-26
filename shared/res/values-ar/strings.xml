@@ -2831,4 +2831,5 @@
     <string name="plugin_help">طريقة الاستخدام</string>
     <string name="plugin_help_hide">إخفاء</string>
     <string name="plugin_help_none">هذه الإضافة ليس لها صفحة شرح للاستخدام.</string>
+    <string name="plugin_script_selected">الطبقات المحددة: %1$d</string>
 </resources>

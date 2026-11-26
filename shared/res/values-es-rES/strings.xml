@@ -2732,4 +2732,5 @@
     <string name="plugin_help">Cómo usarlo</string>
     <string name="plugin_help_hide">Ocultar</string>
     <string name="plugin_help_none">Este plugin no tiene página de instrucciones.</string>
+    <string name="plugin_script_selected">Capas seleccionadas: %1$d</string>
 </resources>

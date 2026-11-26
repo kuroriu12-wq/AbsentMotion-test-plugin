@@ -2666,4 +2666,5 @@
     <string name="plugin_help">Cách dùng</string>
     <string name="plugin_help_hide">Ẩn</string>
     <string name="plugin_help_none">Plugin này chưa có trang hướng dẫn.</string>
+    <string name="plugin_script_selected">Lớp đã chọn: %1$d</string>
 </resources>

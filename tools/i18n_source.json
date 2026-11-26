@@ -5866,5 +5866,6 @@
  "plugin_author": "By %1$s",
  "plugin_help": "How to use",
  "plugin_help_hide": "Hide",
- "plugin_help_none": "This plugin has no how-to-use page."
+ "plugin_help_none": "This plugin has no how-to-use page.",
+ "plugin_script_selected": "Selected layers: %1$d"
 }

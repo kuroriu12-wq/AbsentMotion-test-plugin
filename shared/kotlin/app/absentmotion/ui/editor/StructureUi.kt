@@ -409,6 +409,13 @@ internal fun MultiTopBar(state: EditorState, modifier: Modifier) {
         if (!alignment) {
             val text = pluralStringResource(R.plurals.structure_layers_selected, ids.size, ids.size.toString())
             Text(text, Modifier.weight(1f), color = tint, maxLines = 1, autoSize = TextAutoSize.StepBased(10.sp, 14.sp))
+            val pluginContext = LocalContext.current
+            var pluginsOpen by remember { mutableStateOf(false) }
+            if (pluginsOpen) app.absentmotion.ui.editor.panels.PluginRecipeDialog(state) { pluginsOpen = false }
+            if (remember { app.absentmotion.plugins.hasTools(app.absentmotion.plugins.PluginStore(pluginContext)) }) Box(
+                Modifier.fillMaxHeight().clickable { state.playing = false; pluginsOpen = true }.padding(horizontal = 10.dp),
+                Alignment.Center,
+            ) { Text(stringResource(R.string.tools_plugins), color = tint, fontSize = 13.sp, maxLines = 1) }
             val cell = Modifier.width(40.dp).fillMaxHeight()
             SelectionButton(SelectionIcons.Group, stringResource(R.string.structure_group), cell, tint, ids.isNotEmpty()) { scope.launch { state.groupLayersCentred(ids) } }
             SelectionButton(SelectionIcons.Mask, stringResource(R.string.structure_group_mask), cell, tint, ids.size > 1) { scope.launch { state.groupLayersCentred(ids, "mask") } }

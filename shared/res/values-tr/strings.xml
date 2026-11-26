@@ -2699,4 +2699,5 @@
     <string name="plugin_help">Nasıl kullanılır</string>
     <string name="plugin_help_hide">Gizle</string>
     <string name="plugin_help_none">Bu eklentinin kullanım sayfası yok.</string>
+    <string name="plugin_script_selected">Seçili katmanlar: %1$d</string>
 </resources>

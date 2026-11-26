@@ -2699,4 +2699,5 @@
     <string name="plugin_help">Anleitung</string>
     <string name="plugin_help_hide">Ausblenden</string>
     <string name="plugin_help_none">Dieses Plugin hat keine Anleitungsseite.</string>
+    <string name="plugin_script_selected">Ausgewählte Ebenen: %1$d</string>
 </resources>

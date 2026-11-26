@@ -2725,4 +2725,5 @@
     <string name="plugin_help">How to use</string>
     <string name="plugin_help_hide">Hide</string>
     <string name="plugin_help_none">This plugin has no how-to-use page.</string>
+    <string name="plugin_script_selected">Selected layers: %1$d</string>
 </resources>

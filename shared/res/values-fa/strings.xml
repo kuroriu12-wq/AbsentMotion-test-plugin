@@ -2699,4 +2699,5 @@
     <string name="plugin_help">راهنمای استفاده</string>
     <string name="plugin_help_hide">پنهان کردن</string>
     <string name="plugin_help_none">این افزونه صفحه راهنمای استفاده ندارد.</string>
+    <string name="plugin_script_selected">لایه‌های انتخاب‌شده: %1$d</string>
 </resources>

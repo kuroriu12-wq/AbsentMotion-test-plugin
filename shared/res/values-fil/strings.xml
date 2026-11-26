@@ -2699,4 +2699,5 @@
     <string name="plugin_help">Paano gamitin</string>
     <string name="plugin_help_hide">Itago</string>
     <string name="plugin_help_none">Walang pahina ng paggamit ang plugin na ito.</string>
+    <string name="plugin_script_selected">Mga napiling layer: %1$d</string>
 </resources>

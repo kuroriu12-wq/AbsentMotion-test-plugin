@@ -2699,4 +2699,5 @@
     <string name="plugin_help">इस्तेमाल कैसे करें</string>
     <string name="plugin_help_hide">छिपाएँ</string>
     <string name="plugin_help_none">इस प्लगइन में इस्तेमाल का तरीका नहीं दिया गया है।</string>
+    <string name="plugin_script_selected">चुनी गई लेयर: %1$d</string>
 </resources>

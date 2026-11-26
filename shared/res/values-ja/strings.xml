@@ -2666,4 +2666,5 @@
     <string name="plugin_help">使い方</string>
     <string name="plugin_help_hide">隠す</string>
     <string name="plugin_help_none">このプラグインには使い方のページがありません。</string>
+    <string name="plugin_script_selected">選択中のレイヤー: %1$d</string>
 </resources>

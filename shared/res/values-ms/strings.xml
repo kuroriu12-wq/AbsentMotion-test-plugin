@@ -2666,4 +2666,5 @@
     <string name="plugin_help">Cara guna</string>
     <string name="plugin_help_hide">Sembunyi</string>
     <string name="plugin_help_none">Plugin ini tiada halaman cara guna.</string>
+    <string name="plugin_script_selected">Lapisan dipilih: %1$d</string>
 </resources>
