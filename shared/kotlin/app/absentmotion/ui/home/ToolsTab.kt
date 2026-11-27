@@ -1,5 +1,14 @@
 package app.absentmotion.ui.home
 
+import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.zIndex
+import androidx.compose.runtime.withFrameNanos
+import androidx.compose.foundation.gestures.scrollBy
+import kotlin.math.abs
 import android.content.ClipboardManager
 import android.net.Uri
 import android.os.Environment
@@ -7,6 +16,7 @@ import androidx.annotation.StringRes
 import androidx.compose.animation.core.Animatable
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -42,7 +52,6 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
@@ -143,7 +152,9 @@ private val installScope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.
 private var installPercent by mutableStateOf<Int?>(null)
 private val downloader = videoDownloader()
 
-internal val DefaultToolOrder = listOf("compress", "trim", "extract", "gif", "downloader", "enhance")
+internal val DefaultToolOrder = listOf("compress", "trim", "extract", "gif", "merge", "downloader", "enhance", "convert", "importer", "send")
+
+internal val DefaultHiddenTools = setOf("gif", "merge", "enhance", "convert", "importer")
 
 internal fun toolOrder(saved: List<String>): List<String> {
     val valid = DefaultToolOrder.toSet()
@@ -156,81 +167,46 @@ internal fun movedToolOrder(order: List<String>, from: Int, to: Int): List<Strin
     return order.toMutableList().apply { add(to, removeAt(from)) }
 }
 
-private class ToolSlide {
-    var order: List<String> = emptyList()
-    var at: Offset? = null
-    var from: Offset = Offset.Zero
-    var pending by mutableStateOf(false)
-    val progress = Animatable(1f)
-    var job: Job? = null
+internal fun toolSet(saved: Collection<String>): Set<String> = saved.map { it.trim() }.filterTo(LinkedHashSet()) { it in DefaultToolOrder }
+
+internal class ToolInfo(val icon: ImageVector, val title: Int, val about: Int, val open: Int)
+
+internal fun toolInfo(id: String): ToolInfo = when (id) {
+    "compress" -> ToolInfo(HomeIcons.Compress, R.string.tools_compress, R.string.tools_compress_about, 1)
+    "trim" -> ToolInfo(HomeIcons.Trim, R.string.tools_trim, R.string.tools_trim_about, 3)
+    "extract" -> ToolInfo(HomeIcons.Audio, R.string.tools_extract, R.string.tools_extract_about, 4)
+    "gif" -> ToolInfo(HomeIcons.Gif, R.string.tools_gif, R.string.tools_gif_about, 5)
+    "merge" -> ToolInfo(HomeIcons.Merge, R.string.tools_merge, R.string.tools_merge_about, 9)
+    "downloader" -> ToolInfo(HomeIcons.Download, R.string.tools_downloader, R.string.tools_downloader_about, 2)
+    "enhance" -> ToolInfo(HomeIcons.Compress, R.string.tools_enhance_image, R.string.tools_enhance_image_about, 6)
+    "convert" -> ToolInfo(HomeIcons.ImageConvert, R.string.tools_convert_image, R.string.tools_convert_image_about, 8)
+    "importer" -> ToolInfo(HomeIcons.ProjectImporter, R.string.tools_importer, R.string.tools_importer_about, 0)
+    else -> ToolInfo(HomeIcons.Devices, R.string.tools_send, R.string.tools_send_about, 7)
 }
 
-private class ToolBoard(var order: List<String>) {
-    var coords: LayoutCoordinates? = null
-    val slides = HashMap<String, ToolSlide>()
-}
-
-private fun Modifier.animateToolPlace(board: ToolBoard, id: String, scope: kotlinx.coroutines.CoroutineScope): Modifier {
-    val slide = board.slides.getOrPut(id) { ToolSlide().also { it.order = board.order } }
-    return onPlaced { coords ->
-        val host = board.coords
-        if (host == null || !host.isAttached || !coords.isAttached) return@onPlaced
-        val current = host.localPositionOf(coords, Offset.Zero)
-        val prev = slide.at
-        slide.at = current
-        if (slide.order != board.order) {
-            slide.order = board.order
-            if (prev != null) {
-                val visual = if (slide.pending) slide.from else slide.from * (1f - slide.progress.value)
-                val delta = (prev + visual) - current
-                if (delta.getDistanceSquared() > 1f) {
-                    slide.from = delta
-                    slide.pending = true
-                    slide.job?.cancel()
-                    slide.job = scope.launch {
-                        slide.progress.snapTo(0f)
-                        slide.pending = false
-                        slide.progress.animateTo(1f, Motion.enter())
-                        slide.from = Offset.Zero
-                    }
-                }
-            }
-        }
-    }.graphicsLayer {
-        val d = if (slide.pending) slide.from else slide.from * (1f - slide.progress.value)
-        translationX = d.x
-        translationY = d.y
-    }
+internal fun projectTools(settings: AppSettings, importer: Boolean): List<String> = settings.projectToolOrder.filter {
+    it !in settings.projectToolsHidden && (it != "downloader" || downloader.available) && (it != "importer" || importer)
 }
 
 @Composable
-internal fun ToolsMoreButton(onArrange: () -> Unit, modifier: Modifier = Modifier) {
-    var menu by remember { mutableStateOf(false) }
-    val label = stringResource(R.string.tools_layout_more)
-    Box(modifier.size(if (PlatformFeatures.desktop) 36.dp else 50.dp), contentAlignment = Alignment.Center) {
-        val trigger: @Composable () -> Unit = {
-            Box(
-                Modifier.fillMaxSize()
-                    .then(if (PlatformFeatures.desktop) Modifier.clip(RoundedCornerShape(10.dp)).deskPress(10.dp) else Modifier)
-                    .clickable(role = Role.Button) { menu = true },
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(EffectIcons.MoreVert, label, Modifier.size(if (PlatformFeatures.desktop) 20.dp else 24.dp), tint = Am.Navy)
-                HoldName(label)
-            }
-        }
-        if (PlatformFeatures.desktop) Hint(label, trigger) else trigger()
-        if (PlatformFeatures.desktop) BackHandler(menu) { menu = false }
-        Box(Modifier.matchParentSize().offset(x = if (PlatformFeatures.desktop) 0.dp else (-12).dp, y = if (PlatformFeatures.desktop) 4.dp else 0.dp)) {
-            RefMenu(menu, { menu = false }, Am.Card, RoundedCornerShape(14.dp), Modifier.width(210.dp)) {
-                MenuRow(stringResource(R.string.tools_layout_change), PanelIcons.TabMove, { menu = false; onArrange() })
-            }
+internal fun ToolsCustomizeButton(onCustomize: () -> Unit, modifier: Modifier = Modifier) {
+    val label = stringResource(R.string.tools_customize)
+    val trigger: @Composable () -> Unit = {
+        Box(
+            modifier.size(if (PlatformFeatures.desktop) 36.dp else 50.dp)
+                .then(if (PlatformFeatures.desktop) Modifier.clip(RoundedCornerShape(10.dp)).deskPress(10.dp) else Modifier)
+                .clickable(role = Role.Button, onClick = onCustomize),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(app.absentmotion.ui.editor.DrawingIcons.Tune, label, Modifier.size(if (PlatformFeatures.desktop) 20.dp else 24.dp), tint = Am.Navy)
+            HoldName(label)
         }
     }
+    if (PlatformFeatures.desktop) Hint(label, trigger) else trigger()
 }
 
 @Composable
-internal fun ToolsTab(modifier: Modifier, store: ProjectStore, settings: AppSettings, arranging: Boolean = false, onArranging: (Boolean) -> Unit = {}, onOpen: (String) -> Unit) {
+internal fun ToolsTab(modifier: Modifier, store: ProjectStore, settings: AppSettings, customizing: Boolean = false, onCustomizing: (Boolean) -> Unit = {}, onImportLink: () -> Unit = {}, onOpen: (String) -> Unit) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val revision by downloader.revision.collectAsState()
@@ -238,10 +214,9 @@ internal fun ToolsTab(modifier: Modifier, store: ProjectStore, settings: AppSett
     var open by rememberSaveable { mutableIntStateOf(0) }
     var compressFrom by remember { mutableStateOf<Uri?>(null) }
     var asking by remember { mutableStateOf(false) }
-    val order = settings.toolOrder
-    val board = remember { ToolBoard(order) }
-    board.order = order
-    BackHandler(arranging && open == 0 && !asking) { onArranging(false) }
+    var adding by remember { mutableStateOf(false) }
+    val order = settings.toolOrder.filterNot { it in settings.toolsHidden }
+    val more = settings.toolOrder.filter { it in settings.toolsHidden }
     LaunchedEffect(revision) {
         if (engine !is Engine.Getting) engine = if (!downloader.available) Engine.Unavailable else if (downloader.installed(context)) Engine.Ready else Engine.Missing
     }
@@ -274,65 +249,46 @@ internal fun ToolsTab(modifier: Modifier, store: ProjectStore, settings: AppSett
             }
         }
     }
-    fun moveTool(index: Int, delta: Int) {
-        val next = movedToolOrder(order, index, index + delta)
-        if (next != order) settings.toolOrder = next
-    }
-    val cardFor: @Composable (String, Int, Modifier) -> Unit = { id, index, m ->
-        val placed = m.animateToolPlace(board, id, scope)
-        val up = if (arranging && index > 0) { { moveTool(index, -1) } } else null
-        val down = if (arranging && index < order.lastIndex) { { moveTool(index, 1) } } else null
-        when (id) {
-            "compress" -> ToolCard(HomeIcons.Compress, stringResource(R.string.tools_compress), stringResource(R.string.tools_compress_about), modifier = placed, arranging = arranging, onMoveUp = up, onMoveDown = down) { compressFrom = null; open = 1 }
-            "trim" -> ToolCard(HomeIcons.Trim, stringResource(R.string.tools_trim), stringResource(R.string.tools_trim_about), modifier = placed, arranging = arranging, onMoveUp = up, onMoveDown = down) { open = 3 }
-            "extract" -> ToolCard(HomeIcons.Audio, stringResource(R.string.tools_extract), stringResource(R.string.tools_extract_about), modifier = placed, arranging = arranging, onMoveUp = up, onMoveDown = down) { open = 4 }
-            "gif" -> ToolCard(HomeIcons.Gif, stringResource(R.string.tools_gif), stringResource(R.string.tools_gif_about), modifier = placed, arranging = arranging, onMoveUp = up, onMoveDown = down) { open = 5 }
-            "downloader" -> ToolCard(HomeIcons.Download, stringResource(R.string.tools_downloader), stringResource(R.string.tools_downloader_about), engine = engine, modifier = placed, arranging = arranging, onMoveUp = up, onMoveDown = down) {
-                when {
+    val cardFor: @Composable (String, Modifier) -> Unit = { id, m ->
+        val tool = toolInfo(id)
+        ToolCard(tool.icon, stringResource(tool.title), stringResource(tool.about), engine = engine.takeIf { id == "downloader" }, modifier = m) {
+            when (id) {
+                "downloader" -> when {
                     engine is Engine.Getting -> Unit
                     !downloader.available || downloader.installed(context) -> open = 2
                     else -> asking = true
                 }
+                "importer" -> onImportLink()
+                else -> { compressFrom = null; open = tool.open }
             }
-            "enhance" -> ToolCard(HomeIcons.Compress, stringResource(R.string.tools_enhance_image), stringResource(R.string.tools_enhance_image_about), modifier = placed, arranging = arranging, onMoveUp = up, onMoveDown = down) { open = 6 }
         }
     }
     Column(modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = if (PlatformFeatures.desktop) 28.dp else 16.dp)) {
-        if (arranging) {
-            Spacer(Modifier.height(if (PlatformFeatures.desktop) 12.dp else 16.dp))
-            ArrangeBar(
-                canReset = order != DefaultToolOrder,
-                onReset = { settings.toolOrder = DefaultToolOrder },
-                onDone = { onArranging(false) },
-            )
-            Spacer(Modifier.height(16.dp))
-        } else if (PlatformFeatures.desktop) {
+        if (PlatformFeatures.desktop) {
             Row(Modifier.fillMaxWidth().padding(top = 12.dp, bottom = 12.dp), horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.CenterVertically) {
-                ToolsMoreButton({ onArranging(true) })
+                ToolsCustomizeButton({ onCustomizing(true) })
             }
         } else {
             Spacer(Modifier.height(24.dp))
         }
-        Box(Modifier.fillMaxWidth().onPlaced { board.coords = it }) {
-            if (PlatformFeatures.desktop || LocalWide.current || app.absentmotion.ui.editor.LocalTablet.current) ToolGrid(order, cardFor)
-            else Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                order.forEachIndexed { index, id ->
-                    key(id) {
-                        cardFor(id, index, Modifier)
-                    }
-                }
-            }
+        if (PlatformFeatures.desktop || LocalWide.current || app.absentmotion.ui.editor.LocalTablet.current) ToolGrid(order, cardFor)
+        else Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            order.forEach { id -> key(id) { cardFor(id, Modifier) } }
+        }
+        if (more.isNotEmpty()) {
+            Spacer(Modifier.height(if (order.isEmpty()) 0.dp else 12.dp))
+            AddMoreTools { adding = true }
         }
         Spacer(Modifier.height(12.dp))
-        ToolCard(HomeIcons.Folder, stringResource(R.string.tools_plugins), stringResource(R.string.tools_plugins_about)) { open = 7 }
+        ToolCard(HomeIcons.Folder, stringResource(R.string.tools_plugins), stringResource(R.string.tools_plugins_about)) { open = 10 }
         Spacer(Modifier.height(28.dp))
         ToolsFooter()
         if (asking) AlertDialog(
             onDismissRequest = { asking = false },
             title = { Text(stringResource(R.string.tools_downloader), color = Am.Navy) },
             text = { Text(stringResource(R.string.tools_downloader_intro, (downloader.downloadBytes / (1024f * 1024f)).roundToInt()), color = Am.Navy) },
-            confirmButton = { TextButton({ asking = false; getDownloader() }) { Text(stringResource(R.string.downloader_download), color = Am.Accent) } },
-            dismissButton = { TextButton({ asking = false }) { Text(stringResource(R.string.home_back), color = Am.Navy) } },
+            confirmButton = { DialogPill(stringResource(R.string.downloader_download)) { asking = false; getDownloader() } },
+            dismissButton = { DialogPill(stringResource(R.string.home_back), primary = false) { asking = false } },
             containerColor = Am.Card,
         )
         Spacer(Modifier.height(28.dp))
@@ -344,48 +300,65 @@ internal fun ToolsTab(modifier: Modifier, store: ProjectStore, settings: AppSett
         4 -> ExtractAudioScreen { open = 0 }
         5 -> GifScreen { open = 0 }
         6 -> EnhanceImageScreen { open = 0 }
-        7 -> PluginsRoute { open = 0 }
+        7 -> SendScreen(store) { open = 0 }
+        8 -> ConvertImageScreen { open = 0 }
+        9 -> MergeScreen { open = 0 }
+        10 -> PluginsRoute { open = 0 }
     }
+    if (customizing) CustomizeToolsSheet(settings) { onCustomizing(false) }
+    if (adding) AddToolsSheet(settings) { adding = false }
 }
 
 @Composable
-private fun ArrangeBar(canReset: Boolean, onReset: () -> Unit, onDone: () -> Unit) {
+private fun AddMoreTools(onClick: () -> Unit) {
+    val shape = RoundedCornerShape(12.dp)
     Row(
-        Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(Am.Card).padding(horizontal = 14.dp, vertical = 10.dp),
-        verticalAlignment = Alignment.CenterVertically,
+        Modifier.fillMaxWidth().heightIn(min = 64.dp).clip(shape).background(Am.HomeAccent.copy(alpha = 0.1f)).border(1.5.dp, Am.HomeAccent.copy(alpha = 0.55f), shape)
+            .deskPress(12.dp).clickable(onClick = onClick).padding(horizontal = 16.dp, vertical = 12.dp),
+        horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(stringResource(R.string.tools_layout_hint), Modifier.weight(1f), color = Am.HomeDim, fontSize = 14.sp, lineHeight = 18.sp)
-        Spacer(Modifier.width(8.dp))
-        Box(
-            Modifier.heightIn(min = 36.dp).alpha(if (canReset) 1f else 0.4f).clip(RoundedCornerShape(10.dp))
-                .then(if (canReset) Modifier.deskPress(10.dp) else Modifier)
-                .clickable(enabled = canReset, role = Role.Button, onClick = onReset).padding(horizontal = 10.dp, vertical = 6.dp),
-            contentAlignment = Alignment.Center,
-        ) {
-            Text(stringResource(R.string.audiofx_reset), color = Am.Navy, fontSize = 14.sp, fontWeight = FontWeight.Medium, maxLines = 1, softWrap = false)
-        }
-        Spacer(Modifier.width(6.dp))
-        Box(
-            Modifier.heightIn(min = 36.dp).clip(RoundedCornerShape(10.dp)).background(Am.Accent).deskPress(10.dp)
-                .clickable(role = Role.Button, onClick = onDone).padding(horizontal = 14.dp, vertical = 6.dp),
-            contentAlignment = Alignment.Center,
-        ) {
-            Text(stringResource(R.string.done), color = Am.OnAccent, fontSize = 14.sp, fontWeight = FontWeight.Bold, maxLines = 1, softWrap = false)
-        }
+        Icon(HomeIcons.Plus, null, Modifier.size(22.dp), tint = Am.HomeAccent)
+        Spacer(Modifier.width(10.dp))
+        Text(stringResource(R.string.tools_add_more), color = Am.HomeAccent, fontSize = 17.sp, fontWeight = FontWeight.Bold)
     }
 }
 
 @Composable
-private fun ToolGrid(order: List<String>, card: @Composable (String, Int, Modifier) -> Unit) = BoxWithConstraints(Modifier.fillMaxWidth()) {
-    val columns = ((maxWidth + 16.dp) / 336.dp).toInt().coerceIn(1, 3)
-    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        order.withIndex().chunked(columns).forEach { row ->
-            Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                row.forEach { (index, id) ->
-                    key(id) {
-                        card(id, index, Modifier.weight(1f).fillMaxHeight())
+private fun AddToolsSheet(settings: AppSettings, onClose: () -> Unit) {
+    val hidden = settings.toolOrder.filter { it in settings.toolsHidden }
+    LaunchedEffect(hidden.isEmpty()) { if (hidden.isEmpty()) onClose() }
+    ToolSheet(stringResource(R.string.tools_add_more), onClose, closeButton = true) {
+        Spacer(Modifier.height(16.dp))
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            hidden.forEach { id ->
+                key(id) {
+                    val tool = toolInfo(id)
+                    Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(Am.Card).padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Box(Modifier.size(44.dp).background(Am.Navy, CircleShape), contentAlignment = Alignment.Center) {
+                            Icon(tool.icon, null, Modifier.size(22.dp), tint = Am.OnNavy)
+                        }
+                        Spacer(Modifier.width(14.dp))
+                        Column(Modifier.weight(1f)) {
+                            Text(stringResource(tool.title), color = Am.Navy, fontSize = 17.sp, fontWeight = FontWeight.Bold)
+                            Text(stringResource(tool.about), color = Am.HomeDim, fontSize = 14.sp, lineHeight = 18.sp)
+                        }
+                        Spacer(Modifier.width(10.dp))
+                        BigButton(stringResource(R.string.community_add), Modifier.widthIn(min = 72.dp)) { settings.toolsHidden = settings.toolsHidden - id }
                     }
                 }
+            }
+        }
+        Spacer(Modifier.height(24.dp))
+    }
+}
+
+@Composable
+private fun ToolGrid(order: List<String>, card: @Composable (String, Modifier) -> Unit) = BoxWithConstraints(Modifier.fillMaxWidth()) {
+    val columns = ((maxWidth + 16.dp) / 336.dp).toInt().coerceIn(1, 3)
+    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        order.chunked(columns).forEach { row ->
+            Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                row.forEach { id -> key(id) { card(id, Modifier.weight(1f).fillMaxHeight()) } }
                 repeat(columns - row.size) { Spacer(Modifier.weight(1f)) }
             }
         }
@@ -399,16 +372,13 @@ private fun ToolCard(
     about: String,
     engine: Engine? = null,
     modifier: Modifier = Modifier,
-    arranging: Boolean = false,
-    onMoveUp: (() -> Unit)? = null,
-    onMoveDown: (() -> Unit)? = null,
     onClick: () -> Unit,
 ) {
     val missing = engine == Engine.Missing || engine is Engine.Getting || engine is Engine.Failed
     Row(
         modifier.fillMaxWidth().heightIn(min = 104.dp).clip(RoundedCornerShape(12.dp)).background(Am.Card)
-            .then(if (arranging) Modifier else Modifier.deskPress(12.dp).clickable(onClick = onClick))
-            .padding(start = 16.dp, top = if (arranging) 12.dp else 16.dp, bottom = if (arranging) 12.dp else 16.dp, end = if (arranging) 8.dp else 16.dp),
+            .deskPress(12.dp).clickable(onClick = onClick)
+            .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(Modifier.size(56.dp).alpha(if (missing) 0.45f else 1f).background(Am.Navy, CircleShape), contentAlignment = Alignment.Center) {
@@ -428,34 +398,8 @@ private fun ToolCard(
                 )
             }
         }
-        if (arranging) {
-            Spacer(Modifier.width(4.dp))
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                MoveArrowButton(HomeIcons.ChevronUp, stringResource(R.string.tools_layout_move_up), onMoveUp)
-                MoveArrowButton(HomeIcons.ChevronDown, stringResource(R.string.tools_layout_move_down), onMoveDown)
-            }
-        } else {
-            Icon(HomeIcons.ChevronRight, null, Modifier.size(24.dp).alpha(if (missing) 0.45f else 1f), tint = Am.HomeMid)
-        }
+        Icon(HomeIcons.ChevronRight, null, Modifier.size(24.dp).alpha(if (missing) 0.45f else 1f), tint = Am.HomeMid)
     }
-}
-
-@Composable
-private fun MoveArrowButton(icon: ImageVector, label: String, onClick: (() -> Unit)?) {
-    if (onClick == null) {
-        Spacer(Modifier.size(44.dp, 40.dp))
-        return
-    }
-    val box: @Composable () -> Unit = {
-        Box(
-            Modifier.size(44.dp, 40.dp).clip(RoundedCornerShape(10.dp)).deskPress(10.dp).clickable(role = Role.Button, onClick = onClick),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(icon, label, Modifier.size(20.dp), tint = Am.Navy)
-            HoldName(label)
-        }
-    }
-    if (PlatformFeatures.desktop) Hint(label, box) else box()
 }
 
 @Composable
@@ -811,7 +755,7 @@ internal fun DownloaderScreen(store: ProjectStore, settings: AppSettings, onOpen
             onDismissRequest = { why = null },
             title = { Text(site.title, color = Am.Navy) },
             text = { Text(stringResource(reason), color = Am.Navy) },
-            confirmButton = { TextButton({ why = null }) { Text(stringResource(R.string.ok), color = Am.Navy) } },
+            confirmButton = { DialogPill(stringResource(R.string.ok)) { why = null } },
             containerColor = Am.Card,
         )
     }

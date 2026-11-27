@@ -31,6 +31,7 @@ enum class EditorPanel(@StringRes val title: Int) {
     EditShape(R.string.edit_panel_shape_options), EditText(R.string.edit_panel_edit_text),
     BorderShadow(R.string.edit_panel_frame_shadow), Blending(R.string.edit_panel_opacity_blend), Effects(R.string.edit_panel_effects), Camera(R.string.edit_panel_camera_options), Model(R.string.edit_panel_model_options), Crop(R.string.layer_tool_crop),
     Edge(R.string.cutout_edge), Light(R.string.light_options), Frame(R.string.layer_tool_frame),
+    Textures(R.string.model_textures), Pose(R.string.model_pose),
 }
 
 data class KeyTarget(val ref: PropRef, val default: String, val type: String = "float")
@@ -64,7 +65,7 @@ object Glide {
     internal fun interrupt() { if (!stepping) stop() }
 }
 
-class PointAdjust(val label: String, val move: (dx: Float, dy: Float, width: Float, height: Float) -> Unit)
+class PointAdjust(val label: String, val scene: Boolean = false, val move: (dx: Float, dy: Float, width: Float, height: Float) -> Unit)
 
 class LayerPoints(
     val points: List<app.absentmotion.model.Pt>,
@@ -75,6 +76,7 @@ class LayerPoints(
     val pick: (Int) -> Unit = {},
     val tap: ((app.absentmotion.model.Pt) -> Unit)? = null,
     val source: (app.absentmotion.model.Pt) -> app.absentmotion.model.Pt = { it },
+    val scene: Boolean = false,
     val move: (Int, app.absentmotion.model.Pt) -> Unit,
 )
 
@@ -404,7 +406,7 @@ class EditorState(
         if (previous != null && (key != previous.key || pivot != previous.pivotId)) endGesture()
         val before = scene
         val direct = change(before)
-        val changed = direct.withValueLinksFollowing(before).withMattesFollowing(before).withOutlinesFollowing(before)
+        val changed = direct.withValueLinksFollowing(before).withMattesFollowing(before).withOutlinesFollowing(before).withFacePathsFollowing()
         if (direct.node !== before.node) lockRefusal(before, direct, groupPath.indices.any { root.focused(groupPath.take(it))?.layer(groupPath[it])?.locked == true })?.let { return hint(it) }
         if (playing) {
             val recording = liveRecording ?: LiveRecording(before, key, settings.overwriteRecording, pivot, ::normalizedPoint)

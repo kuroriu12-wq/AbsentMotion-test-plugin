@@ -26,7 +26,6 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -40,6 +39,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.absentmotion.editor.*
+import app.absentmotion.effects.AddedEffectPrefix
 import app.absentmotion.effects.EffectDefinition
 import app.absentmotion.effects.PresetFavouriteStore
 import app.absentmotion.platform.LocalContext
@@ -66,6 +66,7 @@ import app.absentmotion.ui.editor.effects.AiMarkRow
 import app.absentmotion.ui.editor.effects.AiMarkRowGap
 import app.absentmotion.ui.editor.effects.AiMarkRowHeight
 import app.absentmotion.ui.editor.effects.EffectIcons
+import app.absentmotion.ui.editor.effects.AddedEffectBadge
 import app.absentmotion.ui.theme.Am
 import app.absentmotion.ui.theme.Presence
 import androidx.compose.ui.res.stringResource
@@ -87,6 +88,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 import app.absentmotion.ui.HoldName
+import app.absentmotion.ui.home.DialogPill
 
 @Composable
 internal fun EffectsPanel(state: EditorState, modifier: Modifier) {
@@ -96,7 +98,7 @@ internal fun EffectsPanel(state: EditorState, modifier: Modifier) {
     val instance = layer.effects.getOrNull(index)
     val definition = instance?.let { catalog.find(it["id"] ?: "") }
     LaunchedEffect(instance == null) { if (instance == null && index >= 0) state.effectIndex = -1 }
-    var active by remember(layer.id, index, definition?.id) { mutableStateOf(definition?.params?.firstOrNull { it.kind != "color" && it.kind != "switch" && it.kind != "choice" && it.kind != "text" && definition.shown(it, instance, layer.t) }) }
+    var active by remember(layer.id, index, definition?.id) { mutableStateOf(definition?.params?.firstOrNull { it.kind != "color" && it.kind != "switch" && it.kind != "choice" && it.kind != "text" && definition.shown(it, instance, layer.t) && EffectSections.isOpen(definition.key, it.section) }) }
     LaunchedEffect(definition) { active = definition?.params?.firstOrNull { it.id == active?.id } }
     var menu by remember { mutableStateOf(false) }
     var choosing by remember { mutableStateOf(false) }
@@ -119,7 +121,7 @@ internal fun EffectsPanel(state: EditorState, modifier: Modifier) {
     val point = active?.takeIf { it.kind == "point" && usable && !pathText }
     val adjust = remember(layer.id, index, point?.id, point?.label) {
         point?.let { param ->
-            PointAdjust(param.label) { dx, dy, width, height ->
+            PointAdjust(param.label, definition?.key == "facetrack") { dx, dy, width, height ->
                 state.editSelected("effect-$index-${param.id}") { current ->
                     val old = (current.effects.getOrNull(index)?.effectProperty(param.id)?.valueAt(current.t) ?: param.missingDefault).split(',').map { it.trim().finiteFloat() ?: 0f }
                     val x = (old.getOrElse(0) { 0f } + if (param.pixels) dx else dx / width).coerceIn(param.min, param.max)
@@ -204,8 +206,9 @@ internal fun EffectsPanel(state: EditorState, modifier: Modifier) {
                 val shownDefinition = if (current) definition else catalog.find(shown["id"] ?: "")
                 Column(Modifier.fillMaxSize().padding(6.5.dp).cardBounds(cards, cardKey(at, shown)).clip(RowShape).background(Am.Field)) {
                     EffectHeader(state, at, shown, shownDefinition)
-                    Column(Modifier.weight(1f).fillMaxWidth().deskVerticalScroll()) {
-                        if (shownDefinition != null) EffectSettings(state, layer, shown, shownDefinition, if (current) active else null, { active = it; pin = null })
+                    val settingsScroll = androidx.compose.foundation.rememberScrollState()
+                    Column(Modifier.weight(1f).fillMaxWidth().deskVerticalScroll(settingsScroll)) {
+                        if (shownDefinition != null) EffectSettings(state, layer, shown, shownDefinition, if (current) active else null, { active = it; pin = null }, settingsScroll)
                         else Text(shown["id"] ?: "", Modifier.padding(12.dp).dimmed(), color = Am.OnDark, fontSize = 12.sp)
                         if (current && puppet) PuppetSection(state, layer, index, shown, pin, pinField, { pinField = it }, adding, { pin = it; pinField = "position"; if (it != null) active = null }) { adding = it }
                         if (current && pathText) TextPathHint(state, layer, shown)
@@ -238,11 +241,9 @@ private fun CopyEffectsDialog(names: List<String>, onDismiss: () -> Unit, onCopy
             }
         },
         confirmButton = {
-            TextButton({ onCopy(ticked) }, enabled = ticked.isNotEmpty()) {
-                Text(stringResource(R.string.effects_copy_confirm), color = Am.Accent.copy(alpha = if (ticked.isEmpty()) DimAlpha else 1f))
-            }
+            DialogPill(stringResource(R.string.effects_copy_confirm), enabled = ticked.isNotEmpty()) { onCopy(ticked) }
         },
-        dismissButton = { TextButton(onDismiss) { Text(stringResource(R.string.cancel), color = Am.Accent) } },
+        dismissButton = { DialogPill(stringResource(R.string.cancel), primary = false, editor = true, onClick = onDismiss) },
         containerColor = Am.Field, titleContentColor = Am.OnDark, textContentColor = Am.OnDark,
     )
 }
@@ -254,6 +255,7 @@ private fun EffectHeader(state: EditorState, index: Int, effect: XmlNode, defini
     var presets by remember { mutableStateOf(false) }
     Row(Modifier.fillMaxWidth().height(37.dp).background(Am.CardHeader).deleteWhenHovered { state.editSelected { it.removeEffect(index) }; state.effectIndex = -1 }.clickable { state.effectIndex = -1 }.padding(start = 3.dp, end = 4.dp), verticalAlignment = Alignment.CenterVertically) {
         Icon(EffectIcons.Expanded, null, Modifier.padding(start = 8.dp).size(18.dp).alpha(0.9f), tint = Am.OnDark)
+        if (effect["id"]?.startsWith(AddedEffectPrefix) == true) AddedEffectBadge(Modifier.padding(start = 6.dp))
         Text(definition?.name ?: effect["id"]?.substringAfterLast('.') ?: "", Modifier.weight(1f).padding(start = 6.dp, end = 4.dp), color = Am.OnDark, fontSize = 14.sp, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
         if (definition != null && definition.presets.isNotEmpty()) Box {
             Text(stringResource(R.string.presets), Modifier.widthIn(max = 104.dp).clip(RowShape).background(Color(0x33000000)).clickable { presets = true }.padding(horizontal = 9.dp, vertical = 5.dp),
@@ -370,6 +372,7 @@ private fun EffectListRow(state: EditorState, reorder: Reorder, index: Int, coun
             Row(Modifier.weight(1f).fillMaxHeight().alpha(if (definition?.available == true && effect["locallyApplied"] != "true") 1f else 0.35f)
                 .clickable { state.effectIndex = index }.padding(start = 11.dp), verticalAlignment = Alignment.CenterVertically) {
                 Icon(EffectIcons.Expand, null, Modifier.size(18.dp).alpha(0.3f), tint = Am.OnDark)
+                if (effect["id"]?.startsWith(AddedEffectPrefix) == true) AddedEffectBadge(Modifier.padding(start = 6.dp))
                 Text(definition?.name ?: effect["id"]?.substringAfterLast('.') ?: "", Modifier.padding(start = 6.dp), color = Am.OnDark, fontSize = 14.sp, maxLines = 1)
             }
             DeskTip(stringResource(R.string.effects_visibility)) {

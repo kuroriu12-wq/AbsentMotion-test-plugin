@@ -12,6 +12,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
+import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.graphics.asSkiaPath
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.toComposeImageBitmap
 import androidx.compose.ui.graphics.asComposeImageBitmap
 import androidx.compose.ui.graphics.asSkiaBitmap
@@ -106,13 +110,27 @@ fun SceneSurface(engine: app.absentmotion.engine.EngineThread, divisor: Int, siz
 
 fun fontFamily(library: app.absentmotion.fonts.FontLibrary, name: String) = library.composeFamily(name)
 
-fun DrawScope.drawLiveStroke(path: DrawPath, filled: Boolean, color: Int, width: Float, opacity: Float, matrix: Matrix, eraser: Boolean) {
+fun DrawScope.drawLiveStroke(path: DrawPath, filled: Boolean, color: Int, width: Float, opacity: Float, matrix: Matrix, eraser: Boolean, softness: Float = 0f) {
     val v = matrix.v
-    val m = androidx.compose.ui.graphics.Matrix(floatArrayOf(v[0], v[3], 0f, v[6], v[1], v[4], 0f, v[7], 0f, 0f, 1f, 0f, v[2], v[5], 0f, v[8]))
-    val p = androidx.compose.ui.graphics.Path().apply { addPath(path.path); transform(m) }
-    val c = if (eraser) androidx.compose.ui.graphics.Color(0x66FFFFFF) else androidx.compose.ui.graphics.Color(color).let { it.copy(alpha = it.alpha * opacity) }
-    if (filled) drawPath(p, c)
-    else drawPath(p, c, style = androidx.compose.ui.graphics.drawscope.Stroke(width, cap = androidx.compose.ui.graphics.StrokeCap.Round, join = androidx.compose.ui.graphics.StrokeJoin.Round))
+    val paint = org.jetbrains.skia.Paint().apply {
+        isAntiAlias = true
+        this.color = if (eraser) 0x66FFFFFF else androidx.compose.ui.graphics.Color(color).let { it.copy(alpha = it.alpha * opacity) }.toArgb()
+        if (!filled) {
+            mode = org.jetbrains.skia.PaintMode.STROKE
+            strokeWidth = width
+            strokeCap = org.jetbrains.skia.PaintStrokeCap.ROUND
+            strokeJoin = org.jetbrains.skia.PaintStrokeJoin.ROUND
+        }
+        if (softness > 0f) maskFilter = org.jetbrains.skia.MaskFilter.makeBlur(org.jetbrains.skia.FilterBlurMode.NORMAL, softness)
+    }
+    drawIntoCanvas { canvas ->
+        val c = canvas.nativeCanvas
+        c.save()
+        c.concat(org.jetbrains.skia.Matrix33(v[0], v[1], v[2], v[3], v[4], v[5], v[6], v[7], v[8]))
+        c.drawPath(path.path.asSkiaPath(), paint)
+        c.restore()
+    }
+    paint.close()
 }
 
 suspend fun slotPicture(context: Context, uri: String, video: Boolean): ImageBitmap? = DeskFiles.thumbnail(uri, video, 288)
@@ -135,6 +153,12 @@ internal fun android.media.MediaMetadataRetriever.scaledFrame(timeUs: Long, opti
 internal fun webpFormat(lossless: Boolean) = if (lossless) android.graphics.Bitmap.CompressFormat.WEBP_LOSSLESS else android.graphics.Bitmap.CompressFormat.WEBP_LOSSY
 
 class MediaPicker(private val launchBlock: () -> Unit) { fun launch() = launchBlock() }
+
+@Composable
+fun rememberVideosPicker(onResult: (List<Uri>) -> Unit): MediaPicker {
+    val latest by rememberUpdatedState(onResult)
+    return remember { MediaPicker { latest(DeskFiles.chooseFiles(media = true, multiple = true, videoOnly = true).map(Uri::fromFile)) } }
+}
 
 @Composable
 fun rememberMediaPicker(videoOnly: Boolean = false, imageOnly: Boolean = false, onResult: (Uri?) -> Unit): MediaPicker {
@@ -210,6 +234,10 @@ fun ExportBars(dark: Boolean, running: Boolean) {
 internal const val MAX_SHARED_PICTURES = 500
 
 fun shareExport(context: Context, result: app.absentmotion.export.ExportResult) = DeskFiles.reveal(result.uris)
+
+fun stagedExportDir(context: Context): java.io.File? = null
+
+fun stagedExportUri(context: Context, file: java.io.File): Uri = Uri.fromFile(file)
 
 @Composable
 fun ExportMediaPreview(kind: app.absentmotion.export.ExportKind, uris: List<Uri>, large: Boolean = false, onTap: (() -> Unit)? = null) = app.absentmotion.ui.export.DeskExportPreview(kind, uris, large, onTap)
@@ -290,13 +318,13 @@ fun revealLibraryFolder(path: String) { app.absentmotion.desk.DeskOs.reveal(java
 
 fun revealFolderLabel(): String = app.absentmotion.desk.DeskOs.revealLabel
 
-internal const val CAPTION_MODEL_NAME = "ggml-base-q5_1.bin"
-internal const val CAPTION_MODEL_BYTES = 59_707_625L
+internal const val CAPTION_MODEL_NAME = "ggml-small-q8_0.bin"
+internal const val CAPTION_MODEL_BYTES = 264_464_607L
 internal fun loadCaptionLibrary() {
     app.absentmotion.pc.engine.DesktopNative.hashCode()
     if (!app.absentmotion.ai.DeskAiNative.captionCpu()) throw UnsatisfiedLinkError("Auto Captions needs a processor with AVX2")
 }
-internal fun fastCaptionCpu(cpuinfo: String): Boolean = false
+internal fun captionCpuLevel(cpuinfo: String): Int = 0
 
 internal fun captionTextHeight(fonts: app.absentmotion.fonts.FontLibrary, text: String, font: String, size: Float, wrap: Int): Float {
     val measurer = androidx.compose.ui.text.TextMeasurer(androidx.compose.ui.text.font.createFontFamilyResolver(), androidx.compose.ui.unit.Density(1f), androidx.compose.ui.unit.LayoutDirection.Ltr)
@@ -429,8 +457,7 @@ fun folderReachable(context: android.content.Context, folder: String): Boolean =
 fun forgetFolder(context: android.content.Context, folder: String) = Unit
 
 @androidx.compose.runtime.Composable
-fun rememberFolderPicker(start: String?, onPicked: (String) -> Unit): () -> Unit {
-    val title = app.absentmotion.i18n.AppText.get(app.absentmotion.R.string.settings_bundles_folder)
+fun rememberFolderPicker(start: String?, title: String, onPicked: (String) -> Unit): () -> Unit {
     return { app.absentmotion.desk.DeskPicker.openFolder(title)?.let { onPicked(it.absolutePath) } }
 }
 

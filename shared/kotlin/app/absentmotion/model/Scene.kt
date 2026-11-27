@@ -374,7 +374,8 @@ data class Layer(val node: XmlNode, val t: Float = 0f, val snap: ClosedFloatingP
         val index = element.stretchAt(snap)
         if (index < 0) return null
         val keys = element.keyframes
-        return (t - keys[index - 1].t) / (keys[index].t - keys[index - 1].t)
+        val span = keys[index].t - keys[index - 1].t
+        return if (span > 0f) (t - keys[index - 1].t) / span else null
     }
 
     fun withEasing(ref: PropRef, easing: Easing): Layer {
@@ -404,6 +405,8 @@ data class Layer(val node: XmlNode, val t: Float = 0f, val snap: ClosedFloatingP
         walk(if (scope == null) node else scopeNode(scope) ?: return emptyList())
         return out.toList()
     }
+
+    fun otherKeyframeTimes(scope: KeyScope): List<Int> = keyframeTimes() - keyframeTimes(scope).toSet()
 
     private fun scopeNode(scope: KeyScope): XmlNode? = if (scope.ref != null) element(scope.ref) else effects.getOrNull(scope.effectIndex)
 

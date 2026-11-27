@@ -2,6 +2,9 @@
  "id": "channelremaphsv",
  "name": "Channel Remap (HSV)",
  "category": "color",
+ "also": [
+  "other"
+ ],
  "since": "3.0.0",
  "description": "Rebuilds hue, saturation, value and alpha from other channels of the layer.",
  "params": [
@@ -11,13 +14,13 @@
    "type": "choice",
    "default": 0,
    "options": [
-    "Hue",
-    "Saturation",
-    "Value",
-    "Alpha",
-    "Luminance",
-    "Zero",
-    "Full"
+    "H",
+    "S",
+    "V",
+    "A",
+    "Y",
+    "0",
+    "1"
    ]
   },
   {
@@ -26,13 +29,13 @@
    "type": "choice",
    "default": 1,
    "options": [
-    "Hue",
-    "Saturation",
-    "Value",
-    "Alpha",
-    "Luminance",
-    "Zero",
-    "Full"
+    "H",
+    "S",
+    "V",
+    "A",
+    "Y",
+    "0",
+    "1"
    ]
   },
   {
@@ -41,13 +44,13 @@
    "type": "choice",
    "default": 2,
    "options": [
-    "Hue",
-    "Saturation",
-    "Value",
-    "Alpha",
-    "Luminance",
-    "Zero",
-    "Full"
+    "H",
+    "S",
+    "V",
+    "A",
+    "Y",
+    "0",
+    "1"
    ]
   },
   {
@@ -56,13 +59,13 @@
    "type": "choice",
    "default": 3,
    "options": [
-    "Hue",
-    "Saturation",
-    "Value",
-    "Alpha",
-    "Luminance",
-    "Zero",
-    "Full"
+    "H",
+    "S",
+    "V",
+    "A",
+    "Y",
+    "0",
+    "1"
    ]
   }
  ],

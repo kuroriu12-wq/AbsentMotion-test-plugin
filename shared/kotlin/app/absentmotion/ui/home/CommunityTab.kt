@@ -7,7 +7,9 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -30,7 +32,6 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.TextAutoSize
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -43,11 +44,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.CornerRadius
@@ -57,15 +60,21 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
@@ -73,21 +82,30 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.absentmotion.R
+import app.absentmotion.effects.EffectCatalog
 import app.absentmotion.engine.EngineThread
 import app.absentmotion.export.formatBytes
 import app.absentmotion.library.CommunityClient
 import app.absentmotion.library.CommunityDamagedException
-import app.absentmotion.library.CommunityFeed
+import app.absentmotion.library.COMMUNITY_COUNTS_TTL_MS
+import app.absentmotion.library.communityDownloadSource
 import app.absentmotion.library.CommunityIndex
 import app.absentmotion.library.CommunityItem
+import app.absentmotion.library.CommunityItemUnavailable
+import app.absentmotion.library.CommunityWriteException
+import app.absentmotion.platform.MobileDataRefused
 import app.absentmotion.library.CommunityKind
+import app.absentmotion.ui.editor.effects.AddedEffectDialogs
+import app.absentmotion.ui.editor.effects.AddedEffectImport
 import app.absentmotion.library.CommunitySort
 import app.absentmotion.library.MediaAccess
 import app.absentmotion.library.PresetStore
 import app.absentmotion.library.addCommunityPreset
+import app.absentmotion.library.communityDays
 import app.absentmotion.library.communityMatches
 import app.absentmotion.media.pictureSample
 import app.absentmotion.platform.BitmapFactory
+import app.absentmotion.platform.EffectPicture
 import app.absentmotion.platform.LocalContext
 import app.absentmotion.platform.PlatformFeatures
 import app.absentmotion.platform.Toast
@@ -98,18 +116,26 @@ import app.absentmotion.ui.editor.SearchField
 import app.absentmotion.ui.theme.Am
 import app.absentmotion.ui.theme.ThemeFade
 import java.io.File
+import java.text.NumberFormat
+import java.time.LocalDate
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.coroutines.coroutineContext
 import kotlin.math.abs
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runInterruptible
 import kotlinx.coroutines.withContext
 
 internal var sessionIndex: CommunityIndex? = null
-internal var sessionAllowed = false
+private val communityFiles = EffectCatalog(open = { File(it).inputStream() })
+internal var sessionAllowed by mutableStateOf(false)
 
 internal class CommunityBrowseState {
     var query by mutableStateOf("")
@@ -130,7 +156,7 @@ internal class CommunityBrowseState {
 private val sessionBrowse = CommunityBrowseState()
 
 @Composable
-internal fun CommunityBrowseControls(state: CommunityBrowseState, items: List<CommunityItem>, modifier: Modifier = Modifier) {
+internal fun CommunityBrowseControls(state: CommunityBrowseState, items: List<CommunityItem>, modifier: Modifier = Modifier, sortable: Boolean = true) {
     var sorting by remember { mutableStateOf(false) }
     var tagsOpen by remember { mutableStateOf(false) }
     val tags = remember(items) { items.flatMap { it.tags.distinct() }.groupingBy { it }.eachCount().toSortedMap(java.text.Collator.getInstance()) }
@@ -139,7 +165,7 @@ internal fun CommunityBrowseControls(state: CommunityBrowseState, items: List<Co
             SearchField(state.query, { state.query = it }, Modifier.weight(1f).heightIn(min = 48.dp),
                 hint = stringResource(R.string.community_search), background = Am.Card, content = Am.Navy, faint = Am.HomeDim)
             Box {
-                Box(Modifier.size(48.dp).clip(RoundedCornerShape(8.dp)).background(Am.Card).clickable { sorting = true }, Alignment.Center) {
+                Box(Modifier.size(48.dp).alpha(if (sortable) 1f else 0.4f).clip(RoundedCornerShape(8.dp)).background(Am.Card).clickable(enabled = sortable) { sorting = true }, Alignment.Center) {
                     Icon(HomeIcons.ArrowDown, stringResource(R.string.sounds_sort), Modifier.size(22.dp), tint = Am.Navy)
                 }
                 DropdownMenu(sorting, { sorting = false }, containerColor = Am.Card) {
@@ -197,9 +223,11 @@ internal fun CommunityBrowseControls(state: CommunityBrowseState, items: List<Co
     }
 }
 
-private enum class CommunityCategory(val labelRes: Int) {
-    Projects(R.string.community_filter_projects),
-    Presets(R.string.community_filter_presets)
+private enum class CommunityCategory(val labelRes: Int, val kind: CommunityKind?) {
+    New(R.string.community_filter_new, null),
+    Projects(R.string.community_filter_projects, CommunityKind.Bundle),
+    Presets(R.string.community_filter_presets, CommunityKind.Preset),
+    Effects(R.string.community_filter_effects, CommunityKind.Effect)
 }
 
 private class ActiveDownload(
@@ -261,15 +289,17 @@ fun CommunityTab(modifier: Modifier, engine: (() -> EngineThread)? = null, onImp
     val context = LocalContext.current
     val isDesktop = PlatformFeatures.desktop
     val scope = rememberCoroutineScope()
+    val effectImport = remember(context, engine != null) { engine?.let { AddedEffectImport(context, it) } }
     val pager = rememberPagerState { CommunityCategory.entries.size }
-    val client = remember(context) { CommunityClient(context.cacheDir) { TrustedHttp(CommunityFeed.source) } }
+    val client = remember(context) { CommunityClient(context.cacheDir) }
     var index by remember { mutableStateOf(sessionIndex) }
     var loading by remember { mutableStateOf(sessionIndex == null) }
     var failed by remember { mutableStateOf(false) }
     var attempt by remember { mutableIntStateOf(0) }
     var selected by remember { mutableStateOf<CommunityItem?>(null) }
     val thumbs = remember { mutableStateMapOf<String, ImageBitmap?>() }
-    var allowed by remember { mutableStateOf(sessionAllowed) }
+    val files = remember { mutableStateMapOf<String, String>() }
+    val allowed = sessionAllowed
     var refused by remember { mutableStateOf(false) }
 
     LaunchedEffect(attempt, allowed) {
@@ -307,14 +337,39 @@ fun CommunityTab(modifier: Modifier, engine: (() -> EngineThread)? = null, onImp
     }
 
     val current = index
+    val pad = if (isDesktop) 24.dp else 16.dp
+    val header: @Composable (List<CommunityItem>, Boolean) -> Unit = { items, sortable ->
+        Spacer(Modifier.height(if (isDesktop) 16.dp else 8.dp))
+        CommunityShareCard(Modifier.padding(horizontal = pad).fillMaxWidth())
+        Spacer(Modifier.height(8.dp))
+        CommunityBrowseControls(browse, items, Modifier.padding(horizontal = pad).fillMaxWidth(), sortable)
+        Spacer(Modifier.height(8.dp))
+        CommunityCategoryBar(
+            categories = CommunityCategory.entries,
+            currentPage = pager.currentPage,
+            pageOffset = { pager.currentPage + pager.currentPageOffsetFraction },
+            onSelect = { category -> scope.launch { pager.animateScrollToPage(category.ordinal) } },
+            modifier = Modifier.padding(horizontal = pad).widthIn(max = 420.dp).fillMaxWidth()
+        )
+        Spacer(Modifier.height(4.dp))
+    }
+    var counts by remember(client) { mutableStateOf(emptyMap<String, Long>()) }
+    val loadCounts = allowed && current?.tooNew == false && current.items.any { it.asset != null }
+    LaunchedEffect(client, loadCounts) {
+        if (!loadCounts) return@LaunchedEffect
+        while (true) {
+            counts = runInterruptible(Dispatchers.IO) { client.downloadCounts() }
+            delay(COMMUNITY_COUNTS_TTL_MS)
+        }
+    }
     when {
         !allowed -> CommunityErrorState(modifier, R.string.community_ask_title, R.string.community_ask_note, R.string.community_ask_button) {
             sessionAllowed = true
-            allowed = true
         }
 
-        loading -> Box(modifier.fillMaxSize(), Alignment.Center) {
-            CircularProgressIndicator(color = Am.Navy)
+        loading -> Column(modifier.fillMaxSize()) {
+            header(emptyList(), CommunityCategory.entries[pager.currentPage].kind != null)
+            CommunitySkeletonGrid(pad)
         }
 
         failed && refused -> CommunityErrorState(modifier, R.string.community_ask_title, R.string.mobile_data_refused, R.string.community_ask_button) {
@@ -336,30 +391,10 @@ fun CommunityTab(modifier: Modifier, engine: (() -> EngineThread)? = null, onImp
         )
 
         else -> {
-            val pad = if (isDesktop) 24.dp else 16.dp
-            val projects = remember(current.items) {
-                current.items.filter { it.kind == CommunityKind.Bundle }
-            }
-            val presets = remember(current.items) {
-                current.items.filter { it.kind == CommunityKind.Preset }
-            }
+            val itemsByKind = remember(current.items) { current.items.groupBy { it.kind } }
+            fun itemsOf(category: CommunityCategory) = category.kind?.let { itemsByKind[it].orEmpty() } ?: current.items
             Column(modifier.fillMaxSize()) {
-                Spacer(Modifier.height(if (isDesktop) 16.dp else 8.dp))
-                CommunityShareCard(Modifier.padding(horizontal = pad).fillMaxWidth())
-                Spacer(Modifier.height(8.dp))
-                CommunityBrowseControls(
-                    browse, if (pager.currentPage == 0) projects else presets,
-                    Modifier.padding(horizontal = pad).fillMaxWidth()
-                )
-                Spacer(Modifier.height(8.dp))
-                CommunityCategoryBar(
-                    categories = CommunityCategory.entries,
-                    currentPage = pager.currentPage,
-                    pageOffset = { pager.currentPage + pager.currentPageOffsetFraction },
-                    onSelect = { category -> scope.launch { pager.animateScrollToPage(category.ordinal) } },
-                    modifier = Modifier.padding(horizontal = pad).widthIn(max = 420.dp).fillMaxWidth()
-                )
-                Spacer(Modifier.height(4.dp))
+                header(itemsOf(CommunityCategory.entries[pager.currentPage]), CommunityCategory.entries[pager.currentPage].kind != null)
                 HorizontalPager(
                     state = pager,
                     modifier = Modifier.weight(1f).fillMaxWidth(),
@@ -375,26 +410,18 @@ fun CommunityTab(modifier: Modifier, engine: (() -> EngineThread)? = null, onImp
                                 alpha = (1f - 0.6f * abs(offset)).coerceIn(0.4f, 1f)
                             }
                     ) {
-                        when (category) {
-                            CommunityCategory.Projects -> CommunityItemsPage(
-                                items = communityMatches(projects, browse.query, browse.sort, browse.include, browse.exclude),
-                                onClear = browse::clear.takeIf { browse.filtered },
-                                pad = pad,
-                                client = client,
-                                engine = engine,
-                                thumbs = thumbs,
-                                onSelect = { selected = it }
-                            )
-                            CommunityCategory.Presets -> CommunityItemsPage(
-                                items = communityMatches(presets, browse.query, browse.sort, browse.include, browse.exclude),
-                                onClear = browse::clear.takeIf { browse.filtered },
-                                pad = pad,
-                                client = client,
-                                engine = engine,
-                                thumbs = thumbs,
-                                onSelect = { selected = it }
-                            )
-                        }
+                        CommunityItemsPage(
+                            items = communityMatches(itemsOf(category), browse.query, browse.sort, browse.include, browse.exclude),
+                            byDay = category.kind == null,
+                            onClear = browse::clear.takeIf { browse.filtered },
+                            pad = pad,
+                            client = client,
+                            engine = engine,
+                            thumbs = thumbs,
+                            files = files,
+                            counts = counts,
+                            onSelect = { selected = it }
+                        )
                     }
                 }
             }
@@ -405,10 +432,31 @@ fun CommunityTab(modifier: Modifier, engine: (() -> EngineThread)? = null, onImp
         CommunityItemSheet(
             item = item,
             thumb = thumbs[item.thumbKey],
+            client = client,
+            engine = engine,
+            count = item.asset?.let(counts::get),
             onDismiss = { selected = null },
-            onImport = onImport
+            onImport = onImport,
+            onEffect = effectImport?.let { importer ->
+                { file -> scope.launch { importer.pickCommunity(file, item) } }
+            },
+            onPresetBundle = effectImport?.let { importer ->
+                { file ->
+                    scope.launch {
+                        try {
+                            app.absentmotion.library.addPresetBundle(context, file, importer::confirmImported)
+                            Toast.makeText(context, context.getString(R.string.community_added_preset), Toast.LENGTH_SHORT).show()
+                        } catch (e: CancellationException) {
+                            throw e
+                        } catch (_: Exception) {
+                            Toast.makeText(context, context.getString(R.string.community_download_failed), Toast.LENGTH_LONG).show()
+                        }
+                    }
+                }
+            },
         )
     }
+    effectImport?.let { AddedEffectDialogs(it) }
 }
 
 @Composable
@@ -561,13 +609,17 @@ private fun CommunityCategoryBar(
 @Composable
 private fun CommunityItemsPage(
     items: List<CommunityItem>,
+    byDay: Boolean,
     onClear: (() -> Unit)?,
     pad: Dp,
     client: CommunityClient,
     engine: (() -> EngineThread)?,
     thumbs: MutableMap<String, ImageBitmap?>,
+    files: MutableMap<String, String>,
+    counts: Map<String, Long>,
     onSelect: (CommunityItem) -> Unit
 ) {
+    val context = LocalContext.current
     if (items.isEmpty()) {
         Column(Modifier.fillMaxSize().padding(horizontal = 24.dp), Arrangement.Center, Alignment.CenterHorizontally) {
             Text(
@@ -586,33 +638,56 @@ private fun CommunityItemsPage(
         }
     } else {
         LazyVerticalGrid(
-            columns = GridCells.Adaptive(160.dp),
+            columns = communityCells(),
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(start = pad, end = pad, top = 12.dp, bottom = 28.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            items(items, key = { "${it.kind.id}/${it.name}" }) { item ->
+            val card: @Composable (CommunityItem) -> Unit = { item ->
                 val key = item.thumbKey
                 LaunchedEffect(key) {
                     if (!thumbs.containsKey(key)) {
                         val loaded = withContext(Dispatchers.IO) {
                             try {
-                                Result.success(decodeCommunityThumb(if (item.kind == CommunityKind.Preset) engine?.let { client.presetPicture(item, it()) } else client.thumbnail(item)))
+                                val first = item.contents.firstOrNull()
+                                val file = first?.let { client.effectPicture(item, it.thumbnail, hero = false) }
+                                val bytes = when (item.kind) {
+                                    CommunityKind.Bundle -> client.thumbnail(item)
+                                    CommunityKind.Preset -> engine?.let { client.presetPicture(item, it()) }
+                                    CommunityKind.Effect -> file?.readBytes() ?: engine?.let {
+                                        client.renderedEffectPictures(item, it(), context).let { rendered -> rendered[first?.id] ?: rendered.values.firstOrNull() }
+                                    }
+                                }
+                                Result.success(decodeCommunityThumb(bytes) to file?.path)
                             } catch (e: CancellationException) {
                                 throw e
                             } catch (e: Exception) {
                                 Result.failure(e)
                             }
                         }
-                        loaded.onSuccess { thumbs[key] = it }
+                        loaded.onSuccess { (still, file) ->
+                            file?.let { files[key] = it }
+                            thumbs[key] = still
+                        }
                     }
                 }
                 CommunityGridCard(
                     item = item,
                     thumb = thumbs[key],
+                    file = files[key],
+                    loading = !thumbs.containsKey(key),
+                    count = item.asset?.let(counts::get),
                     onClick = { onSelect(item) }
                 )
+            }
+            if (byDay) {
+                for ((day, dayItems) in communityDays(items, ZoneId.systemDefault())) {
+                    item(key = "day/$day", span = { androidx.compose.foundation.lazy.grid.GridItemSpan(maxLineSpan) }) { CommunityDayHeader(day) }
+                    items(dayItems, key = { "${it.kind.id}/${it.name}" }) { card(it) }
+                }
+            } else {
+                items(items, key = { "${it.kind.id}/${it.name}" }) { card(it) }
             }
             item(key = "form", span = { androidx.compose.foundation.lazy.grid.GridItemSpan(maxLineSpan) }) {
                 Box(Modifier.fillMaxWidth().padding(top = 8.dp), contentAlignment = Alignment.Center) { CommunityFormLine() }
@@ -622,9 +697,19 @@ private fun CommunityItemsPage(
 }
 
 @Composable
+private fun CommunityDayHeader(day: LocalDate) {
+    val locale = LocalConfiguration.current.locales[0]
+    val label = remember(day, locale) { day.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG).withLocale(locale)) }
+    Text(label, Modifier.fillMaxWidth().padding(top = 4.dp), color = Am.Navy, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, maxLines = 2, overflow = TextOverflow.Ellipsis)
+}
+
+@Composable
 private fun CommunityGridCard(
     item: CommunityItem,
     thumb: ImageBitmap?,
+    file: String?,
+    loading: Boolean,
+    count: Long?,
     onClick: () -> Unit
 ) {
     val shape = RoundedCornerShape(12.dp)
@@ -643,14 +728,23 @@ private fun CommunityGridCard(
                 .fillMaxWidth()
                 .aspectRatio(1f)
                 .clip(RoundedCornerShape(10.dp))
-                .then(if (thumb != null && item.kind == CommunityKind.Preset) Modifier.checkerboard(5.dp) else Modifier.background(Am.HomePanel)),
+                .then(when {
+                    thumb != null && item.kind != CommunityKind.Bundle -> Modifier.checkerboard(5.dp)
+                    thumb == null && loading -> Modifier.shimmer(RoundedCornerShape(10.dp))
+                    else -> Modifier.background(Am.HomePanel)
+                }),
             Alignment.Center
         ) {
-            if (thumb != null) {
-                Image(thumb, null, Modifier.fillMaxSize(), contentScale = if (item.kind == CommunityKind.Preset) ContentScale.Fit else ContentScale.Crop)
-            } else {
-                Icon(HomeIcons.CommunityTab, null, Modifier.size(36.dp), tint = Am.HomeMid)
+            androidx.compose.animation.Crossfade(thumb, animationSpec = androidx.compose.animation.core.tween(180), label = "thumb") { shown ->
+                if (file != null) {
+                    EffectPicture(communityFiles, file, ContentScale.Fit)
+                } else if (shown != null) {
+                    Image(shown, null, Modifier.fillMaxSize(), contentScale = if (item.kind == CommunityKind.Bundle) ContentScale.Crop else ContentScale.Fit)
+                } else if (!loading) {
+                    Box(Modifier.fillMaxSize(), Alignment.Center) { Icon(HomeIcons.CommunityTab, null, Modifier.size(36.dp), tint = Am.HomeMid) }
+                }
             }
+            count?.let { CommunityDownloadBadge(it, Modifier.align(Alignment.BottomEnd).padding(4.dp)) }
         }
         Spacer(Modifier.height(8.dp))
         Text(
@@ -678,8 +772,13 @@ private fun CommunityGridCard(
 private fun CommunityItemSheet(
     item: CommunityItem,
     thumb: ImageBitmap?,
+    client: CommunityClient,
+    engine: (() -> EngineThread)?,
+    count: Long?,
     onDismiss: () -> Unit,
-    onImport: (File) -> Unit
+    onImport: (File) -> Unit,
+    onEffect: ((File) -> Unit)?,
+    onPresetBundle: ((File) -> Unit)?,
 ) {
     val context = LocalContext.current
     val view = LocalView.current
@@ -687,8 +786,8 @@ private fun CommunityItemSheet(
     var activeDownload by remember(item) { mutableStateOf<ActiveDownload?>(null) }
     val downloading = activeDownload != null
     val addLabel = stringResource(
-        if (item.kind == CommunityKind.Bundle) R.string.community_add
-        else R.string.community_add_preset
+        if (item.kind == CommunityKind.Preset) R.string.community_add_preset
+        else R.string.community_add
     )
 
     fun stopDownload() {
@@ -705,17 +804,17 @@ private fun CommunityItemSheet(
     }
 
     fun startDownload() {
-        if (activeDownload != null) return
-        val http = TrustedHttp(CommunityFeed.source)
+        if (activeDownload != null || (item.kind == CommunityKind.Effect && onEffect == null)) return
+        val http = TrustedHttp(communityDownloadSource(item))
         val cancelled = AtomicBoolean(false)
         val job = scope.launch {
             val me = coroutineContext.job
             try {
                 val file = withContext(Dispatchers.IO) {
-                    val downloaded = CommunityClient(context.cacheDir) { http }.download(item)
+                    val downloaded = runInterruptible { CommunityClient(context.cacheDir) { http }.download(item) }
                     if (item.kind == CommunityKind.Preset) {
-                        if (downloaded.extension == "absproj") app.absentmotion.library.addPresetBundle(context, downloaded)
-                        else addCommunityPreset(downloaded, PresetStore(context), MediaAccess.forApp(context))
+                        if (downloaded.extension != "absproj") addCommunityPreset(downloaded, PresetStore(context), MediaAccess.forApp(context))
+                        else if (onPresetBundle == null) app.absentmotion.library.addPresetBundle(context, downloaded)
                     }
                     downloaded
                 }
@@ -724,14 +823,13 @@ private fun CommunityItemSheet(
                     activeDownload = null
                 }
                 onDismiss()
-                if (item.kind == CommunityKind.Bundle) {
-                    onImport(file)
-                } else {
-                    Toast.makeText(
-                        context,
-                        context.getString(R.string.community_added_preset),
-                        Toast.LENGTH_SHORT
-                    ).show()
+                when (item.kind) {
+                    CommunityKind.Bundle -> onImport(file)
+                    CommunityKind.Effect -> onEffect?.invoke(file)
+                    CommunityKind.Preset -> {
+                        if (file.extension == "absproj" && onPresetBundle != null) onPresetBundle(file)
+                        else Toast.makeText(context, context.getString(R.string.community_added_preset), Toast.LENGTH_SHORT).show()
+                    }
                 }
             } catch (e: CancellationException) {
                 if (activeDownload?.job === me) {
@@ -749,14 +847,21 @@ private fun CommunityItemSheet(
                         Toast.LENGTH_LONG
                     ).show()
                 }
-            } catch (_: Exception) {
+            } catch (e: Exception) {
                 if (activeDownload?.job === me) {
                     activeDownload = null
                 }
                 if (!cancelled.get()) {
+                    val reason = when {
+                        e is MobileDataRefused -> R.string.mobile_data_refused
+                        e is CommunityItemUnavailable -> R.string.added_effect_community_unavailable
+                        e is CommunityWriteException -> R.string.added_effect_save_failed
+                        item.kind == CommunityKind.Effect -> R.string.added_effect_community_unreachable
+                        else -> R.string.community_download_failed
+                    }
                     Toast.makeText(
                         context,
-                        context.getString(R.string.community_download_failed),
+                        context.getString(reason),
                         Toast.LENGTH_LONG
                     ).show()
                 }
@@ -818,30 +923,38 @@ private fun CommunityItemSheet(
                         label = addLabel,
                         modifier = Modifier.weight(1f).fillMaxHeight(),
                         icon = HomeIcons.Plus,
-                        enabled = !downloading
+                        enabled = !downloading && (item.kind != CommunityKind.Effect || onEffect != null)
                     ) {
                         startDownload()
                     }
                 }
             }
-        }
+        },
+        side = { CommunityItemDetails(item, count, client, engine) }
     ) {
         Spacer(Modifier.height(16.dp))
-        val thumbRatio = if (thumb != null && thumb.width > 0 && thumb.height > 0) {
-            (thumb.width.toFloat() / thumb.height.toFloat()).coerceIn(0.2f, 5f)
+        val hero by produceState<ImageBitmap?>(null, item) {
+            val rel = item.contents.firstOrNull()?.hero ?: return@produceState
+            value = withContext(Dispatchers.IO) {
+                runCatching { client.effectPicture(item, rel, hero = true)?.readBytes()?.let { BitmapFactory.decodeByteArray(it, 0, it.size)?.asImageBitmap() } }.getOrNull()
+            }
+        }
+        val picture = hero ?: thumb
+        val thumbRatio = if (picture != null && picture.width > 0 && picture.height > 0) {
+            (picture.width.toFloat() / picture.height.toFloat()).coerceIn(0.2f, 5f)
         } else {
             1.5f
         }
         Box(
             Modifier
                 .fillMaxWidth()
-                .aspectRatio(thumbRatio)
+                .aspectRatio(thumbRatio.coerceAtLeast(1f))
                 .clip(RoundedCornerShape(12.dp))
-                .then(if (thumb != null && item.kind == CommunityKind.Preset) Modifier.checkerboard(8.dp) else Modifier.background(Am.Scrim)),
+                .then(if (picture != null && item.kind != CommunityKind.Bundle) Modifier.checkerboard(8.dp) else Modifier.background(Am.Scrim)),
             Alignment.Center
         ) {
-            if (thumb != null) {
-                Image(thumb, null, Modifier.fillMaxSize(), contentScale = ContentScale.Fit)
+            if (picture != null) {
+                Image(picture, null, Modifier.fillMaxSize(), contentScale = ContentScale.Fit)
             } else {
                 Icon(
                     HomeIcons.CommunityTab,
@@ -852,6 +965,13 @@ private fun CommunityItemSheet(
             }
         }
         Spacer(Modifier.height(14.dp))
+    }
+}
+
+@Composable
+private fun CommunityItemDetails(item: CommunityItem, count: Long?, client: CommunityClient, engine: (() -> EngineThread)?) {
+    Column(Modifier.fillMaxWidth()) {
+        Spacer(Modifier.height(16.dp))
         if (item.creator.isNotEmpty()) {
             Text(
                 text = stringResource(R.string.community_by, item.creator),
@@ -909,7 +1029,84 @@ private fun CommunityItemSheet(
                 lineHeight = 19.sp
             )
         }
+        if (item.kind == CommunityKind.Effect && item.contents.isNotEmpty()) {
+            Spacer(Modifier.height(14.dp))
+            Text(stringResource(R.string.community_effects_included), color = Am.Navy, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+            Spacer(Modifier.height(8.dp))
+            CommunityEffectTiles(item, client, engine)
+        }
+        count?.let {
+            Text(communityDownloadLabel(it), Modifier.padding(top = 14.dp), color = Am.HomeMid, fontSize = 13.sp)
+        }
         Spacer(Modifier.height(24.dp))
+    }
+}
+
+@Composable
+private fun CommunityEffectTiles(item: CommunityItem, client: CommunityClient, engine: (() -> EngineThread)?) {
+    val context = LocalContext.current
+    val rendered by produceState<Map<String, ImageBitmap?>?>(null, item) {
+        if (item.contents.all { it.thumbnail != null }) return@produceState
+        value = withContext(Dispatchers.IO) {
+            runCatching { engine?.let { client.renderedEffectPictures(item, it(), context).mapValues { (_, bytes) -> decodeCommunityThumb(bytes) } } }.getOrNull().orEmpty()
+        }
+    }
+    BoxWithConstraints(Modifier.fillMaxWidth()) {
+        val gap = 8.dp
+        val columns = ((maxWidth + gap) / ((if (PlatformFeatures.desktop) 96.dp else 76.dp) + gap)).toInt().coerceAtLeast(3)
+        val tile = with(LocalDensity.current) { ((constraints.maxWidth - gap.roundToPx() * (columns - 1)) / columns).toDp() }
+        val shape = RoundedCornerShape(8.dp)
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(gap), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            for (effect in item.contents) {
+                val label = if (effect.version == 1L) effect.name else stringResource(R.string.community_effect_version, effect.name, effect.version)
+                Column(Modifier.width(tile), horizontalAlignment = Alignment.CenterHorizontally) {
+                    Box(Modifier.size(tile).clip(shape).background(Am.HomePanel)) {
+                        val still = rendered?.get(effect.id)
+                        when {
+                            effect.thumbnail != null -> CommunityEffectThumb(client, item, effect.thumbnail, shape)
+                            still != null -> Image(still, null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
+                            rendered == null && engine != null -> Box(Modifier.fillMaxSize().shimmer(shape))
+                        }
+                    }
+                    Text(label, Modifier.fillMaxWidth().padding(top = 4.dp), color = Am.Navy, fontSize = 12.sp, lineHeight = 15.sp,
+                        textAlign = TextAlign.Center, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun CommunityEffectThumb(client: CommunityClient, item: CommunityItem, rel: String, shape: RoundedCornerShape) {
+    val file by produceState<Result<String>?>(null, item.sha256, rel) {
+        value = withContext(Dispatchers.IO) { runCatching { requireNotNull(client.effectPicture(item, rel, hero = false)).path } }
+    }
+    when (val shown = file) {
+        null -> Box(Modifier.fillMaxSize().shimmer(shape))
+        else -> shown.getOrNull()?.let { EffectPicture(communityFiles, it, ContentScale.Crop) }
+    }
+}
+
+@Composable
+private fun communityDownloadLabel(count: Long): String {
+    val locale = LocalConfiguration.current.locales[0]
+    val number = remember(count, locale) { NumberFormat.getIntegerInstance(locale).format(count) }
+    return pluralStringResource(R.plurals.community_download_count, count.coerceAtMost(Int.MAX_VALUE.toLong()).toInt(), number)
+}
+
+@Composable
+private fun CommunityDownloadBadge(count: Long, modifier: Modifier) {
+    val label = communityDownloadLabel(count)
+    val style = TextStyle(fontSize = 10.sp)
+    val measure = rememberTextMeasurer()
+    BoxWithConstraints(modifier) {
+        val available = with(LocalDensity.current) { (maxWidth - 12.dp).toPx() }
+        if (measure.measure(label, style, maxLines = 1).size.width <= available) {
+            Text(
+                label, Modifier.background(Am.Card, RoundedCornerShape(6.dp)).padding(horizontal = 6.dp, vertical = 2.dp),
+                color = Am.HomeMid, style = style, maxLines = 1,
+            )
+        }
     }
 }
 
@@ -928,4 +1125,32 @@ internal fun decodeCommunityThumb(bytes: ByteArray?): ImageBitmap? {
     } catch (_: Throwable) {
         null
     }
+}
+
+@Composable
+private fun CommunitySkeletonGrid(pad: Dp) {
+    LazyVerticalGrid(
+        columns = communityCells(),
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(start = pad, end = pad, top = 12.dp, bottom = 28.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+        userScrollEnabled = false
+    ) {
+        items(6) {
+            val shape = RoundedCornerShape(12.dp)
+            Column(Modifier.fillMaxWidth().clip(shape).background(Am.Card).border(1.dp, Am.HomeLine, shape).padding(8.dp)) {
+                Box(Modifier.fillMaxWidth().aspectRatio(1f).shimmer(RoundedCornerShape(10.dp)))
+                Spacer(Modifier.height(8.dp))
+                Box(Modifier.height(20.dp), Alignment.CenterStart) { Box(Modifier.fillMaxWidth(0.62f).height(12.dp).shimmer(RoundedCornerShape(6.dp))) }
+                Box(Modifier.padding(top = 2.dp).height(16.dp), Alignment.CenterStart) { Box(Modifier.fillMaxWidth(0.4f).height(10.dp).shimmer(RoundedCornerShape(5.dp))) }
+            }
+        }
+    }
+}
+
+@Composable
+private fun communityCells(): GridCells {
+    val width = with(LocalDensity.current) { LocalWindowInfo.current.containerSize.width.toDp() }
+    return GridCells.Adaptive(if (width >= 900.dp) 220.dp else 160.dp)
 }

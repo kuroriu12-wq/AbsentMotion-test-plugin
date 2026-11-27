@@ -95,7 +95,8 @@
    "id": "fillColor",
    "label": "Fill Color",
    "type": "color",
-   "default": "#ffffff"
+   "default": "#2d1ef6",
+   "legacyDefault": "#ffffff"
   },
   {
    "id": "fillAmount",
@@ -222,6 +223,22 @@
    "max": 1,
    "step": 0.001,
    "percent": true
+  },
+  {
+   "id": "style",
+   "label": "Style",
+   "type": "choice",
+   "default": 1,
+   "options": [
+    "Classic",
+    "Standard"
+   ],
+   "legacyDefault": 0,
+   "when": {
+    "style": [
+     0
+    ]
+   }
   }
  ]
 }

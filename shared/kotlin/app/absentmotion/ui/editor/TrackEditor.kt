@@ -162,7 +162,7 @@ internal fun TrackPanel(state: EditorState, mode: TrackMode) {
 }
 
 @Composable
-private fun <T> Choices(label: String, options: List<Pair<String, T>>, chosen: T, enabled: Boolean, onPick: (T) -> Unit) {
+internal fun <T> Choices(label: String, options: List<Pair<String, T>>, chosen: T, enabled: Boolean, onPick: (T) -> Unit) {
     Row(Modifier.fillMaxWidth().height(34.dp).alpha(if (enabled) 1f else DimAlpha), verticalAlignment = Alignment.CenterVertically) {
         Text(label, Modifier.width(72.dp).padding(end = 4.dp), color = Am.Caption, maxLines = 1, autoSize = androidx.compose.foundation.text.TextAutoSize.StepBased(8.sp, 12.sp, 0.5.sp))
         Row(Modifier.weight(1f).fillMaxHeight().clip(RoundedCornerShape(6.dp)).background(Am.PanelInset)) {
@@ -199,7 +199,7 @@ private fun TargetChoice(state: EditorState, mode: TrackMode, enabled: Boolean) 
 }
 
 @Composable
-private fun ActionChip(text: String, enabled: Boolean, onClick: () -> Unit) {
+internal fun ActionChip(text: String, enabled: Boolean, onClick: () -> Unit) {
     Box(
         Modifier.padding(start = 8.dp).width(84.dp).height(36.dp).clip(RoundedCornerShape(6.dp)).background(Am.Button)
             .alpha(if (enabled) 1f else DimAlpha).clickable(enabled = enabled, onClick = onClick),

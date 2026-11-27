@@ -2,6 +2,8 @@ package app.absentmotion.export
 
 import kotlin.math.roundToInt
 import app.absentmotion.R
+import app.absentmotion.effects.AddedEffectBundleLimit
+import app.absentmotion.effects.AddedEffectStore
 import app.absentmotion.i18n.UiText
 import app.absentmotion.i18n.txt
 import app.absentmotion.platform.Context
@@ -49,18 +51,19 @@ const val CommunityLimitBytes = 20L shl 20
 fun communitySizeText(bytes: Long): String =
     if (bytes > CommunityLimitBytes) String.format(java.util.Locale.ROOT, "%.1fMB", kotlin.math.ceil(bytes / 104857.6) / 10) else formatBytes(bytes)
 
-internal fun CommunityDetails.problem(scene: Scene, access: MediaAccess): UiText? = when {
+internal fun CommunityDetails.problem(scene: Scene, access: MediaAccess, addedBytes: Long = 0L): UiText? = when {
     title.isBlank() -> txt(R.string.community_need_title)
     !confirmed -> txt(R.string.community_need_confirm)
     !guidelinesConfirmed -> txt(R.string.community_need_guidelines)
-    scene.communityBytes(access) > CommunityLimitBytes -> txt(R.string.community_too_big, communitySizeText(scene.communityBytes(access)))
+    scene.communityBytes(access) + addedBytes > CommunityLimitBytes ->
+        txt(R.string.community_too_big, communitySizeText(scene.communityBytes(access) + addedBytes))
     else -> null
 }
 
-class Exporter(context: Context, private val engine: EngineThread, private val store: ExportStore, private val access: MediaAccess = MediaAccess.forApp(context), private val bundles: ExportStore? = null) {
+class Exporter(context: Context, private val engine: EngineThread, private val store: ExportStore, private val access: MediaAccess = MediaAccess.forApp(context), private val bundles: ExportStore? = null, private val stage: ExportStore? = null, private val videos: ExportStore? = null, private val sounds: ExportStore? = null) {
     private val context = context.applicationContext
 
-    suspend fun export(kind: ExportKind, scene: Scene, s: ExportSettings, frame: Int, name: String, note: (UiText) -> Unit = {}, community: CommunityDetails? = null, progress: (Float) -> Unit): ExportResult {
+    suspend fun export(kind: ExportKind, scene: Scene, s: ExportSettings, frame: Int, name: String, note: (UiText) -> Unit = {}, community: CommunityDetails? = null, includeAddedEffects: Boolean = true, progress: (Float) -> Unit): ExportResult {
         val saved = ArrayList<Uri>()
         try {
             return CrashLogs.during("exporting ${kind.name.lowercase()}") { withContext(Dispatchers.Default) {
@@ -76,7 +79,7 @@ class Exporter(context: Context, private val engine: EngineThread, private val s
                             progress(0f)
                             mix = ExportAudio.mixFor?.invoke(scene, f.audio.effectiveRate)
                             closingUnlessAbandoned(mix) {
-                                direct(saved, name, f.container.ext, f.container.mime, "Movies/$AppFolder") { fd ->
+                                direct(saved, name, f.container.ext, f.container.mime, "Movies/$AppFolder", stage ?: videos ?: store) { fd ->
                                     watched { alive ->
                                         cool { thermal ->
                                             exportVideo(engine, scene, xml, f, fd, mix, thermal.hot, { thermal.pauseMs().also { paused += it } }, note, { looks = it }) { alive(); progress(it) }
@@ -95,14 +98,14 @@ class Exporter(context: Context, private val engine: EngineThread, private val s
                     ExportKind.Audio -> {
                         val mix = ExportAudio.mixFor?.invoke(scene, audioRate(s)) ?: throw ExportError(txt(R.string.export_error_no_sound))
                         closingUnlessAbandoned(mix) {
-                            direct(saved, name, s.audioFormat.ext, s.audioFormat.mime, "Music/$AppFolder") { fd ->
+                            direct(saved, name, s.audioFormat.ext, s.audioFormat.mime, "Music/$AppFolder", sounds ?: store) { fd ->
                                 watched { alive -> exportAudio(s, (scene.totalTime + 1) * 1000L, mix, fd) { alive(); progress(it) } }
                             }.verified(kind, scene, s, true).unreadable(mix, scene)
                         }
                     }
                     ExportKind.Gif -> {
                         exportSize(scene, s.shortSide, even = false).let { (w, h) -> checkPicture(w, h) }
-                        direct(saved, name, "gif", "image/gif", "Pictures/$AppFolder") { fd ->
+                        direct(saved, name, "gif", "image/gif", "Pictures/$AppFolder", stage ?: videos ?: store) { fd ->
                             watched { alive -> cool { gif(scene, xml, s, fdStream(fd), it::pauseMs) { p -> alive(); progress(p) } } }
                         }.verified(kind, scene, s, false)
                     }
@@ -111,7 +114,7 @@ class Exporter(context: Context, private val engine: EngineThread, private val s
                         imageProblem(shape.image, android.os.Build.VERSION.SDK_INT)?.let { throw ExportError(it) }
                         checkPicture(scene.width, scene.height)
                         val pixels = engine.exportSession(xml) { still(scene.frameStart(frame), scene.width, scene.height) } ?: throw ExportError(txt(R.string.export_error_draw_still))
-                        save(saved, null, "$name.${shape.image.ext}", shape.image.mime) { encode(pixels, scene.width, scene.height, shape, null, it) }
+                        save(saved, null, "$name.${shape.image.ext}", shape.image.mime, stage ?: store) { encode(pixels, scene.width, scene.height, shape, null, it) }
                         ExportResult(saved, shape.image.mime, store.location("Pictures/$AppFolder")).verified(kind, scene, shape, false)
                     }
                     ExportKind.Xml -> {
@@ -119,9 +122,14 @@ class Exporter(context: Context, private val engine: EngineThread, private val s
                         ExportResult(saved, "text/xml", store.location("Documents/$AppFolder"))
                     }
                     ExportKind.Package -> {
-                        val shared = community?.let { communityPart(scene, xml, it) }
+                        val effects = if (includeAddedEffects) withContext(Dispatchers.IO) {
+                            val added = AddedEffectStore(context.filesDir)
+                            checkAddedEffectBundleSize(added.bundleBytes(scene))
+                            added.bundled(scene)
+                        } else emptyMap()
+                        val shared = community?.let { communityPart(scene, xml, it, effects.values.sumOf { bytes -> bytes.size.toLong() }) }
                         direct(saved, name, "absproj", "application/octet-stream", "Documents/$AppFolder", bundles ?: store) { fd ->
-                            watched { alive -> pack(scene, xml, fdStream(fd), shared) { alive(); progress(it) } }
+                            watched { alive -> pack(scene, xml, fdStream(fd), shared, effects) { alive(); progress(it) } }
                         }
                     }
                     ExportKind.Sequence -> watched { alive -> sequence(saved, scene, xml, s, name) { alive(); progress(it) } }
@@ -129,9 +137,42 @@ class Exporter(context: Context, private val engine: EngineThread, private val s
             } }
         } catch (t: Throwable) {
             val full = storageFull(t)
-            withContext(NonCancellable + Dispatchers.IO) { saved.forEach { runCatching { (if (kind == ExportKind.Package) bundles ?: store else store).delete(it) } } }
+            withContext(NonCancellable + Dispatchers.IO) { synchronized(saved) { saved.toList() }.forEach { runCatching { (chosenStore(kind) ?: store).delete(it) } } }
             throw if (full) StorageFullException() else plainCodecError(t)
         }
+    }
+
+    suspend fun measureBytes(kind: ExportKind, scene: Scene, s: ExportSettings, frame: Int, community: CommunityDetails? = null, includeAddedEffects: Boolean = true): Long = withContext(Dispatchers.Default) {
+        val xml = scene.toXml()
+        when (kind) {
+            ExportKind.Xml -> xml.toByteArray().size.toLong()
+            ExportKind.Frame, ExportKind.FrameAs -> {
+                val shape = if (kind == ExportKind.Frame) s.copy(image = ImageKind.Png) else s
+                checkPicture(scene.width, scene.height)
+                val pixels = engine.exportSession(xml) { still(scene.frameStart(frame), scene.width, scene.height) } ?: error("Cannot draw the frame")
+                ByteCounter().also { encode(pixels, scene.width, scene.height, shape, null, it) }.bytes
+            }
+            ExportKind.Audio -> measureAudioBytes(s, (scene.totalTime + 1) * 1000L, { ExportAudio.mixFor?.invoke(scene, audioRate(s)) }, context.cacheDir)
+            ExportKind.Package -> withContext(Dispatchers.IO) {
+                val effects = if (includeAddedEffects) AddedEffectStore(context.filesDir).bundled(scene) else emptyMap()
+                val shared = community?.let { communityPart(scene, xml, it, effects.values.sumOf { bytes -> bytes.size.toLong() }) }
+                var media = 0L
+                ByteCounter().also { counter ->
+                    writeProjectPackage(scene, xml, counter, access, { uri -> streamLength(uri)?.let { media += it; java.io.ByteArrayInputStream(ByteArray(0)) } }, shared, effects) {}
+                }.bytes + media
+            }
+            else -> error("${kind.name} is measured elsewhere")
+        }
+    }
+
+    private fun streamLength(uri: String): Long? =
+        runCatching { context.contentResolver.openAssetFileDescriptor(Uri.parse(uri), "r")?.use { it.length } }.getOrNull()?.takeIf { it >= 0 }
+
+    private fun chosenStore(kind: ExportKind): ExportStore? = when (kind) {
+        ExportKind.Package -> bundles
+        ExportKind.Video, ExportKind.Gif -> videos.takeIf { stage == null }
+        ExportKind.Audio -> sounds
+        else -> null
     }
 
     private fun plainCodecError(t: Throwable): Throwable {
@@ -144,8 +185,8 @@ class Exporter(context: Context, private val engine: EngineThread, private val s
     private fun storageFull(t: Throwable): Boolean =
         t !is kotlinx.coroutines.CancellationException && (crashReason(t, "") == CrashReason.Storage || runCatching { freeSpace() < MinFreeBytes }.getOrDefault(false))
 
-    private suspend fun save(saved: MutableList<Uri>, folder: String?, name: String, mime: String, write: (java.io.OutputStream) -> Unit) =
-        withContext(Dispatchers.IO) { saved.add(store.save(folder, name, mime, write)) }
+    private suspend fun save(saved: MutableList<Uri>, folder: String?, name: String, mime: String, target: ExportStore = store, write: (java.io.OutputStream) -> Unit) =
+        withContext(Dispatchers.IO) { saved.add(target.save(folder, name, mime, write)) }
 
     private suspend fun checkPicture(width: Int, height: Int) {
         val side = engine.maxPictureSize()
@@ -154,7 +195,7 @@ class Exporter(context: Context, private val engine: EngineThread, private val s
 
     private suspend fun direct(saved: MutableList<Uri>, name: String, ext: String, mime: String, where: String, target: ExportStore = store, make: suspend (java.io.FileDescriptor) -> Unit): ExportResult {
         val (file, used) = withContext(NonCancellable + Dispatchers.IO) {
-            try { target.open(null, "$name.$ext", mime) to target } catch (e: ExportError) { if (target === store) throw e else store.open(null, "$name.$ext", mime) to store }
+            savedIn(target, store) { it.open(null, "$name.$ext", mime) }
         }
         val uri = try {
             currentCoroutineContext().ensureActive()
@@ -269,7 +310,9 @@ class Exporter(context: Context, private val engine: EngineThread, private val s
         return ExportResult(saved, s.image.mime, store.location("Pictures/$AppFolder/$folder"))
     }
 
-    private suspend fun communityPart(scene: Scene, xml: String, details: CommunityDetails): CommunityPart {
+    private suspend fun communityPart(scene: Scene, xml: String, details: CommunityDetails, addedBytes: Long): CommunityPart {
+        val bytes = scene.communityBytes(access) + addedBytes
+        if (bytes > CommunityLimitBytes) throw ExportError(txt(R.string.community_too_big, communitySizeText(bytes)))
         val info = communityInfo(scene, details, app.absentmotion.ui.home.Updates.installed(context))
         if (details.preset) return CommunityPart(info, null)
         val square = details.square(scene.width, scene.height)
@@ -285,8 +328,8 @@ class Exporter(context: Context, private val engine: EngineThread, private val s
         return CommunityPart(info.put("thumbnail", CommunityThumbnail).put("thumbnailMs", time), picture)
     }
 
-    private suspend fun pack(scene: Scene, xml: String, out: OutputStream, community: CommunityPart? = null, progress: (Float) -> Unit) = withContext(Dispatchers.IO) {
-        writeProjectPackage(scene, xml, out, access, { uri -> runCatching { context.contentResolver.openInputStream(Uri.parse(uri)) }.getOrNull() }, community) { ensureStorage(); progress(it) }
+    private suspend fun pack(scene: Scene, xml: String, out: OutputStream, community: CommunityPart?, effects: Map<String, ByteArray>, progress: (Float) -> Unit) = withContext(Dispatchers.IO) {
+        writeProjectPackage(scene, xml, out, access, { uri -> runCatching { context.contentResolver.openInputStream(Uri.parse(uri)) }.getOrNull() }, community, effects) { ensureStorage(); progress(it) }
     }
 
     private fun encode(pixels: ByteArray, width: Int, height: Int, settings: ExportSettings, reuse: Bitmap?, out: OutputStream) {
@@ -393,16 +436,18 @@ private fun app.absentmotion.model.XmlNode.effectIds(): Set<String> =
     (if (name == "effect") setOfNotNull(this["id"]) else emptySet()) + children.flatMap { it.effectIds() }
 
 internal suspend fun writeProjectPackage(scene: Scene, xml: String, out: OutputStream, access: MediaAccess, open: (String) -> InputStream?, progress: (Float) -> Unit) =
-    writeProjectPackage(scene, xml, out, access, open, null, progress)
+    writeProjectPackage(scene, xml, out, access, open, null, effects = emptyMap(), progress = progress)
 
 internal suspend fun writeProjectPackage(
-    scene: Scene, xml: String, out: OutputStream, access: MediaAccess, open: (String) -> InputStream?, community: CommunityPart?, progress: (Float) -> Unit,
+    scene: Scene, xml: String, out: OutputStream, access: MediaAccess, open: (String) -> InputStream?, community: CommunityPart?, effects: Map<String, ByteArray> = emptyMap(), progress: (Float) -> Unit,
 ) {
     val allowed = ImportLimits().unpacked - PACKAGE_MARGIN
-    if (scene.packageBytes() > allowed) throw ExportError(txt(R.string.export_package_too_large, (allowed shr 20).toString()))
+    val effectBytes = effects.values.sumOf { it.size.toLong() }
+    checkAddedEffectBundleSize(effectBytes)
+    if (scene.packageBytes() + effectBytes > allowed) throw ExportError(txt(R.string.export_package_too_large, (allowed shr 20).toString()))
     val uris = scene.node.storedMediaUris().toList()
     val limit = ImportLimits().entries
-    val entries = 2 + scene.packedFonts(access).size +
+    val entries = 2 + effects.size + scene.packedFonts(access).size +
         uris.sumOf { uri -> if (access.allows(uri)) modelFolder(uri)?.listFiles { f -> f.isFile }?.size ?: 1 else 0 }
     if (entries > limit) throw ExportError(txt(R.string.library_err_too_many_files, limit.toString()))
     val manifest = JSONObject().put("format", "absentmotion-package").put("version", 1)
@@ -465,6 +510,12 @@ internal suspend fun writeProjectPackage(
             }
             fonts.put(JSONObject().put("font", font).put("entry", entry))
         }
+        for ((entry, bytes) in effects) {
+            currentCoroutineContext().ensureActive()
+            zip.putNextEntry(ZipEntry(entry))
+            zip.write(bytes)
+            zip.closeEntry()
+        }
         if (community != null) {
             community.thumbnail?.let { zip.putNextEntry(ZipEntry(CommunityThumbnail)); zip.write(it); zip.closeEntry() }
             manifest.put("community", community.info)
@@ -472,6 +523,12 @@ internal suspend fun writeProjectPackage(
         zip.putNextEntry(ZipEntry("manifest.json")); zip.write(manifest.put("media", media).put("fonts", fonts).toString(1).toByteArray()); zip.closeEntry()
     }
     progress(1f)
+}
+
+private fun checkAddedEffectBundleSize(bytes: Long) {
+    if (bytes > AddedEffectBundleLimit) {
+        throw ExportError(txt(R.string.export_package_too_large, (AddedEffectBundleLimit shr 20).toString()))
+    }
 }
 
 private suspend fun InputStream.copyChunks(out: OutputStream, start: Long, copied: (Long) -> Unit): Long {

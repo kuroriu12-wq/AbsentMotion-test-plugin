@@ -258,14 +258,15 @@ JNIEXPORT void JNICALL JNI_FN(nativeSetAccurateBlur)(JNIEnv*, jclass, jlong engi
     engineOf(engine)->setAccurateBlur(on);
 }
 
-JNIEXPORT jboolean JNICALL JNI_FN(nativeFastCaptionCpu)(JNIEnv*, jclass) {
+JNIEXPORT jint JNICALL JNI_FN(nativeCaptionCpuLevel)(JNIEnv*, jclass) {
 #if defined(__aarch64__)
     const unsigned long need = HWCAP_ASIMDDP | HWCAP_ASIMDHP | HWCAP_FPHP | HWCAP_ATOMICS | HWCAP_ASIMDRDM | HWCAP_CRC32;
-    return (getauxval(AT_HWCAP) & need) == need;
+    if ((getauxval(AT_HWCAP) & need) != need) return 0;
+    return (getauxval(AT_HWCAP2) & HWCAP2_I8MM) ? 2 : 1;
 #elif defined(__x86_64__)
-    return __builtin_cpu_supports("avx2") && __builtin_cpu_supports("fma") && __builtin_cpu_supports("f16c");
+    return __builtin_cpu_supports("avx2") && __builtin_cpu_supports("fma") && __builtin_cpu_supports("f16c") ? 1 : 0;
 #else
-    return false;
+    return 0;
 #endif
 }
 
@@ -351,6 +352,18 @@ JNIEXPORT jfloatArray JNICALL JNI_FN(nativeLayerBounds)(JNIEnv* env, jclass, jlo
     return out;
 }
 
+JNIEXPORT jfloatArray JNICALL JNI_FN(nativeModelJoints)(JNIEnv* env, jclass, jlong engine, jlong layerId, jdouble timeMs) {
+    const std::vector<float> xy = engineOf(engine)->modelJoints(layerId, timeMs);
+    if (xy.empty()) return nullptr;
+    jfloatArray out = env->NewFloatArray((jsize)xy.size());
+    if (!out) {
+        env->ExceptionClear();
+        return nullptr;
+    }
+    env->SetFloatArrayRegion(out, 0, (jsize)xy.size(), xy.data());
+    return out;
+}
+
 JNIEXPORT jstring JNICALL JNI_FN(nativeLayerOutline)(JNIEnv* env, jclass, jlong engine, jlong layerId, jdouble timeMs) {
     std::string svg;
     if (!engineOf(engine)->layerOutline(layerId, timeMs, &svg)) return nullptr;
@@ -403,7 +416,8 @@ JNIEXPORT jbyteArray JNICALL JNI_FN(nativeShapeIcon)(JNIEnv* env, jclass, jlong 
 }
 
 JNIEXPORT jboolean JNICALL JNI_FN(nativeSetModel)(JNIEnv* env, jclass, jbyteArray uri, jfloatArray positions, jfloatArray normals,
-                                                 jfloatArray uvs, jintArray colors, jintArray triangles, jintArray slots, jboolean twoSided) {
+                                                 jfloatArray uvs, jintArray colors, jintArray triangles, jintArray slots, jboolean twoSided,
+                                                 jintArray parts, jintArray skinInts, jfloatArray skinFloats) {
     std::string key((size_t)env->GetArrayLength(uri), '\0');
     env->GetByteArrayRegion(uri, 0, (jsize)key.size(), reinterpret_cast<jbyte*>(key.data()));
     if (!positions) {
@@ -411,13 +425,13 @@ JNIEXPORT jboolean JNICALL JNI_FN(nativeSetModel)(JNIEnv* env, jclass, jbyteArra
         return true;
     }
     auto floats = [&](jfloatArray a) {
-        std::vector<float> v((size_t)env->GetArrayLength(a));
-        env->GetFloatArrayRegion(a, 0, (jsize)v.size(), v.data());
+        std::vector<float> v(a ? (size_t)env->GetArrayLength(a) : 0);
+        if (a) env->GetFloatArrayRegion(a, 0, (jsize)v.size(), v.data());
         return v;
     };
     auto ints = [&](jintArray a) {
-        std::vector<int> v((size_t)env->GetArrayLength(a));
-        env->GetIntArrayRegion(a, 0, (jsize)v.size(), v.data());
+        std::vector<int> v(a ? (size_t)env->GetArrayLength(a) : 0);
+        if (a) env->GetIntArrayRegion(a, 0, (jsize)v.size(), v.data());
         return v;
     };
     auto model = std::make_shared<am::Model>();
@@ -432,7 +446,8 @@ JNIEXPORT jboolean JNICALL JNI_FN(nativeSetModel)(JNIEnv* env, jclass, jbyteArra
     const size_t count = model->positions.size() / 3;
     const bool ok = model->positions.size() == count * 3 && model->normals.size() == count * 3 && model->uvs.size() == count * 2 &&
                     model->colors.size() == count && model->triangles.size() % 3 == 0 && model->slots.size() == model->triangles.size() / 3 &&
-                    std::all_of(model->triangles.begin(), model->triangles.end(), [&](int i) { return i >= 0 && (size_t)i < count; });
+                    std::all_of(model->triangles.begin(), model->triangles.end(), [&](int i) { return i >= 0 && (size_t)i < count; }) &&
+                    am::SetModelParts(model.get(), ints(parts), ints(skinInts), floats(skinFloats));
     if (ok) am::SetModel(key, std::move(model));
     return ok;
 }

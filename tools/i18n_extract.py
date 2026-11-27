@@ -30,7 +30,7 @@ REWRITE_IMPORTS = ['import androidx.compose.ui.res.stringResource', 'import app.
 FOLDERS = {'en': 'values', 'id': 'values-in', 'hi': 'values-hi', 'pt-BR': 'values-pt-rBR', 'es': 'values-es', 'fil': 'values-fil',
            'vi': 'values-vi', 'th': 'values-th', 'ms': 'values-ms', 'ar': 'values-ar', 'fa': 'values-fa', 'tr': 'values-tr', 'ru': 'values-ru', 'bn': 'values-bn',
            'es-ES': 'values-es-rES', 'ur': 'values-ur', 'ja': 'values-ja', 'ko': 'values-ko', 'zh-TW': 'values-zh-rTW', 'zh-CN': 'values-zh-rCN',
-           'fr': 'values-fr', 'de': 'values-de', 'it': 'values-it', 'pl': 'values-pl', 'uk': 'values-uk'}
+           'fr': 'values-fr', 'de': 'values-de', 'it': 'values-it', 'pl': 'values-pl', 'nl': 'values-nl', 'uk': 'values-uk'}
 JAVA_WORDS = {'new', 'default', 'switch', 'case', 'do', 'final', 'private', 'public', 'static', 'void', 'int', 'char', 'this', 'super', 'throw', 'goto', 'const', 'package', 'native', 'long', 'short', 'byte', 'float', 'double', 'boolean', 'catch', 'enum', 'extends', 'implements', 'interface', 'instanceof', 'protected', 'synchronized', 'throws', 'transient', 'volatile', 'abstract', 'strictfp', 'null', 'true', 'false'}
 PLACEHOLDER = re.compile(r'%%|%(\d+\$)?[sdf]')
 SEVERAL = {'values-fil': {'one'}, 'values-hi': {'one'}, 'values-pt-rBR': {'one'}, 'values-ru': {'one', 'few', 'many'}, 'values-fa': {'one'}, 'values-ar': {'few', 'many'}, 'values-bn': {'one'}, 'values-fr': {'one'}, 'values-pl': {'few', 'many'}, 'values-uk': {'one', 'few', 'many'}}
@@ -208,6 +208,7 @@ def scan_effects():
         if not isinstance(data, dict):
             continue
         rows = [{'line': 0, 'kind': 'effect.' + k, 'text': data[k], 'rewrite': False} for k in ('name', 'description') if isinstance(data.get(k), str)]
+        rows += [{'line': 0, 'kind': 'effect.alias', 'text': a, 'rewrite': False} for a in data.get('aliases') or [] if isinstance(a, str)]
         for p in data.get('params', []):
             if isinstance(p.get('label'), str):
                 rows.append({'line': 0, 'kind': 'param.label', 'text': p['label'], 'rewrite': False})

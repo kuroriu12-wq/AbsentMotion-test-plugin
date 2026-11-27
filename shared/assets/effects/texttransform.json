@@ -4,28 +4,24 @@
  "category": "text",
  "since": "3.0.0",
  "native": true,
- "description": "Moves, scales, turns, fades and tints letters, words or lines inside a range. Anchor sets whether scaling and rotation use each component or the center of the layer. Move the range with Offset to make the change travel through the text.",
+ "description": "Moves, scales, turns, fades and tints letters, words or lines inside a range. Anchor sets whether scaling and rotation use each component or the center of the layer. Move the range with Phase to make the change travel through the text.",
  "params": [
   {
-   "id": "unit",
-   "label": "Based On",
+   "id": "version",
+   "label": "Range",
    "type": "choice",
-   "default": 0,
+   "default": 1,
    "options": [
-    "Character",
-    "Word",
-    "Line"
-   ]
-  },
-  {
-   "id": "anchor",
-   "label": "Anchor",
-   "type": "choice",
-   "default": 0,
-   "options": [
-    "Component",
-    "Layer"
-   ]
+    "Legacy",
+    "Standard"
+   ],
+   "legacyDefault": 0,
+   "when": {
+    "version": [
+     0
+    ]
+   },
+   "section": "range"
   },
   {
    "id": "start",
@@ -35,7 +31,8 @@
    "min": 0,
    "max": 1,
    "step": 0.001,
-   "percent": true
+   "percent": true,
+   "section": "range"
   },
   {
    "id": "end",
@@ -45,31 +42,169 @@
    "min": 0,
    "max": 1,
    "step": 0.001,
-   "percent": true
+   "percent": true,
+   "section": "range"
   },
   {
    "id": "offset",
-   "label": "Offset",
+   "label": "Phase",
    "type": "float",
    "default": 0,
-   "min": -2,
+   "min": -1,
    "max": 2,
    "step": 0.001,
-   "percent": true
+   "percent": true,
+   "section": "range"
   },
   {
-   "id": "shape",
+   "id": "unit",
+   "label": "Component",
+   "type": "choice",
+   "default": 0,
+   "options": [
+    "Character",
+    "Word",
+    "Line",
+    "Contour"
+   ],
+   "section": "transform"
+  },
+  {
+   "id": "anchorTo",
+   "label": "Anchor",
+   "type": "choice",
+   "default": 1,
+   "options": [
+    "Layer",
+    "Component"
+   ],
+   "section": "transform"
+  },
+  {
+   "id": "position",
+   "label": "Offset",
+   "type": "point",
+   "default": [
+    0,
+    0
+   ],
+   "min": -4000,
+   "max": 4000,
+   "step": 1,
+   "pixels": true,
+   "section": "transform"
+  },
+  {
+   "id": "rotation",
+   "label": "Angle",
+   "type": "angle",
+   "default": 0,
+   "min": -3600,
+   "max": 3600,
+   "step": 0.1,
+   "section": "transform"
+  },
+  {
+   "id": "scaleBy",
+   "label": "Scale",
+   "type": "float",
+   "default": 0,
+   "min": -1,
+   "max": 10,
+   "step": 0.01,
+   "section": "transform"
+  },
+  {
+   "id": "stretch",
+   "label": "Stretch",
+   "type": "float",
+   "default": 0,
+   "min": -1,
+   "max": 10,
+   "step": 0.01,
+   "section": "transform"
+  },
+  {
+   "id": "alpha",
+   "label": "Alpha",
+   "type": "float",
+   "default": 0,
+   "min": -1,
+   "max": 1,
+   "step": 0.001,
+   "section": "transform"
+  },
+  {
+   "id": "tint",
+   "label": "Tint",
+   "type": "color",
+   "default": "#00ffffff",
+   "section": "visual"
+  },
+  {
+   "id": "easeIn",
+   "label": "Ease In",
+   "type": "float",
+   "default": 0,
+   "min": -1,
+   "max": 1,
+   "step": 0.01,
+   "percent": true,
+   "when": {
+    "version": [
+     1
+    ]
+   },
+   "section": "easing",
+   "slider": true
+  },
+  {
+   "id": "easeOut",
+   "label": "Ease Out",
+   "type": "float",
+   "default": 0,
+   "min": -1,
+   "max": 1,
+   "step": 0.01,
+   "percent": true,
+   "when": {
+    "version": [
+     1
+    ]
+   },
+   "section": "easing",
+   "slider": true
+  },
+  {
+   "id": "overlap",
+   "label": "Overlap",
+   "type": "float",
+   "default": 0,
+   "min": 0,
+   "max": 10,
+   "step": 0.01,
+   "percent": true,
+   "when": {
+    "version": [
+     1
+    ]
+   },
+   "section": "easing"
+  },
+  {
+   "id": "curve",
    "label": "Shape",
    "type": "choice",
    "default": 0,
    "options": [
     "Square",
+    "Smooth",
+    "Triangle",
     "Ramp Up",
     "Ramp Down",
-    "Triangle",
-    "Round",
-    "Smooth"
-   ]
+    "Round"
+   ],
+   "section": "easing"
   },
   {
    "id": "smoothness",
@@ -79,61 +214,16 @@
    "min": 0,
    "max": 1,
    "step": 0.001,
-   "percent": true
-  },
-  {
-   "id": "position",
-   "label": "Position",
-   "type": "point",
-   "default": [
-    0,
-    0
-   ],
-   "min": -4000,
-   "max": 4000,
-   "step": 0.1,
-   "pixels": true
-  },
-  {
-   "id": "scale",
-   "label": "Scale",
-   "type": "float",
-   "default": 1,
-   "min": 0,
-   "max": 10,
-   "step": 0.001,
-   "percent": true
-  },
-  {
-   "id": "rotation",
-   "label": "Rotation",
-   "type": "angle",
-   "default": 0,
-   "min": -3600,
-   "max": 3600,
-   "step": 0.1
-  },
-  {
-   "id": "opacity",
-   "label": "Opacity",
-   "type": "float",
-   "default": 1,
-   "min": 0,
-   "max": 1,
-   "step": 0.001,
-   "percent": true
-  },
-  {
-   "id": "tint",
-   "label": "Tint",
-   "type": "color",
-   "default": "#00ffffff"
+   "percent": true,
+   "section": "easing"
   },
   {
    "id": "randomOrder",
    "label": "Random Order",
    "type": "switch",
-   "default": false
+   "default": false,
+   "section": "random",
+   "header": true
   },
   {
    "id": "seed",
@@ -142,14 +232,30 @@
    "default": 1,
    "min": 0,
    "max": 1000,
-   "step": 1
+   "step": 1,
+   "section": "random"
+  },
+  {
+   "id": "style",
+   "label": "Style",
+   "type": "choice",
+   "default": 1,
+   "options": [
+    "Classic",
+    "Standard"
+   ],
+   "legacyDefault": 0,
+   "when": {
+    "style": [
+     0
+    ]
+   }
   }
  ],
  "presets": [
   {
    "name": "Wave",
    "params": {
-    "shape": 5,
     "start": 0,
     "end": 0.35,
     "position": [
@@ -159,34 +265,35 @@
     "offset": [
      [
       0,
-      -0.35
+      0.35
      ],
      [
       1.5,
-      1
+      -1
      ]
-    ]
+    ],
+    "curve": 1
    }
   },
   {
    "name": "Spin Cascade",
    "params": {
-    "shape": 1,
     "start": 0,
     "end": 0.3,
     "rotation": -180,
-    "scale": 0,
-    "opacity": 0,
     "offset": [
      [
       0,
-      -0.3
+      0.3
      ],
      [
       1.5,
-      1
+      -1
      ]
-    ]
+    ],
+    "curve": 3,
+    "scaleBy": -1,
+    "alpha": -1
    }
   }
  ]

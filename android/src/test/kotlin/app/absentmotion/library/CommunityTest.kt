@@ -1,6 +1,7 @@
 package app.absentmotion.library
 
 import app.absentmotion.editor.presetScene
+import app.absentmotion.effects.AddedEffectUse
 import app.absentmotion.model.Layer
 import app.absentmotion.model.Scene
 import app.absentmotion.model.XmlNode
@@ -16,6 +17,80 @@ class CommunityTest {
 
     private val shaA = "a".repeat(64)
     private val shaB = "0123456789abcdef".repeat(4)
+
+    @Test fun releaseAssetsAreOptionalPlainFileNames() {
+        fun item(field: String) = parseCommunityIndex("""
+            {"format":"absentmotion-community","version":2,"items":[
+            {"kind":"effect","name":"fun-pack","file":"effects/fun-pack/fun-pack.abmfx","bytes":42,"sha256":"$shaA"$field}
+            ]}
+        """.trimIndent(), 52).items.single()
+
+        fun withAsset(value: String) = item(",\"asset\":" + org.json.JSONObject.quote(value))
+        val release = withAsset("effect-fun-pack.abmfx")
+        assertEquals("effect-fun-pack.abmfx", release.asset)
+        assertEquals("https://github.com/Comett1225/AbsentMotion-Community/releases/download/items/effect-fun-pack.abmfx", communityDownloadUrl(release))
+        assertNotNull(withAsset("x".repeat(120)).asset)
+        val invalid = listOf("", "../asset", "a b", "a%2Fb", "..", "x".repeat(121)).map(::withAsset)
+        for (raw in invalid + listOf(item(""), item(",\"asset\":42"), item(",\"asset\":null"))) {
+            assertNull(raw.asset)
+            assertEquals(COMMUNITY_RAW + raw.file, communityDownloadUrl(raw))
+        }
+    }
+
+    @Test fun releaseDownloadsTrustOnlyTheUpdatersAssetHostsAfterRedirect() {
+        for (host in listOf("objects.githubusercontent.com", "release-assets.githubusercontent.com")) {
+            val target = URI("https://$host/asset?ticket=123")
+            assertTrue(CommunityReleaseSource.allows(target, first = false))
+            assertFalse(CommunityReleaseSource.allows(target, first = true))
+        }
+        assertFalse(CommunityReleaseSource.allows(URI("https://raw.githubusercontent.com/asset"), first = false))
+        assertFalse(CommunityReleaseSource.allows(URI("http://release-assets.githubusercontent.com/asset"), first = false))
+    }
+
+    @Test fun releaseCountsReadOnlyValidAssetNamesAndNonnegativeIntegers() {
+        val counts = parseCommunityDownloadCounts("""
+            {"assets":[
+              {"name":"effect-fun-pack.abmfx","download_count":1234},
+              {"name":"preset-zero.xml","download_count":0},
+              {"name":"bundle-large.absproj","download_count":2147483648},
+              {"name":"bundle-missing.absproj"},
+              {"name":"preset-negative.xml","download_count":-1},
+              {"name":"preset-decimal.xml","download_count":1.5},
+              {"name":"preset-string.xml","download_count":"50"},
+              {"name":"../item","download_count":1}
+            ]}
+        """.trimIndent())
+        assertEquals(mapOf("effect-fun-pack.abmfx" to 1234L, "preset-zero.xml" to 0L, "bundle-large.absproj" to 2147483648L), counts)
+    }
+
+    @Test fun releaseCountsCacheLastsAnHourInMemoryAndOnDisk() {
+        var now = 1000L
+        val file = File(tmp.root, "community/counts.json")
+        val cache = CommunityCountsCache(file) { now }
+        val fresh = mapOf("bundle-clip.absproj" to 5L)
+        assertEquals(fresh, cache.counts { fresh })
+        now += COMMUNITY_COUNTS_TTL_MS - 1
+        assertEquals(fresh, cache.counts { throw AssertionError("memory cache missed") })
+        assertEquals(fresh, CommunityCountsCache(file) { now }.counts { throw AssertionError("disk cache missed") })
+        now += 1
+        assertTrue(cache.counts { throw java.io.IOException() }.isEmpty())
+        assertTrue(CommunityCountsCache(file) { now }.counts { throw AssertionError("failure was not cached") }.isEmpty())
+        now += COMMUNITY_COUNTS_TTL_MS
+        val updated = mapOf("bundle-clip.absproj" to 8L)
+        assertEquals(updated, cache.counts { updated })
+    }
+
+    @Test fun aCountsFetchStoppedByLeavingTheTabIsNotCached() {
+        val file = File(tmp.root, "community/counts.json")
+        val cache = CommunityCountsCache(file) { 1000L }
+        assertTrue(cache.counts { throw java.io.InterruptedIOException("thread interrupted") }.isEmpty())
+        assertFalse(file.exists())
+        val fresh = mapOf("bundle-clip.absproj" to 5L)
+        assertEquals(fresh, cache.counts { fresh })
+        assertEquals(fresh, CommunityCountsCache(file) { 1000L }.counts { throw AssertionError("disk cache missed") })
+        assertTrue(CommunityCountsCache(File(tmp.root, "other.json")) { 1000L }.counts { throw java.net.SocketTimeoutException() }.isEmpty())
+        assertTrue(File(tmp.root, "other.json").exists())
+    }
 
     @Test fun parseCommunityIndexReadsValidItemsAndIgnoresUnknownKind() {
         val json = """
@@ -91,6 +166,77 @@ class CommunityTest {
         assertEquals(CommunityKind.Preset, preset.kind)
         assertEquals("pop-scale", preset.name)
         assertNull(preset.thumbnail)
+    }
+
+    @Test fun parseCommunityIndexReadsEffectsWithNoThumbnail() {
+        fun item(name: String, extension: String, bytes: Int) =
+            """{"kind":"effect","name":"$name","title":"Glow","creator":"Alice","description":"Soft colour","tags":["light"],"file":"effects/$name/item.$extension","bytes":$bytes,"sha256":"$shaA","added":"2026-04-03","thumbnail":"../ignored.webp"}"""
+        val entries = listOf(item("glow", "abmfx", 512 * 1024), item("light", "json", 230),
+            item("xml", "xml", 1024), item("large", "abmfx", 512 * 1024 + 1))
+        val items = parseCommunityIndex("""{"format":"absentmotion-community","version":2,"items":[${entries.joinToString()}]}""", 52).items
+        assertEquals(listOf("glow", "light"), items.map { it.name })
+        val effect = items.first()
+        assertEquals(CommunityKind.Effect, effect.kind)
+        assertEquals("Glow", effect.title)
+        assertEquals("Alice", effect.creator)
+        assertEquals("Soft colour", effect.description)
+        assertEquals(listOf("light"), effect.tags)
+        assertEquals("2026-04-03", effect.added)
+        assertEquals(shaA, effect.sha256)
+        assertNull(effect.thumbnail)
+    }
+
+    @Test fun parsesCreditAndUsableContentsAndPicksPacksForTheRequiredVersions() {
+        fun entry(id: String, version: String, name: String = "Colour") =
+            """{"id":"$id","name":"$name","version":$version}"""
+        fun pack(name: String, minVersion: Int, vararg entries: String) =
+            """{"kind":"effect","name":"$name","creator":"Alice","credit":"CC BY","file":"effects/$name/pack.abmfx","bytes":20,"sha256":"$shaA","minVersion":$minVersion,"contents":[${entries.joinToString()}]}"""
+        val packs = listOf(
+            pack("old-colour", 0, entry("alice.colour", "1")),
+            pack("both", 0, entry("alice.colour", "2"), entry("bob.glow", "1", "Glow"), entry("wrong", "2"), entry("alice.zero", "0")),
+            pack("without-contents", 0, entry("bob.glow", "1.5"), entry("bob.glow", "2", "")),
+            pack("future", 53, entry("alice.shadow", "1")),
+        )
+        val index = parseCommunityIndex("""{"format":"absentmotion-community","version":2,"items":[${packs.joinToString()}]}""", 52)
+        assertEquals(listOf("old-colour", "both", "without-contents"), index.items.map { it.name })
+        assertEquals("Alice", index.items[1].creator)
+        assertEquals("CC BY", index.items[1].credit)
+        assertEquals(listOf(CommunityEffectContent("alice.colour", "Colour", 2), CommunityEffectContent("bob.glow", "Glow", 1)), index.items[1].contents)
+        assertTrue(index.items.last().contents.isEmpty())
+        assertEquals("future", index.unavailableEffects.single().name)
+        val colour = AddedEffectUse("user.alice.colour", "Colour", 2, "old-colour")
+        val glow = AddedEffectUse("user.bob.glow", "Glow", 1, null)
+        val shadow = AddedEffectUse("user.alice.shadow", "Shadow", 1, null)
+        assertEquals(mapOf(index.items[1] to listOf(colour, glow)), index.effectPacks(listOf(colour, glow, shadow)))
+        assertTrue(index.effectPacks(listOf(colour.copy(version = 3))).isEmpty())
+    }
+
+    @Test fun effectThumbnailsMustSitInTheItemFolderWithTheRightKindAndSize() {
+        fun entry(thumbnail: Any, hero: Any) = org.json.JSONObject().put("id", "alice.glow").put("name", "Glow").put("version", 1)
+            .put("thumbnail", thumbnail).put("hero", hero).toString()
+        val folder = "effects/glow-pack/thumbs"
+        val entries = listOf(
+            entry("$folder/glow.webp", "$folder/glow.hero.webp"),
+            entry("effects/other/thumbs/glow.webp", "$folder/glow.png"),
+            entry("$folder/../glow.webp", 42),
+        )
+        val item = parseCommunityIndex("""{"format":"absentmotion-community","version":2,"items":[
+            {"kind":"effect","name":"glow-pack","file":"effects/glow-pack/glow-pack.abmfx","bytes":20,"sha256":"$shaA","contents":[${entries.joinToString()}]}]}""", 52).items.single()
+        assertEquals(CommunityEffectContent("alice.glow", "Glow", 1, "$folder/glow.webp", "$folder/glow.hero.webp"), item.contents[0])
+        assertEquals(listOf(null to null, null to null), item.contents.drop(1).map { it.thumbnail to it.hero })
+
+        val webp = "RIFF".toByteArray() + ByteArray(4) + "WEBPVP8X".toByteArray() + ByteArray(10)
+        val animated = webp.copyOf().also { it[20] = 2 }
+        val avif = ByteArray(3) + byteArrayOf(24) + "ftypavifmif1".toByteArray() + ByteArray(10)
+        assertTrue(communityEffectPicture(webp, hero = false))
+        assertTrue(communityEffectPicture(webp, hero = true))
+        assertTrue(communityEffectPicture(animated, hero = false))
+        assertFalse(communityEffectPicture(animated, hero = true))
+        assertFalse(communityEffectPicture(avif, hero = true))
+        assertFalse(communityEffectPicture(avif, hero = false))
+        assertTrue(communityEffectPicture(webp + ByteArray(EFFECT_PICTURE_MAX_BYTES.toInt() - webp.size), hero = false))
+        assertFalse(communityEffectPicture(webp + ByteArray(EFFECT_PICTURE_MAX_BYTES.toInt() - webp.size + 1), hero = false))
+        assertFalse(communityEffectPicture("RIFF".toByteArray(), hero = false))
     }
 
     @Test fun parseCommunityIndexSkipsBadItemsClipsTextAndFiltersMinVersion() {
@@ -364,6 +510,21 @@ class CommunityTest {
         val unknown = item("Unknown", added = "")
         val invalid = item("Invalid", added = "2026-02-30")
         assertEquals(listOf(newest, old, unknown, invalid), communityMatches(listOf(unknown, old, invalid, newest)))
+    }
+
+    @Test fun newGroupsItemsByDayInTheUsersTimeZoneNewestFirst() {
+        val late = item("Late", added = "2026-11-24T02:29:06Z")
+        val afternoon = item("Afternoon", added = "2026-11-23T20:00:00Z")
+        val early = item("Early", added = "2026-11-23T03:42:14Z")
+        val dateOnly = item("Date only", added = "2026-11-22")
+        val unknown = item("Unknown", added = "")
+        val all = listOf(unknown, dateOnly, early, afternoon, late)
+        val day = { d: Int -> java.time.LocalDate.of(2026, 11, d) }
+        assertEquals(listOf(day(24) to listOf(late), day(23) to listOf(afternoon, early), day(22) to listOf(dateOnly)),
+            communityDays(all, java.time.ZoneOffset.UTC))
+        assertEquals(listOf(day(23) to listOf(late, afternoon), day(22) to listOf(early, dateOnly)),
+            communityDays(all, java.time.ZoneId.of("America/New_York")))
+        assertTrue(communityDays(listOf(unknown), java.time.ZoneOffset.UTC).isEmpty())
     }
 
     @Test fun aToZUsesTheChosenLocale() {

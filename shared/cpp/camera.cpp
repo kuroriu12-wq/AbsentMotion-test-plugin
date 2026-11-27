@@ -268,13 +268,13 @@ bool CameraFrame(const std::vector<Layer>& layers, const Layer& camera, int widt
     return true;
 }
 
-bool SeenPlacement(const Layer& l, double timeMs, Placement* out) {
+bool SeenPlacement(const Layer& l, double timeMs, Placement* out, bool flat) {
     const Sight& s = l.sight;
     if (!s.layers) return false;
     Placement p = EffectivePlacement(*s.layers, *s.layer, timeMs);
     if (l.kind != "camera") {
         const View v = s.camera ? LayerView(*s.layers, *s.camera, s.width, s.height, timeMs, s.depthOrder) : DefaultView(s.width, s.height);
-        if (l.projected) {
+        if (l.projected && !flat) {
             p.space = Space(v, p);
             p.turn = v.tilt * SkM44::Rotate({0, 0, 1}, (p.rotation - v.rotation) * 3.14159265f / 180) * p.tilt;
         } else {
@@ -545,6 +545,18 @@ bool SeeLayers(const std::vector<Layer>& layers, int width, int height, bool top
         }
     }
     return true;
+}
+
+Layer Sighted(const std::vector<Layer>& layers, const Layer& l, int width, int height, double timeMs, bool depthOrder) {
+    Layer copy = l;
+    const Layer* camera = gCameraView ? ActiveCamera(layers, timeMs) : nullptr;
+    const Placement p = EffectivePlacement(layers, l, timeMs);
+    const View now = camera ? LayerView(layers, *camera, width, height, timeMs, depthOrder) : DefaultView(width, height);
+    copy.parent = 0;
+    copy.placed = true;
+    copy.sight = {&layers, &l, camera, width, height, depthOrder};
+    copy.projected = Solid(l, p) || (camera && now.tilt != SkM44() && Spatial(l, p, timeMs));
+    return copy;
 }
 
 }

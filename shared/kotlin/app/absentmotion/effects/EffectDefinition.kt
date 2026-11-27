@@ -27,9 +27,18 @@ data class EffectParam(
     val showWhen: Pair<String, Set<Int>>? = null,
     val palette: Boolean = false,
     val slow: Int = 1,
+    val section: String? = null,
+    val header: Boolean = false,
+    val slider: Pair<Float, Float>? = null,
+    val drag: Float = 0f,
 ) {
     val type: String get() = when (kind) { "point" -> "vec2"; "color" -> "color"; "switch" -> "bool"; "text" -> "string"; else -> "float" }
     val missingDefault: String get() = legacyDefault ?: default
+    val rulerStep: Float get() = when {
+        drag > 0f -> drag
+        kind == "angle" -> maxOf(step, 1f)
+        else -> step / slow
+    }
 
     fun format(value: Any?): String = format(id, kind, value)
 
@@ -57,16 +66,23 @@ data class EffectParam(
             val showWhen = json.optJSONObject("when")?.let { o ->
                 o.keys().asSequence().firstOrNull()?.let { key -> key to o.getJSONArray(key).let { a -> List(a.length()) { a.getInt(it) }.toSet() } }
             }
+            val section = json.optString("section").takeIf { it.isNotBlank() }
+            val header = json.optBoolean("header") && kind == "switch" && section != null
             if (kind == "choice") {
                 val options = json.getJSONArray("options").let { a -> List(a.length()) { a.getString(it) } }
                 require(options.isNotEmpty() && (d as Number).toInt() in options.indices) { "$id: choice $d" }
-                return EffectParam(id, json.optString("label", id), kind, default, 0f, options.size - 1f, 1f, options = options, legacyDefault = legacyDefault, showWhen = showWhen)
+                return EffectParam(id, json.optString("label", id), kind, default, 0f, options.size - 1f, 1f, options = options, legacyDefault = legacyDefault, showWhen = showWhen, section = section)
             }
-            return EffectParam(id, json.optString("label", id), kind, default,
-                json.optDouble("min", -Float.MAX_VALUE.toDouble()).toFloat(), json.optDouble("max", Float.MAX_VALUE.toDouble()).toFloat(),
+            val min = json.optDouble("min", -Float.MAX_VALUE.toDouble()).toFloat()
+            val max = json.optDouble("max", Float.MAX_VALUE.toDouble()).toFloat()
+            val s = json.opt("slider")
+            val slider = (if (s is JSONArray) s.optDouble(0, Double.NaN).toFloat() to s.optDouble(1, Double.NaN).toFloat() else if (s == true) min to max else null)
+                ?.takeIf { (lo, hi) -> (kind == "float" || kind == "angle") && lo > -Float.MAX_VALUE / 2 && hi < Float.MAX_VALUE / 2 && lo < hi }
+            return EffectParam(id, json.optString("label", id), kind, default, min, max,
                 json.optDouble("step", 0.01).toFloat(), percent = json.optBoolean("percent"), pixels = json.optBoolean("pixels"), unit = json.optString("unit"),
                 layerTime = json.optBoolean("layerTime"), after = json.optString("after").takeIf { it.isNotEmpty() }, legacyDefault = legacyDefault,
-                showWhen = showWhen, palette = palette, slow = json.optInt("slow", 1).coerceIn(1, 20))
+                showWhen = showWhen, palette = palette, slow = json.optInt("slow", 1).coerceIn(1, 20), section = section, header = header, slider = slider,
+                drag = json.optDouble("drag", 0.0).toFloat().takeIf { it.isFinite() && it > 0f } ?: 0f)
         }
     }
 }
@@ -82,7 +98,7 @@ data class EffectDefinition(
     val id: String,
     val key: String,
     val name: String,
-    val category: String,
+    val category: String?,
     val description: String,
     val params: List<EffectParam>,
     val sksl: String? = null,
@@ -95,13 +111,22 @@ data class EffectDefinition(
     val shortcut: String? = null,
     val alsoIn: List<String> = emptyList(),
     val plugin: String? = null,
+    val aliases: List<String> = emptyList(),
+    val addedPicture: String? = null,
+    val addedHero: String? = null,
+    internal val addedAuthor: String = "",
+    internal val addedCreator: String = "",
+    internal val addedVersion: Long = 1L,
+    internal val addedPack: String? = null,
+    internal val addedModified: Long = 0L,
 ) {
     val available: Boolean get() = status == "ok"
-    val thumbnail: String get() = "thumb/${shortcut ?: key}.webp"
-    val hero: String get() = "thumb/${shortcut ?: key}.hero.avif"
+    val isAdded: Boolean get() = id.startsWith(AddedEffectPrefix)
+    val thumbnail: String get() = if (isAdded) addedPicture ?: "added/$key.webp" else "thumb/${shortcut ?: key}.webp"
+    val hero: String get() = if (isAdded) addedHero ?: thumbnail else "thumb/${shortcut ?: key}.hero.avif"
 
     fun shortcutTiles(): List<EffectDefinition> = shortcuts.map { s ->
-        copy(name = s.name, description = s.description, since = s.since ?: since, shortcut = s.key, shortcuts = emptyList(), alsoIn = s.also)
+        copy(name = s.name, description = s.description, since = s.since ?: since, shortcut = s.key, shortcuts = emptyList(), alsoIn = s.also, aliases = emptyList())
     }
 
     fun thumbnail(preset: EffectPreset): String = "thumb/$key.${preset.slug}.webp"
@@ -124,9 +149,20 @@ data class EffectDefinition(
         })
     }
 
-    fun instance(): XmlNode = XmlNode("effect", mapOf("id" to id, "hidden" to "false"), params.map {
-        XmlNode("property", mapOf("name" to it.id, "type" to it.type, "value" to it.default))
-    })
+    fun instance(): XmlNode {
+        val attrs = buildMap {
+            put("id", id)
+            put("hidden", "false")
+            if (isAdded) {
+                put("name", name)
+                put("version", addedVersion.toString())
+                addedPack?.let { put("pack", it) }
+            }
+        }
+        return XmlNode("effect", attrs, params.map {
+            XmlNode("property", mapOf("name" to it.id, "type" to it.type, "value" to it.default))
+        })
+    }
 
     fun bounded(param: EffectParam, seconds: Float, value: (EffectParam) -> Float): EffectParam {
         if (!param.layerTime && param.after == null) return param
@@ -147,9 +183,13 @@ data class EffectDefinition(
 
     companion object {
         fun parse(json: JSONObject): EffectDefinition {
-            val key = json.getString("id")
             val category = json.getString("category")
-            require(category in EffectCatalog.Categories) { "$key: unknown category $category" }
+            require(category in EffectCatalog.Categories) { "${json.getString("id")}: unknown category $category" }
+            return parse(json, category)
+        }
+
+        internal fun parse(json: JSONObject, category: String?): EffectDefinition {
+            val key = json.getString("id")
             val params = json.optJSONArray("params") ?: JSONArray()
             val native = json.optBoolean("native")
             val sksl = json.optString("sksl").takeIf { it.isNotBlank() }
@@ -158,10 +198,13 @@ data class EffectDefinition(
             parsed.forEachIndexed { i, p -> require(p.after == null || parsed.take(i).any { it.id == p.after }) { "$key.${p.id}: after ${p.after} is not an earlier parameter" } }
             val presets = json.optJSONArray("presets") ?: JSONArray()
             val shortcuts = json.optJSONArray("shortcuts") ?: JSONArray()
+            val aliases = json.optJSONArray("aliases") ?: JSONArray()
             return EffectDefinition("absent.$key", key, json.optString("name", key), category, json.optString("description"),
                 parsed, if (native) null else sksl, native, since = json.optString("since").takeIf { it.isNotBlank() },
                 presets = List(presets.length()) { preset(key, parsed, presets.getJSONObject(it)) },
                 page = json.optString("name", key).lowercase(Locale.US).replace(Regex("[^a-z0-9]"), ""),
+                aliases = List(aliases.length()) { aliases.optString(it) }.filter { it.isNotBlank() },
+                alsoIn = (json.optJSONArray("also") ?: JSONArray()).let { a -> List(a.length()) { a.getString(it) } }.onEach { require(it in EffectCatalog.Categories && it != category) { "$key: unknown also category $it" } },
                 shortcuts = List(shortcuts.length()) { i ->
                     shortcuts.getJSONObject(i).let { s ->
                         val also = s.optJSONArray("also") ?: JSONArray()
