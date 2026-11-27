@@ -1,5 +1,7 @@
 package app.absentmotion.desk
 
+import app.absentmotion.ui.home.DeviceSend
+import app.absentmotion.ui.home.DeviceSendHost
 import app.absentmotion.ui.home.FfampOffer
 import app.absentmotion.ui.home.FfampOfferDialog
 import android.content.Desk
@@ -54,13 +56,12 @@ import app.absentmotion.R
 import app.absentmotion.compat.EffectMigration
 import app.absentmotion.compat.oldAlightImport
 import app.absentmotion.compat.withReimportTipShown
+import app.absentmotion.effects.readAddedEffectUri
 import app.absentmotion.editor.EditorState
 import app.absentmotion.editor.ElementNav
 import app.absentmotion.editor.MultiSelect
 import app.absentmotion.editor.PreviewCache
 import app.absentmotion.engine.EngineThread
-import app.absentmotion.fonts.FontName
-import app.absentmotion.model.fontNames
 import app.absentmotion.i18n.Ltr
 import app.absentmotion.export.DeskExports
 import app.absentmotion.export.ExportRun
@@ -84,6 +85,8 @@ import app.absentmotion.library.TemplateStore
 import app.absentmotion.model.Scene
 import app.absentmotion.model.ShapeCatalog
 import app.absentmotion.ui.editor.DeskTopBar
+import app.absentmotion.ui.editor.effects.AddedEffectDialogs
+import app.absentmotion.ui.editor.effects.AddedEffectImport
 import app.absentmotion.ui.editor.EditorScreen
 import app.absentmotion.ui.editor.LocalWide
 import app.absentmotion.ui.editor.MediaPicks
@@ -103,6 +106,10 @@ import app.absentmotion.ui.home.DeskSettings
 import app.absentmotion.ui.home.SettingsPage
 import app.absentmotion.ui.home.UpdateDialog
 import app.absentmotion.ui.home.OpeningOverlay
+import app.absentmotion.library.ProjectLinkImportFailure
+import app.absentmotion.ui.home.LocalImportLink
+import app.absentmotion.library.stoppableImport
+import app.absentmotion.ui.home.ProjectLinkDialog
 import app.absentmotion.ui.home.Updates
 import app.absentmotion.ui.home.OpenFailedDialog
 import app.absentmotion.ui.home.TemplateEditor
@@ -110,6 +117,8 @@ import app.absentmotion.ui.home.VersionHistory
 import app.absentmotion.ui.theme.Am
 import app.absentmotion.ui.theme.PressIndication
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.job
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.sync.Mutex
@@ -134,6 +143,7 @@ class DeskAppState {
     val templates = TemplateStore(context)
     val recovery = Recovery(File(context.filesDir, "recovery"))
     val engine by lazy { EngineThread(background = Am.PreviewBg.toArgb(), context = context) { false } }
+    internal val addedEffects = AddedEffectImport(context) { engine }
     var editor by mutableStateOf<EditorState?>(null)
     var exportingFromList by mutableStateOf<Scene?>(null)
     var imported by mutableStateOf<List<ImportReport>>(emptyList())
@@ -141,6 +151,7 @@ class DeskAppState {
     var opening by mutableStateOf(false)
     var openFailed by mutableStateOf<String?>(null)
     var importFailed by mutableStateOf<String?>(null)
+    var importLinkOpen by mutableStateOf(false)
     var historyFor by mutableStateOf<Triple<String, String, Boolean>?>(null)
     var projectsChanged by mutableIntStateOf(0)
     var recovered by mutableStateOf<RecoveryOffer?>(null)
@@ -149,14 +160,12 @@ class DeskAppState {
     var newProjectTick by mutableIntStateOf(0)
     val canStartProject: Boolean get() = editor == null && editingTemplate == null && exportingFromList == null && DeskModals.open == 0
     var saveFailed by mutableStateOf(false)
-    var fontOffer by mutableStateOf<Pair<EditorState, List<String>>?>(null)
     var afterClose: (() -> Unit)? = null
     var hidden by mutableStateOf(false)
     var quitAsk by mutableStateOf(false)
     var quitNow: (() -> Unit)? = null
     var job: Job? = null
     private var closeAnyway = false
-    private val fontsDeclined = HashSet<String>()
     private val closeLock = Mutex()
     private val openLock = Mutex()
     private val background = MainScope()
@@ -189,7 +198,7 @@ class DeskAppState {
     suspend fun maintainNow() {
         autoBackupIfDue(context, settings)
         sweepStorageDaily(context)
-        withContext(Dispatchers.IO) { runCatching { sweepStaleTemps(context.filesDir, context.cacheDir) }; runCatching { app.absentmotion.export.MediaStoreExport(context).discardAbandoned() } }
+        withContext(Dispatchers.IO) { runCatching { sweepStaleTemps(context.filesDir, context.cacheDir) }; runCatching { app.absentmotion.export.MediaStoreExport(context).discardAbandoned() }; runCatching { app.absentmotion.ai.AiModel.dropReplaced(context) } }
     }
 
     suspend fun maintain() {
@@ -260,30 +269,15 @@ class DeskAppState {
 
     suspend fun openNow(id: String): EditorState? {
         val scene = load(id) ?: return null
+        addedEffects.confirmMissing(scene, id)
         val saver = ProjectSaver(id, store, recovery, failed = { javax.swing.SwingUtilities.invokeLater { toast(R.string.home_save_project_failed) } })
-        return EditorState(id, scene, store, engine, settings, saver).also { DeskLibrary.open(id, it.scene.media.map { m -> m.uri }); editor = it; offerFonts(it) }
+        return EditorState(id, scene, store, engine, settings, saver).also { DeskLibrary.open(id, it.scene.media.map { m -> m.uri }); editor = it; installFonts(it) }
     }
 
-    private fun offerFonts(state: EditorState) {
+    private fun installFonts(state: EditorState) {
         val library = engine.fonts ?: return
-        if (System.getProperty("am.fontOffer") == "off" || state.projectId in fontsDeclined) return
-        background.launch {
-            val missing = withContext(Dispatchers.IO) { state.project.fontNames().filter { FontName.parse(it).source == "googlefonts" && library.localFile(it) == null } }
-            if (missing.isNotEmpty() && editor === state) fontOffer = state to missing
-        }
-    }
-
-    fun declineFonts(state: EditorState) {
-        fontsDeclined += state.projectId
-        fontOffer = null
-    }
-
-    fun downloadFonts(names: List<String>) {
-        fontOffer = null
-        val library = engine.fonts ?: return
-        background.launch {
-            if (names.count { library.resolve(it, download = true) == null } > 0) toast(R.string.font_load_failed_body)
-        }
+        if (System.getProperty("am.fontOffer") == "off") return
+        background.launch { library.fetchMissing(state.project) { delay(60_000); editor === state } }
     }
 
     fun closeAnyway() { saveFailed = false; closeAnyway = true; closeSoon() }
@@ -393,36 +387,54 @@ class DeskAppState {
         openNow(id)
     }
 
-    suspend fun importFiles(uris: List<Uri>): List<ImportReport> {
+    suspend fun importFiles(uris: List<Uri>, asProjects: Boolean = false, fromLink: Boolean = false, quiet: Boolean = false): List<ImportReport> {
+        val projects = if (quiet) uris else takeEffectFiles(uris)
+        if (projects.isEmpty()) return emptyList()
         val reports = ArrayList<ImportReport>()
         var presetsAdded = 0
-        opening = true
+        var failure: String? = null
+        if (!quiet) opening = true
         try {
             withContext(Dispatchers.IO) {
+                val job = coroutineContext.job
                 val importer = Importer.forApp(context, store)
                 val presets = app.absentmotion.library.PresetStore(context)
-                for (uri in uris) try {
+                for (uri in projects) try {
                     val xfl = DeskOpen.xflZip(uri)
                     try {
-                        reports += importer.import { xfl?.inputStream() ?: context.contentResolver.openInputStream(uri) }.mapNotNull {
+                        val items = importer.import { (xfl?.inputStream() ?: context.contentResolver.openInputStream(uri))?.stoppableImport(job) }
+                        withContext(Dispatchers.Main) { addedEffects.confirmImported(items, store) }
+                        reports += items.map { it.copy(bundledEffects = emptyMap()) }.mapNotNull {
                             if (it.community?.preset == true && presets.adopt(store, it.id, templates::localize) != null) null.also { presetsAdded++ }
-                            else if (!it.template) it else templates.adopt(store, it.id, engine)?.let { id -> it.copy(id = id) } ?: it.copy(template = false)
+                            else if (!it.template) it else if (asProjects) it.copy(template = false) else templates.adopt(store, it.id, engine)?.let { id -> it.copy(id = id) } ?: it.copy(template = false)
                         }
                     } finally {
                         xfl?.delete()
                     }
                 } catch (e: kotlinx.coroutines.CancellationException) { throw e }
-                catch (e: Exception) { importFailed = (e as? app.absentmotion.library.ImportFailed)?.text?.resolve(context) ?: e.message ?: context.getString(R.string.library_err_unsupported_type) }
+                catch (e: Exception) {
+                    val reason = (e as? app.absentmotion.library.ImportFailed)?.text?.resolve(context) ?: e.message ?: context.getString(R.string.library_err_unsupported_type)
+                    if (fromLink || quiet) failure = failure ?: reason else importFailed = reason
+                }
             }
-        } finally { opening = false; projectsChanged++ }
+        } finally { if (!quiet) opening = false; projectsChanged++ }
         if (presetsAdded > 0) Toast.makeText(context, context.getString(R.string.community_added_preset), Toast.LENGTH_SHORT).show()
-        if (reports.isNotEmpty()) imported = reports
+        if (reports.isNotEmpty() && !quiet) imported = if (fromLink) imported + reports else reports
         for (report in reports) if (!report.template) {
-            val scene = withContext(Dispatchers.IO) { store.load(report.id) } ?: continue
+            val scene = withContext(Dispatchers.IO) { store.load(report.id)?.also { engine.fonts?.fetchMissing(it) } } ?: continue
             saveThumbnail(scene, scene.totalTime / 2, report.id)
         }
         projectsChanged++
+        failure?.let { throw ProjectLinkImportFailure(it) }
         return reports
+    }
+
+    internal suspend fun takeEffectFiles(uris: List<Uri>): List<Uri> {
+        val (effects, remaining) = withContext(Dispatchers.IO) {
+            uris.map { uri -> uri to readAddedEffectUri(context, uri) }.partition { it.second != null }
+        }
+        addedEffects.present(effects.mapNotNull { it.second })
+        return remaining.map { it.first }
     }
 
     suspend fun projectFromTemplate(scene: Scene) {
@@ -488,6 +500,11 @@ private fun DeskContent(app: DeskAppState, scale: Float) {
     }
     LaunchedEffect(Unit) { if (app.settings.autoUpdateCheck) Updates.atStart(app.context, app.settings) }
     LaunchedEffect(Unit) { app.startup() }
+    LaunchedEffect(Unit) {
+        DeviceSend.importer = { file -> app.importFiles(listOf(Uri.fromFile(file)), quiet = true) }
+        DeviceSend.opener = { id -> scope.launch { app.openNow(id) } }
+        DeviceSend.changed = { app.projectsChanged++ }
+    }
     LaunchedEffect(Unit) { DeskPreload.run(app) }
     LaunchedEffect(Unit) { app.maintain() }
     LaunchedEffect(DeskOpen.arrived.intValue) {
@@ -541,10 +558,11 @@ private fun DeskContent(app: DeskAppState, scale: Float) {
                 Box(Modifier.fillMaxSize()) {
                     DeskHome(
                         app.store, app.settings, onOpen = { id -> run { app.openNow(id) } }, onExport = { id -> run { app.exportingFromList = app.load(id) } },
-                        imported = app.imported, onImportShown = { app.imported = emptyList() }, onImportFiles = { uris -> run { app.importFiles(uris) } },
+                        imported = if (app.importLinkOpen) emptyList() else app.imported, onImportShown = { app.imported = emptyList() }, onImportFiles = { uris -> run { app.importFiles(uris) } },
                         onTemplate = { id -> app.editingTemplate = id }, onTemplateProject = { scene -> run { app.projectFromTemplate(scene) } },
                         onHistory = { app.historyFor = Triple(it.id, it.title, it.damaged) }, onSettings = { app.openSettings() }, changes = app.projectsChanged,
                         newTick = app.newProjectTick, onCollect = { id -> scope.launch { app.collectMedia(id) } }, engine = { app.engine },
+                        onImportLink = { if (!app.opening) app.importLinkOpen = true },
                     )
                     app.editingTemplate?.let { id ->
                         TemplateEditor(id, app.engine, app.settings, onClose = { app.editingTemplate = null }, onContinue = { scene -> run { app.projectFromTemplate(scene) } })
@@ -555,12 +573,20 @@ private fun DeskContent(app: DeskAppState, scale: Float) {
             } else {
                 Box(Modifier.fillMaxSize().enterZoom()) {
                     CompositionLocalProvider(LocalDensity provides Density(density.density, density.fontScale.coerceAtMost(1.3f))) {
-                        key(open) { Ltr { EditorScreen(open, onExit = { scope.launch { app.closeEditor() } }) } }
+                        key(open) { Ltr { CompositionLocalProvider(LocalImportLink provides { if (!app.opening) app.importLinkOpen = true }) { EditorScreen(open, onExit = { scope.launch { app.closeEditor() } }) } } }
                     }
                     if (open.exportOpen) ExportScreen(open.project, open.exportFrame, app.engine, app.settings, fromProjectList = false, null) { open.exportOpen = false }
                 }
             }
-            if (app.opening) OpeningOverlay { app.job?.cancel() }
+            if (app.opening && !app.addedEffects.handlingProject) OpeningOverlay { app.job?.cancel() }
+            AddedEffectDialogs(app.addedEffects)
+            if (app.importLinkOpen) {
+                ProjectLinkDialog({ app.importLinkOpen = false }) { uri, alightShare ->
+                    app.job = currentCoroutineContext().job
+                    app.importFiles(listOf(uri), asProjects = alightShare, fromLink = true)
+                }
+            }
+            DeviceSendHost()
             app.openFailed?.let { id -> OpenFailedDialog({ app.openFailed = null; app.historyFor = Triple(id, "", false) }, null) { app.openFailed = null } }
             app.importFailed?.let { reason -> DeskMessage(stringResource(R.string.home_import_failed, reason)) { app.importFailed = null } }
             if (open?.historyOpen == true) VersionHistory(app.store, open.projectId, open.project.title, app.engine, onRestore = { v -> scope.launch { app.restoreVersion(open.projectId, v) } }, editor = true) { open.historyOpen = false }
@@ -580,7 +606,6 @@ private fun DeskContent(app: DeskAppState, scale: Float) {
                 homeFree = open == null && first == null && !app.opening && app.editingTemplate == null && app.exportingFromList == null && PresetSharing.preset == null && app.recovered == null && app.imported.isEmpty() && !app.settingsOpen && Updates.answer == null && whatsNew == null && !FfampOffer.pending(app.settings),
                 onOpen = { id -> run { app.openNow(id) } }, onCloseEditor = { scope.launch { app.closeEditor() } }, onChanged = { app.projectsChanged++ },
             )
-            app.fontOffer?.takeIf { it.first === open }?.let { (state, names) -> DeskFontOffer(names, { app.downloadFonts(names) }) { app.declineFonts(state) } }
             if (app.saveFailed && open != null) DeskSaveFailed(app)
             if (app.quitAsk) DeskQuitAsk(app)
             UpdateDialog(app::requestQuit)
@@ -639,12 +664,19 @@ private class DeskDrop(private val app: DeskAppState, private val run: (suspend 
         if (dropped.isEmpty()) return false
         val files = app.takePalettes(dropped)
         if (files.isEmpty()) return true
-        DeskLibrary.remember(files)
-        val uris = files.map(Uri::fromFile)
-        if (app.editor == null) { run { if (files.all(DeskOpen::isProject)) app.importFiles(uris) else app.openFiles(files) }; return true }
-        val (projects, media) = files.partition(DeskOpen::isProject)
-        if (projects.isNotEmpty()) run { app.importFiles(projects.map(Uri::fromFile)) }
-        if (media.isNotEmpty()) app.queueMedia(media.map(Uri::fromFile))
+        run {
+            val remaining = app.takeEffectFiles(files.map(Uri::fromFile)).toSet()
+            val regular = files.filter { Uri.fromFile(it) in remaining }
+            if (regular.isEmpty()) return@run
+            DeskLibrary.remember(regular)
+            if (app.editor == null) {
+                if (regular.all(DeskOpen::isProject)) app.importFiles(regular.map(Uri::fromFile)) else app.openFiles(regular)
+            } else {
+                val (projects, media) = regular.partition(DeskOpen::isProject)
+                if (projects.isNotEmpty()) app.importFiles(projects.map(Uri::fromFile))
+                if (media.isNotEmpty()) app.queueMedia(media.map(Uri::fromFile))
+            }
+        }
         return true
     }
 }

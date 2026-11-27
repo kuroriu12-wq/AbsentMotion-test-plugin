@@ -3,6 +3,7 @@ package app.absentmotion.ui.editor
 import app.absentmotion.platform.readAtMost
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.foundation.layout.Arrangement
@@ -26,7 +27,6 @@ import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.Icon
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -40,6 +40,8 @@ import app.absentmotion.model.canSplitAt
 import app.absentmotion.model.trimEndAt
 import app.absentmotion.model.trimStartAt
 import app.absentmotion.editor.trimChosen
+import app.absentmotion.editor.endChosenAtPlayhead
+import app.absentmotion.editor.endShifts
 import app.absentmotion.model.cutBetween
 import app.absentmotion.model.shownName
 import androidx.compose.runtime.Composable
@@ -52,6 +54,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Popup
@@ -61,6 +65,7 @@ import app.absentmotion.editor.EffectClipboard
 import app.absentmotion.editor.pasteEffectsOnChosen
 import app.absentmotion.editor.MultiSelect
 import app.absentmotion.editor.StylePart
+import app.absentmotion.editor.PastedStyle
 import app.absentmotion.editor.copiedLayerForStyle
 import app.absentmotion.editor.pasteStyleOnChosen
 import app.absentmotion.editor.removeAudioOfChosen
@@ -116,6 +121,7 @@ import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import app.absentmotion.ui.HoldName
+import app.absentmotion.ui.home.DialogPill
 
 private val ItemShape = RoundedCornerShape(4.dp)
 
@@ -153,13 +159,13 @@ internal fun rememberObjectImport(state: EditorState): ObjectImport {
         AlertDialog(
             onDismissRequest = { asking = null }, title = { Text(stringResource(R.string.model_detail_ask_title)) },
             text = { Text(stringResource(R.string.model_detail_ask_body, triangles(count), triangles(MODEL_TRIANGLE_BUDGET), triangles(MODEL_HIGH_DETAIL_BUDGET))) },
-            dismissButton = { TextButton({ asking = null }) { Text(stringResource(R.string.model_detail_keep, triangles(MODEL_TRIANGLE_BUDGET)), color = Am.Accent) } },
+            dismissButton = { DialogPill(stringResource(R.string.model_detail_keep, triangles(MODEL_TRIANGLE_BUDGET)), primary = false, editor = true) { asking = null } },
             confirmButton = {
-                TextButton({
+                DialogPill(stringResource(R.string.model_detail_allow, triangles(MODEL_HIGH_DETAIL_BUDGET))) {
                     asking = null
                     state.settings.highDetailModels = true
                     if (count > MODEL_HIGH_DETAIL_BUDGET) Toast.makeText(context, simplified, Toast.LENGTH_LONG).show()
-                }) { Text(stringResource(R.string.model_detail_allow, triangles(MODEL_HIGH_DETAIL_BUDGET)), color = Am.Accent) }
+                }
             },
             containerColor = Am.Field, titleContentColor = Am.OnDark, textContentColor = Am.OnDark,
         )
@@ -272,8 +278,14 @@ private suspend fun importModel(context: Context, state: EditorState, picked: Li
             }
             val uri = File(folder, names[main]).toURI().toString()
             val (bytes, open) = modelFiles(resolver, uri)
-            val count = parseModel(names[main], bytes, open).triangleCount
-            withContext(Dispatchers.Main) { state.addModel(uri, names[main]); added = true }
+            val mesh = parseModel(names[main], bytes, open)
+            val count = mesh.triangleCount
+            val unpicked = mesh.materials.any { it.picture != null && !it.embedded && !it.found }
+            withContext(Dispatchers.Main) {
+                state.addModel(uri, names[main])
+                added = true
+                if (unpicked) state.panel = app.absentmotion.editor.EditorPanel.Textures
+            }
             val budget = ModelDetail.budget.value
             (if (count > budget) context.getString(R.string.model_simplified, "$count", "$budget") else null) to count
         } catch (e: kotlinx.coroutines.CancellationException) {
@@ -304,6 +316,8 @@ internal fun MultiBar(state: EditorState, modifier: Modifier) {
     var animation by remember { mutableStateOf<Set<Long>?>(null) }
     transition?.let { TransitionSheet(state, it) { transition = null } }
     animation?.let { AnimationSheet(state, it) { animation = null } }
+    var pluginsOpen by remember { mutableStateOf(false) }
+    if (pluginsOpen) app.absentmotion.ui.editor.panels.PluginRecipeDialog(state) { pluginsOpen = false }
     BoxWithConstraints(modifier.padding(6.dp)) {
     val cell = minOf(40.dp, maxWidth / 8.7f)
     Row(Modifier.fillMaxSize().clip(RoundedCornerShape(3.dp)).background(Am.PanelInset), verticalAlignment = Alignment.CenterVertically) {
@@ -340,6 +354,11 @@ internal fun MultiBar(state: EditorState, modifier: Modifier) {
                         state.playing = false
                         state.presetsOpen = true
                     }
+                    if (remember { app.absentmotion.plugins.hasTools(app.absentmotion.plugins.PluginStore(context)) }) MenuRow(stringResource(R.string.effects_plugin_recipes)) {
+                        moreMenu = false
+                        state.playing = false
+                        pluginsOpen = true
+                    }
                     val style = copiedLayerForStyle != null
                     for (part in StylePart.entries) MenuRow(stringResource(PasteLabels.getValue(part)), enabled = style) {
                         moreMenu = false
@@ -362,7 +381,9 @@ internal fun MultiBar(state: EditorState, modifier: Modifier) {
         }
         BarButton(PanelIcons.TrimLeft, stringResource(R.string.a11y_trim_start), Modifier.width(cell).fillMaxHeight(), layers.any { state.scene.trimStartAt(it, state.frame) != null }) { state.trimChosen(true) }
         BarButton(PanelIcons.Split, stringResource(R.string.timeline_split), Modifier.width(cell).fillMaxHeight(), layers.any { state.scene.canSplitAt(it, state.frame) }) { state.split() }
-        BarButton(PanelIcons.TrimRight, stringResource(R.string.a11y_trim_end), Modifier.width(cell).fillMaxHeight(), layers.any { state.scene.trimEndAt(it, state.frame) != null }) { state.trimChosen(false) }
+        val shifts = remember(state.scene, ids, state.frame) { state.scene.endShifts(ids, state.frame, state.sampleMs) }
+        val grows = shifts.any { it > 0 }
+        BarButton(PanelIcons.TrimRight, stringResource(if (grows) R.string.a11y_extend_end else R.string.a11y_trim_end), Modifier.width(cell).fillMaxHeight(), shifts.any { it != 0 }) { state.endChosenAtPlayhead() }
         Spacer(Modifier.weight(1f))
         BarButton(ChromeIcons.Transition, stringResource(R.string.transition_add_between), Modifier.width(cell).fillMaxHeight().alpha(if (cuts.isNotEmpty()) 1f else DimAlpha)) {
             if (cuts.isNotEmpty()) { state.playing = false; transition = cuts }
@@ -388,7 +409,8 @@ private val AlignNames = listOf(
 
 internal val PasteLabels = mapOf(
     StylePart.ColorFill to R.string.structure_paste_fill_color, StylePart.BorderShadow to R.string.structure_paste_border_shadow,
-    StylePart.Blending to R.string.structure_paste_blending,
+    StylePart.Blending to R.string.structure_paste_blending, StylePart.Effects to R.string.effects_paste_effects,
+    StylePart.Motions to R.string.structure_paste_motions,
 )
 
 @Composable
@@ -402,10 +424,39 @@ internal fun MultiTopBar(state: EditorState, modifier: Modifier) {
         if (!alignment) {
             val text = pluralStringResource(R.plurals.structure_layers_selected, ids.size, ids.size.toString())
             Text(text, Modifier.weight(1f), color = tint, maxLines = 1, autoSize = TextAutoSize.StepBased(10.sp, 14.sp))
+            val pluginContext = LocalContext.current
+            var pluginsOpen by remember { mutableStateOf(false) }
+            if (pluginsOpen) app.absentmotion.ui.editor.panels.PluginRecipeDialog(state) { pluginsOpen = false }
+            if (remember { app.absentmotion.plugins.hasTools(app.absentmotion.plugins.PluginStore(pluginContext)) }) Box(
+                Modifier.fillMaxHeight().clickable { state.playing = false; pluginsOpen = true }.padding(horizontal = 10.dp),
+                Alignment.Center,
+            ) { Text(stringResource(R.string.tools_plugins), color = tint, fontSize = 13.sp, maxLines = 1) }
             val cell = Modifier.width(40.dp).fillMaxHeight()
-            SelectionButton(SelectionIcons.Group, stringResource(R.string.structure_group), cell, tint, ids.isNotEmpty()) { scope.launch { state.groupLayersCentred(ids) } }
-            SelectionButton(SelectionIcons.Mask, stringResource(R.string.structure_group_mask), cell, tint, ids.size > 1) { scope.launch { state.groupLayersCentred(ids, "mask") } }
-            SelectionButton(SelectionIcons.Exclude, stringResource(R.string.structure_group_exclude), cell, tint, ids.size > 1) { scope.launch { state.groupLayersCentred(ids, "exclude") } }
+            Box(
+                Modifier.width(80.dp).fillMaxHeight().alpha(if (ids.isNotEmpty()) 1f else DimAlpha)
+                    .clickable(enabled = ids.isNotEmpty(), role = Role.Button) { scope.launch { state.groupLayersCentred(ids) } }
+                    .padding(horizontal = 4.dp),
+                Alignment.Center,
+            ) {
+                Text(stringResource(R.string.structure_group), color = tint, fontWeight = FontWeight.SemiBold,
+                    maxLines = 1, autoSize = TextAutoSize.StepBased(10.sp, 14.sp))
+            }
+            var groupMenu by remember(ids) { mutableStateOf(false) }
+            Box(cell) {
+                SelectionButton(PanelIcons.More, stringResource(R.string.structure_group_options), Modifier.fillMaxSize(), tint, ids.size > 1) { groupMenu = true }
+                Presence(groupMenu) {
+                    MenuPopup(DropOrRise, { groupMenu = false }) {
+                        MenuRow(stringResource(R.string.structure_group_mask), icon = SelectionIcons.Mask) {
+                            groupMenu = false
+                            scope.launch { state.groupLayersCentred(ids, "mask") }
+                        }
+                        MenuRow(stringResource(R.string.structure_group_exclude), icon = SelectionIcons.Exclude) {
+                            groupMenu = false
+                            scope.launch { state.groupLayersCentred(ids, "exclude") }
+                        }
+                    }
+                }
+            }
             var parentMenu by remember { mutableStateOf(false) }
             val linkLabel = stringResource(R.string.structure_link_parent)
             Box(
@@ -431,8 +482,15 @@ internal fun MultiTopBar(state: EditorState, modifier: Modifier) {
     }
 }
 
-internal fun styleToast(context: Context, n: Int) {
-    Toast.makeText(context, context.resources.getQuantityString(R.plurals.structure_style_pasted, n, n.toString()), Toast.LENGTH_SHORT).show()
+internal fun styleToast(context: Context, pasted: PastedStyle?, onto: Boolean = true) {
+    val resources = context.resources
+    val n = pasted?.layers ?: 0
+    val lines = listOfNotNull(
+        resources.getQuantityString(R.plurals.structure_style_pasted, n, n.toString()).takeIf { onto },
+        pasted?.skipped?.takeIf { it > 0 }?.let { resources.getQuantityString(R.plurals.effects_paste_skipped, it, it.toString()) },
+        pasted?.unpaired?.takeIf { it > 0 }?.let { resources.getQuantityString(R.plurals.structure_transitions_skipped, it, it.toString()) },
+    ) + pasted?.notes.orEmpty().map { it.resolve(context) }
+    if (lines.isNotEmpty()) Toast.makeText(context, lines.joinToString("\n"), if (lines.size > 1) Toast.LENGTH_LONG else Toast.LENGTH_SHORT).show()
 }
 
 internal fun pasteEffectsOnSelection(state: EditorState, context: Context) {
@@ -463,8 +521,8 @@ internal fun ChoiceList(items: List<String>, onDismiss: () -> Unit, below: Boole
                 .verticalScroll(rememberScrollState()),
         ) {
             items.forEachIndexed { i, label ->
-                Box(Modifier.fillMaxWidth().height(40.dp).clickable { onPick(i); onDismiss() }.padding(horizontal = 14.dp), contentAlignment = Alignment.CenterStart) {
-                    Text(label, color = Am.OnDark, fontSize = 15.sp, maxLines = 1)
+                Box(Modifier.fillMaxWidth().heightIn(min = 40.dp).clickable { onPick(i); onDismiss() }.padding(horizontal = 14.dp, vertical = 6.dp), contentAlignment = Alignment.CenterStart) {
+                    Text(label, color = Am.OnDark, fontSize = 15.sp, maxLines = 2, overflow = TextOverflow.Ellipsis)
                 }
             }
         }
@@ -494,10 +552,12 @@ internal fun MultiParentMenu(state: EditorState, below: Boolean = false, onDismi
 }
 
 @Composable
-internal fun PasteStyleMenu(state: EditorState, onDismiss: () -> Unit) {
+internal fun PasteStyleMenu(state: EditorState, chosen: Boolean = false, onDismiss: () -> Unit) {
     val parts = StylePart.entries
+    val context = LocalContext.current
     ChoiceList(parts.map { stringResource(PasteLabels.getValue(it)) } + stringResource(R.string.structure_paste_style), onDismiss) { i ->
-        state.pasteStyle(if (i < parts.size) setOf(parts[i]) else parts.toSet())
+        val picked = if (i < parts.size) setOf(parts[i]) else parts.toSet()
+        styleToast(context, if (chosen) state.pasteStyleOnChosen(picked) else state.pasteStyle(picked), onto = chosen)
     }
 }
 

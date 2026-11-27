@@ -47,7 +47,7 @@ const char* const kLift = "absent.backdrop";
 const char* const kPuppet = "absent.puppet";
 
 bool BuiltIn(const std::string& id) {
-    return id == "absent.blur" || id == "absent.glow" || id == "absent.smear" || id == kLift || id == kPuppet;
+    return id == "absent.blur" || id == "absent.boxblur" || id == "absent.gaussianblur" || id == "absent.glow" || id == "absent.smear" || id == "absent.outline" || id == kLift || id == kPuppet;
 }
 
 bool TilesLayer(const std::string& id) {
@@ -56,6 +56,10 @@ bool TilesLayer(const std::string& id) {
 }
 
 bool WrapsLayer(const std::string& id) { return TilesLayer(id) || id == "absent.mirror" || id == "absent.kaleidoscope" || id == "absent.offset"; }
+
+constexpr float kGlowScanSmoothing = 0.0802f;
+constexpr float kGlowScanSharp = 0.92f;
+constexpr float kDarkGlowSpread = 0.14f;
 
 bool KeepsEdges(const std::string& id) {
     return id == "absent.pixelate" || id == "absent.mosaic" || id == "absent.pixeltiles" || id == "absent.ascii" || id == "absent.halftone" ||
@@ -369,7 +373,9 @@ float Value(const LayerEffect& e, const std::map<std::string, Anim>* defaults, c
         if (auto d = defaults->find(name); d != defaults->end()) fallback = d->second.get(i, t, fallback);
     }
     for (const Property& p : e.props) {
-        if (p.name == name) return p.anim.get(i, t, fallback);
+        if (p.name != name) continue;
+        const float v = p.anim.get(i, t, fallback);
+        return std::isfinite(v) ? v : fallback;
     }
     return fallback;
 }
@@ -494,6 +500,39 @@ sk_sp<SkRuntimeEffect> Compiled(const char* sksl) {
     return result.effect;
 }
 
+const char* const kEdgeGlowEdges = R"(
+uniform shader image;
+uniform float dist;
+uniform float gain;
+uniform float flip;
+float lum(float2 p) {
+    half4 c = image.eval(p);
+    return dot(float3(c.rgb), float3(0.2126, 0.7152, 0.0722));
+}
+half4 main(float2 p) {
+    float s = dist;
+    float a = lum(p + float2(-s, -s)), b = lum(p + float2(0.0, -s)), c = lum(p + float2(s, -s));
+    float d = lum(p + float2(-s, 0.0)), f = lum(p + float2(s, 0.0));
+    float g = lum(p + float2(-s, s)), h = lum(p + float2(0.0, s)), i = lum(p + float2(s, s));
+    float gx = (c + 2.0 * f + i) - (a + 2.0 * d + g);
+    float gy = (g + 2.0 * h + i) - (a + 2.0 * b + c);
+    float w = clamp(gain * 0.25 * length(float2(gx, gy)), 0.0, 1.0);
+    half4 src = image.eval(p);
+    if (flip > 0.5) return half4(half3(half(1.0 - w) * src.a), src.a);
+    return half4(src.rgb * half(w), src.a);
+}
+)";
+
+sk_sp<SkImageFilter> EdgeGlowEdges(float dist, float threshold, bool invert, const SkRect& frame, sk_sp<SkImageFilter> input) {
+    static const sk_sp<SkRuntimeEffect> edges = Compiled(kEdgeGlowEdges);
+    if (!edges) return input;
+    SkRuntimeShaderBuilder b(edges);
+    b.uniform("dist") = std::max(dist, 0.0f);
+    b.uniform("gain") = 7.0f / (0.5f + std::clamp(threshold, 0.0f, 0.5f));
+    b.uniform("flip") = invert ? 1.0f : 0.0f;
+    return SkImageFilters::RuntimeShader(b, std::max(dist, 0.0f) * 1.5f + 2, "image", SkImageFilters::Crop(frame, SkTileMode::kClamp, std::move(input)));
+}
+
 float GlowExtent(const std::function<float(const char*, int, float)>& v) {
     const float reach = std::max(v("radius", 0, 100), 0.0f) * kGlowReach;
     const float hard = std::clamp(v("hardness", 0, 0.5f), 0.0f, 1.0f);
@@ -502,15 +541,16 @@ float GlowExtent(const std::function<float(const char*, int, float)>& v) {
     return grow + soft + 1 + 2 * step + 4;
 }
 
-sk_sp<SkImageFilter> GlowFilter(const std::function<float(const char*, int, float)>& v, sk_sp<SkImageFilter> input, bool behind) {
-    static const sk_sp<SkRuntimeEffect> rows = Compiled(kGlowRows), columns = Compiled(kGlowColumns), mix = Compiled(kGlowMix);
-    const float reach = std::max(v("radius", 0, 100), 0.0f) * kGlowReach;
-    const float amount = std::clamp(v("alpha", 0, 0.75f), 0.0f, 1.0f);
-    const float hard = std::clamp(v("hardness", 0, 0.5f), 0.0f, 1.0f);
-    const float a = std::clamp(v("color", 0, 1), 0.0f, 1.0f);
-    if (!rows || !columns || !mix || !(reach > 0) || !(amount * a > 0)) return input;
-    const float edge = std::min(reach / 4, 1.0f), grow = hard * reach - 0.5f * edge, soft = (1 - hard) * reach + edge;
-    const float step = std::max(1.0f, (grow + soft + 1) / kGlowCells), cells = (grow + soft + 1) / step;
+struct DistanceField {
+    sk_sp<SkImageFilter> field;
+    float reach;
+    float grown;
+};
+
+DistanceField DistanceTo(sk_sp<SkImageFilter> input, float limit) {
+    static const sk_sp<SkRuntimeEffect> rows = Compiled(kGlowRows), columns = Compiled(kGlowColumns);
+    if (!rows || !columns) return {nullptr, 0, 0};
+    const float step = std::max(1.0f, (limit + 1) / kGlowCells), cells = (limit + 1) / step;
     const SkSamplingOptions linear(SkFilterMode::kLinear);
     sk_sp<SkImageFilter> mask = input;
     float grown = 0;
@@ -525,9 +565,81 @@ sk_sp<SkImageFilter> GlowFilter(const std::function<float(const char*, int, floa
     sk_sp<SkImageFilter> field = SkImageFilters::RuntimeShader(down, cells + 1, "image",
                                                                SkImageFilters::RuntimeShader(across, cells + 1, "image", mask));
     if (step > 1) field = SkImageFilters::MatrixTransform(SkMatrix::Scale(step, step), linear, field);
+    return {field, cells * step, grown};
+}
+
+const char* const kOutlineMix = R"(
+uniform shader image;
+uniform shader outside;
+uniform shader inside;
+uniform float reachOut;
+uniform float shiftOut;
+uniform float reachIn;
+uniform float shiftIn;
+uniform float width;
+uniform float bands;
+uniform half4 tint;
+float dist(half4 f, float reach, float shift) { return (float(f.r) + 1.0 - float(f.a)) * reach - shift; }
+half4 main(float2 p) {
+    half4 src = image.eval(p);
+    float o = dist(outside.eval(p), reachOut, shiftOut);
+    if (bands > 0.5) {
+        float h = width * 0.5;
+        if (src.a >= 0.5) {
+            float i = dist(inside.eval(p), reachIn, shiftIn);
+            half4 c = mix(src, half4(0.0, 0.0, 1.0, 1.0), half(clamp(width - i + 0.5, 0.0, 1.0)));
+            return mix(c, half4(0.0, 1.0, 0.0, 1.0), half(clamp(h - i + 0.5, 0.0, 1.0)));
+        }
+        half4 c = half4(1.0, 0.0, 0.0, 1.0) * half(clamp(width - o + 0.5, 0.0, 1.0));
+        return mix(c, half4(0.0, 1.0, 0.0, 1.0), half(clamp(h - o + 0.5, 0.0, 1.0)));
+    }
+    half k = o < width ? tint.a : 0.0;
+    return src + half4(tint.rgb * k, k) * (1.0 - src.a);
+}
+)";
+
+sk_sp<SkImageFilter> OutlineFilter(const std::function<float(const char*, int, float)>& v, sk_sp<SkImageFilter> input) {
+    static const sk_sp<SkRuntimeEffect> mix = Compiled(kOutlineMix);
+    const float width = std::clamp(v("radius", 0, 5), 0.0f, 400.0f);
+    const int style = (int)std::lround(std::clamp(v("style", 0, 0), 0.0f, 2.0f));
+    const SkColor4f tint = {std::clamp(v("color", 1, 0), 0.0f, 1.0f), std::clamp(v("color", 2, 0), 0.0f, 1.0f),
+                            std::clamp(v("color", 3, 0), 0.0f, 1.0f), std::clamp(v("color", 0, 1), 0.0f, 1.0f)};
+    if (!mix || !(width > 0)) return input;
+    if (style == 1) {
+        const float across = 2 * std::floor((width + 1) / 2) - 1, down = 2 * std::floor(width / 2);
+        sk_sp<SkImageFilter> grown = SkImageFilters::Offset(1, 0, across > 0 || down > 0 ? SkImageFilters::Dilate(std::max(across, 0.0f), down, input) : input);
+        return SkImageFilters::ColorFilter(SkColorFilters::Blend(tint, nullptr, SkBlendMode::kSrcIn), std::move(grown));
+    }
+    const DistanceField away = DistanceTo(input, width + 1);
+    const float flip[20] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, 1};
+    const DistanceField within = style == 2 ? DistanceTo(SkImageFilters::ColorFilter(SkColorFilters::Matrix(flip), input), width + 1) : away;
+    if (!away.field || !within.field) return input;
     SkRuntimeShaderBuilder b(mix);
-    b.uniform("reach") = cells * step;
-    b.uniform("shift") = (v("spread", 0, 0) > 0.5f ? -0.05f : 0.5f) - grown;
+    b.uniform("reachOut") = away.reach;
+    b.uniform("shiftOut") = 0.5f - away.grown;
+    b.uniform("reachIn") = within.reach;
+    b.uniform("shiftIn") = 0.5f - within.grown;
+    b.uniform("width") = width;
+    b.uniform("bands") = style == 2 ? 1.0f : 0.0f;
+    b.uniform("tint") = SkV4{tint.fR, tint.fG, tint.fB, tint.fA};
+    std::string_view names[] = {"image", "outside", "inside"};
+    sk_sp<SkImageFilter> inputs[] = {input, away.field, within.field};
+    return SkImageFilters::RuntimeShader(b, 0, names, inputs, 3);
+}
+
+sk_sp<SkImageFilter> GlowFilter(const std::function<float(const char*, int, float)>& v, sk_sp<SkImageFilter> input, bool behind) {
+    static const sk_sp<SkRuntimeEffect> rows = Compiled(kGlowRows), columns = Compiled(kGlowColumns), mix = Compiled(kGlowMix);
+    const float reach = std::max(v("radius", 0, 100), 0.0f) * kGlowReach;
+    const float amount = std::clamp(v("alpha", 0, 0.75f), 0.0f, 1.0f);
+    const float hard = std::clamp(v("hardness", 0, 0.5f), 0.0f, 1.0f);
+    const float a = std::clamp(v("color", 0, 1), 0.0f, 1.0f);
+    if (!rows || !columns || !mix || !(reach > 0) || !(amount * a > 0)) return input;
+    const float edge = std::min(reach / 4, 1.0f), grow = hard * reach - 0.5f * edge, soft = (1 - hard) * reach + edge;
+    const DistanceField away = DistanceTo(input, grow + soft);
+    if (!away.field) return input;
+    SkRuntimeShaderBuilder b(mix);
+    b.uniform("reach") = away.reach;
+    b.uniform("shift") = (v("spread", 0, 0) > 0.5f ? -0.05f : 0.5f) - away.grown;
     b.uniform("imported") = v("spread", 0, 0);
     b.uniform("grow") = grow;
     b.uniform("soft") = soft;
@@ -536,7 +648,7 @@ sk_sp<SkImageFilter> GlowFilter(const std::function<float(const char*, int, floa
     b.uniform("tint") = SkV4{std::clamp(v("color", 1, 1), 0.0f, 1.0f), std::clamp(v("color", 2, 1), 0.0f, 1.0f),
                              std::clamp(v("color", 3, 0.667f), 0.0f, 1.0f), a};
     std::string_view names[] = {"image", "field", "backdrop"};
-    sk_sp<SkImageFilter> inputs[] = {input, field, behind ? nullptr : SkImageFilters::Empty()};
+    sk_sp<SkImageFilter> inputs[] = {input, away.field, behind ? nullptr : SkImageFilters::Empty()};
     return SkImageFilters::RuntimeShader(b, 0, names, inputs, 3);
 }
 
@@ -600,12 +712,104 @@ half4 main(float2 p) {
     return SkImageFilters::RuntimeShader(b, reach + 1, "image", std::move(input));
 }
 
+sk_sp<SkImageFilter> TapPass(sk_sp<SkImageFilter> input, float count, float first, float spacing, SkV2 dir, const SkRect& screen) {
+    static const sk_sp<SkRuntimeEffect> effect = SkRuntimeEffect::MakeForShader(SkString(R"(
+uniform shader image;
+uniform float2 dir;
+uniform float count;
+uniform float first;
+uniform float spacing;
+uniform float4 screen;
+half4 main(float2 p) {
+    float2 lo = screen.xy + 0.5;
+    float2 hi = screen.zw - 0.5;
+    float4 sum = float4(0.0);
+    for (int i = 0; i < 1024; i++) {
+        float k = float(i);
+        if (k >= count) break;
+        sum += float4(image.eval(clamp(p + dir * (first + k * spacing), lo, hi)));
+    }
+    return half4(sum / max(count, 1.0));
+}
+)")).effect;
+    if (!effect) return input;
+    SkRuntimeShaderBuilder b(effect);
+    b.uniform("dir") = dir;
+    b.uniform("count") = count;
+    b.uniform("first") = first;
+    b.uniform("spacing") = spacing;
+    b.uniform("screen") = SkV4{screen.left(), screen.top(), screen.right(), screen.bottom()};
+    return SkImageFilters::RuntimeShader(b, std::abs(first) + count * spacing + 1, "image", std::move(input));
+}
+
+sk_sp<SkImageFilter> DeepGlowLight(sk_sp<SkImageFilter> input, float threshold, float knee) {
+    static const sk_sp<SkRuntimeEffect> effect = SkRuntimeEffect::MakeForShader(SkString(R"(
+uniform shader image;
+uniform float threshold;
+uniform float knee;
+half4 main(float2 p) {
+    float4 c = float4(image.eval(p));
+    if (c.a <= 0.0) return half4(0.0);
+    float3 s = clamp(c.rgb / c.a, 0.0, 1.0);
+    float l = dot(s, float3(0.2126, 0.7152, 0.0722));
+    float k = max(knee, 0.0001);
+    float x = clamp(l - threshold + k, 0.0, 2.0 * k);
+    float w = clamp(max(x * x / (4.0 * k), l - threshold) / max(l, 0.0001), 0.0, 1.0);
+    return half4(half3(sqrt(s * s * (s * 0.2 + 0.8) * w) * c.a), half(c.a));
+})")).effect;
+    if (!effect) return input;
+    SkRuntimeShaderBuilder b(effect);
+    b.uniform("threshold") = threshold;
+    b.uniform("knee") = knee;
+    return SkImageFilters::RuntimeShader(b, 0.0f, "image", std::move(input));
+}
+
+sk_sp<SkImageFilter> FeatherAlpha(sk_sp<SkImageFilter> input, float radius, float iterations, const SkRect& screen) {
+    static const float lit[20] = {0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0};
+    static const float inward[20] = {0, 0, 0, 2, -1, 0, 0, 0, 2, -1, 0, 0, 0, 2, -1, 0, 0, 0, 2, -1};
+    static const float spread[5] = {1.0f, 1.35f, 1.3f, 1.45f, 1.45f};
+    static const float settle[5] = {1.0f, 0.65f, 0.85f, 0.85f, 0.8f};
+    const float steps = std::max(iterations, 1.0f);
+    const int n = std::clamp((int)std::lround(steps), 1, 10);
+    const int row = std::min(n, 5) - 1;
+    const float r = std::max(radius, 0.0f) / steps;
+    const auto box = [](sk_sp<SkImageFilter> in, float reach) {
+        reach = std::min(reach, 128.0f);
+        return reach > 0 ? BoxPass(BoxPass(std::move(in), reach, {1, 0}, {0, 0}), reach, {0, 1}, {0, 0}) : in;
+    };
+    sk_sp<SkImageFilter> a = SkImageFilters::Crop(screen, SkTileMode::kClamp, SkImageFilters::ColorFilter(SkColorFilters::Matrix(lit), std::move(input)));
+    for (int k = 1; k < n; k++) a = SkImageFilters::ColorFilter(SkColorFilters::Matrix(inward), box(std::move(a), spread[row] * r));
+    return box(std::move(a), settle[row] * r);
+}
+
 sk_sp<SkImageFilter> BuiltInFilter(const std::string& id, const std::function<float(const char*, int, float)>& v,
-                                   sk_sp<SkImageFilter> input) {
+                                   sk_sp<SkImageFilter> input, const SkRect& screen) {
+    if (id == "absent.boxblur" || id == "absent.gaussianblur") {
+        const float k = v("scale", 0, id == "absent.boxblur" ? 329 : 196);
+        return BuiltInFilter("absent.blur", [&](const char* name, int i, float d) {
+            return strcmp(name, "strength") ? v(name, i, d) : v(name, i, 0.15f) * k;
+        }, std::move(input), screen);
+    }
     if (id == "absent.blur") {
-        const float sigma = std::max(v("strength", 0, 10), 0.0f) / 3;
-        if (v("shape", 0, 0) > 0.5f) {
-            const float reach = std::min(sigma, 128.0f);
+        float sigma = std::max(v("strength", 0, 10), 0.0f) / 3;
+        const float shape = v("shape", 0, 0), iterations = std::clamp(v("iterations", 0, 3), 1.0f, 20.0f);
+        if (shape > 0.5f && shape < 1.5f && v("style", 0, 0) > 0.5f) {
+            const float n = std::clamp(std::floor(std::max(v("strength", 0, 10), 0.0f) / 3.75f + 0.001f), 1.0f, 500.0f);
+            return TapPass(TapPass(input, 2 * n, -0.84375f * n, 0.84375f, {1, 0}, screen), 2 * n, 1.5f - 1.5f * n, 1.5f, {0, 1}, screen);
+        }
+        if (shape > 1.5f) {
+            constexpr float baseVariance = 170, passVariance = 445, referencePasses = 5;
+            sigma *= std::sqrt((baseVariance + passVariance / iterations) / (baseVariance + passVariance / referencePasses));
+        }
+        if (shape < 0.5f && v("style", 0, 0) > 0.5f) {
+            const int passes = (int)std::lround(iterations);
+            const float reach = std::min(std::max(v("strength", 0, 10), 0.0f) / passes, 128.0f);
+            if (!(reach > 0)) return input;
+            for (int i = 0; i < passes; i++) input = BoxPass(BoxPass(input, reach, {1, 0}, {-0.5f, 0}), reach, {0, 1}, {0, -0.5f});
+            return input;
+        }
+        if (shape > 0.5f && (shape < 1.5f || iterations <= 1.0f)) {
+            const float reach = std::min(shape > 1.5f ? sigma * std::sqrt(3.0f) : sigma, 128.0f);
             return reach > 0 ? BoxPass(BoxPass(input, reach, {1, 0}, {-0.5f, 0}), reach, {0, 1}, {0, 0.5f}) : input;
         }
         return sigma > 0 ? SkImageFilters::Blur(sigma, sigma, SkTileMode::kDecal, input) : input;
@@ -956,6 +1160,13 @@ std::string EffectRuntime::load(const std::string& xml) {
         if (c->attr("value")) d.texts[c->attr("name")] = c->attr("value");
     }
     const std::string id = root->attr("id");
+    const bool added = id.compare(0, 5, "user.") == 0;
+    const char* remove = root->attr("remove");
+    if (added && remove && std::string(remove) == "true") {
+        fDefinitions.erase(id);
+        NoteOrientedEffect(id, false);
+        return "ok";
+    }
     const char* sksl = root->attr("sksl");
     if (!sksl || !*sksl) {
         if (!BuiltIn(id) && !pieces3d::IsEffect(id) && !MotionEffect(id) && !RepeatEffect(id) && !TextEffect(id) && !DrawingEffect(id) && !ParticleEffect(id)) return "shader error: no shader and no built-in called " + id;
@@ -968,8 +1179,14 @@ std::string EffectRuntime::load(const std::string& xml) {
             return "shader error: " + text.substr(0, text.find('\n')) + "\n" + text;
         }
         if (!result.effect->findChild("image")) return "shader error: no 'uniform shader image'";
+        if (added) {
+            for (const auto& child : result.effect->children()) {
+                if (child.name != "image" || child.type != SkRuntimeEffect::ChildType::kShader) return "shader error: added effects can only read 'uniform shader image'";
+            }
+        }
         d.brightPass = result.effect->findChild("bright") != nullptr;
         d.plainBlur = result.effect->findChild("blurred") != nullptr;
+        d.wide = result.effect->findChild("wide") != nullptr && result.effect->findChild("wider") != nullptr;
         d.blurred = d.brightPass || d.plainBlur;
         d.backdrop = result.effect->findChild("backdrop") != nullptr;
         d.below = result.effect->findChild("below") != nullptr;
@@ -977,7 +1194,8 @@ std::string EffectRuntime::load(const std::string& xml) {
         d.pointwise = Pointwise(sksl);
         d.timed = (result.effect->findUniform("time") && Mentions(sksl, "time") > 1) || result.effect->findUniform("beat") ||
                   result.effect->findUniform("beatTime") || result.effect->findUniform("beatIndex");
-        if (result.effect->findUniform("orient")) NoteOrientedEffect(id);
+        const bool oriented = result.effect->findUniform("orient") != nullptr;
+        if (added || oriented) NoteOrientedEffect(id, oriented);
         d.palette = result.effect->findChild("palette") != nullptr;
         d.matrix = result.effect->findChild("thresholds") != nullptr;
         d.glyphs = result.effect->findChild("glyphs") != nullptr;
@@ -1226,8 +1444,10 @@ sk_sp<SkImageFilter> EffectRuntime::chain(const Scene& scene, const Layer& layer
                 const SkRect lit = (first ? f->computeFastBounds(bounds) : bounds).makeOutset(extent, extent);
                 f = GlowFilter(value, f, withBackdrop);
                 if (first && !lit.contains(bounds) && pointwiseAfter(k + 1)) f = SkImageFilters::Crop(lit, f);
+            } else if (e.id == "absent.outline") {
+                f = OutlineFilter(value, f);
             } else {
-                f = BuiltInFilter(e.id, value, f);
+                f = BuiltInFilter(e.id, value, f, SkRect::MakeXYWH(-area.left(), -area.top(), scene.width, scene.height));
             }
         } else if (d && d->shader) {
             SkRuntimeShaderBuilder b(d->shader);
@@ -1268,6 +1488,12 @@ sk_sp<SkImageFilter> EffectRuntime::chain(const Scene& scene, const Layer& layer
                     v = columns(fromLayer().invert(&inverse) ? inverse : SkMatrix::I());
                 }
                 else if (automatic && name == "duration") v = {(float)((layer.endTime - layer.startTime) / 1000.0)};
+                else if (automatic && name == "cycles") {
+                    const double span = std::max((double)(layer.endTime - layer.startTime), 1.0);
+                    double sum = 0;
+                    for (int k = 0; k < 64; k++) sum += Value(e, defaults, "frequency", 0, (float)(seconds * (k + 0.5) / 64 * 1000.0 / span), 0);
+                    v = {(float)(sum * seconds / 64)};
+                }
                 else if (automatic && name == "orient") v = columns3(Orientation(layer, timeMs));
                 else if (automatic && name == "paletteSize") v = {colors ? (float)colors->colors.size() : 0.0f};
                 else if (automatic && name == "paletteSpread") v = {colors ? colors->spread : 1.0f};
@@ -1311,22 +1537,53 @@ sk_sp<SkImageFilter> EffectRuntime::chain(const Scene& scene, const Layer& layer
                 box.outset(std::min(std::abs(Value(e, defaults, "stretch", 0, t, 1)) * cell, kWrapPixels),
                            std::min(std::abs(Value(e, defaults, "stretch", 1, t, 1)) * cell, kWrapPixels));
             }
+            if (cells && e.id == "absent.pixelate" && Value(e, defaults, "style", 0, t, 0) > 0.5f) {
+                const float cell = std::max(Value(e, defaults, "blockSize", 0, t, 10), 0.0f) *
+                                   std::max(std::abs(Value(e, defaults, "stretch", 0, t, 1)), std::abs(Value(e, defaults, "stretch", 1, t, 1)));
+                box.outset(std::min(cell, kWrapPixels), std::min(cell, kWrapPixels));
+            }
+            if (cells && e.id == "absent.hexagontilerotate" && Value(e, defaults, "edgeStyle", 0, t, 0) > 0.5f) {
+                const float unit = area.height() / (2.475f * std::max(Value(e, defaults, "count", 0, t, 10), 0.5f));
+                box.outset(std::min(unit, kWrapPixels), std::min(unit, kWrapPixels));
+            }
             std::vector<std::string_view> names = {"image"};
-            std::vector<sk_sp<SkImageFilter>> inputs = {cells ? SkImageFilters::Crop(kept.makeInset(1, 1), SkTileMode::kMirror, f) : f};
+            const float edge = (e.id == "absent.pixelate" && Value(e, defaults, "style", 0, t, 0) > 0.5f) || Value(e, defaults, "edgeStyle", 0, t, 0) > 0.5f ? 0.0f : 1.0f;
+            std::vector<sk_sp<SkImageFilter>> inputs = {cells ? SkImageFilters::Crop(kept.makeInset(edge, edge), SkTileMode::kMirror, f) : f};
+            sk_sp<SkImageFilter> deepLight;
             if (d->blurred) {
                 const float spread = e.id == "absent.electricedges" ? Value(e, defaults, "strength", 0, t, -1) : -1;
+                const bool edgeLook = e.id == "absent.edgeglow" && Value(e, defaults, "style", 0, t, 0) > 0.5f;
+                const bool scanLook = e.id == "absent.glowscan" && Value(e, defaults, "style", 0, t, 0) > 0.5f;
+                const bool darkLook = e.id == "absent.darkglow" && Value(e, defaults, "style", 0, t, 0) > 0.5f;
+                const bool deepLook = e.id == "absent.deepglow" && Value(e, defaults, "style", 0, t, 0) > 0.5f;
                 const bool redMask = e.id == "absent.unsharpmask" && Value(e, defaults, "showMask", 0, t, 0) > 0.5f &&
                                      Value(e, defaults, "maskColor", 0, t, 0) > 0.5f;
+                const float blur = e.id == "absent.softglow" ? Value(e, defaults, "diffusion", 0, t, 0.1f) * 180 + 3
+                                   : e.id == "absent.feather" ? Value(e, defaults, "strength", 0, t, 0.15f) * 283.333f
+                                   : e.id == "absent.ominoglass" ? Value(e, defaults, "bevel", 0, t, 0.1f) * 100
+                                   : scanLook ? 3 * std::max(Value(e, defaults, "smoothing", 0, t, 0.05f), 0.0f) * kGlowScanSmoothing * std::min(area.width(), area.height())
+                                                              : Value(e, defaults, "blur", 0, t, 0);
                 const float sigma = e.id == "absent.unsharpmask"
-                                        ? redMask ? std::max(Value(e, defaults, "radius", 0, t, 0), 0.0f) * 25 * std::min(scene.width, scene.height) / 1080.0f : 0
+                                        ? redMask ? std::max(Value(e, defaults, "blurRadius", 0, t, 0), 0.0f) * 62.5f * std::min(scene.width, scene.height) / 1080.0f : 0
                                     : spread >= 0 ? std::max(spread, 0.02f) * kEdgeSpread * std::hypot((float)scene.width, (float)scene.height)
-                                                  : std::max(Value(e, defaults, "blur", 0, t, 0), 0.0f) / 3;
+                                    : edgeLook    ? 40 * std::pow(std::max(Value(e, defaults, "strength", 0, t, 0.1f), 0.0f), 0.8f)
+                                    : scanLook && blur < 3 * kGlowScanSharp ? 0
+                                                  : std::max(blur, 0.0f) / 3;
+                const bool passLook = e.id == "absent.innerblur" && Value(e, defaults, "style", 0, t, 0) > 0.5f;
                 auto blurOf = [&](sk_sp<SkImageFilter> source) {
+                    if (passLook) {
+                        const int passes = (int)std::lround(std::clamp(Value(e, defaults, "iterations", 0, t, 2), 1.0f, 20.0f));
+                        const float reach = std::min(std::max(Value(e, defaults, "blur", 0, t, 0), 0.0f) / passes, 128.0f);
+                        if (!(reach > 0)) return source;
+                        for (int i = 0; i < passes; i++) source = BoxPass(BoxPass(source, reach, {1, 0}, {-0.5f, 0}), reach, {0, 1}, {0, -0.5f});
+                        return source;
+                    }
                     return sigma > 0 ? SkImageFilters::Blur(sigma, sigma, SkTileMode::kDecal, source) : source;
                 };
                 if (d->brightPass) {
                     const float cut = Value(e, defaults, "threshold", 0, t, 0);
-                    const float luma[5] = {0.2126f, 0.7152f, 0.0722f, 0.0f, -cut};
+                    const float hard = e.id == "absent.lightglow" && Value(e, defaults, "style", 0, t, 0) > 0.5f ? 50.0f : 1.0f;
+                    const float luma[5] = {0.2126f * hard, 0.7152f * hard, 0.0722f * hard, 0.0f, -cut * hard};
                     const float rows[20] = {luma[0], luma[1], luma[2], luma[3], luma[4], luma[0], luma[1], luma[2], luma[3], luma[4],
                                             luma[0], luma[1], luma[2], luma[3], luma[4], 0, 0, 0, 1, 0};
                     names.push_back("bright");
@@ -1339,8 +1596,40 @@ sk_sp<SkImageFilter> EffectRuntime::chain(const Scene& scene, const Layer& layer
                         const float feather = 2 * radius * Value(e, defaults, "softness", 0, t, 0);
                         auto eroded = SkImageFilters::Erode(radius, radius, f);
                         inputs.push_back(feather > 0 ? SkImageFilters::Blur(feather, feather, SkTileMode::kDecal, eroded) : eroded);
+                    } else if (edgeLook) {
+                        const SkRect frame = SkRect::MakeXYWH(-area.left(), -area.top(), (float)scene.width, (float)scene.height);
+                        const sk_sp<SkImageFilter> lit = EdgeGlowEdges(Value(e, defaults, "smoothing", 0, t, 5), Value(e, defaults, "threshold", 0, t, 0.7f),
+                                                                       Value(e, defaults, "invert", 0, t, 0) > 0.5f, frame, f);
+                        inputs.push_back(blurOf(SkImageFilters::Arithmetic(0, 0.5f, 0.5f, 0, true, SkImageFilters::Crop(frame, SkTileMode::kClamp, lit),
+                                                                           SkImageFilters::Crop(frame, SkTileMode::kMirror, lit))));
+                    } else if (darkLook) {
+                        const float k = 50.0f, cut = Value(e, defaults, "threshold", 0, t, 0.3f) * k;
+                        const float rows[20] = {-0.2126f * k, -0.7152f * k, -0.0722f * k, 0, cut, -0.2126f * k, -0.7152f * k, -0.0722f * k, 0, cut,
+                                                -0.2126f * k, -0.7152f * k, -0.0722f * k, 0, cut, 0, 0, 0, 1, 0};
+                        SkMatrix down = SkMatrix::Scale(0.5f, 0.5f);
+                        down.postTranslate(area.left() * 0.5f - std::floor(area.left() * 0.5f), area.top() * 0.5f - std::floor(area.top() * 0.5f));
+                        auto dark = SkImageFilters::ColorFilter(SkColorFilters::Matrix(rows),
+                                                                SkImageFilters::MatrixTransform(down, SkSamplingOptions(SkFilterMode::kLinear), f));
+                        const float half = std::max(Value(e, defaults, "blur", 0, t, 0), 0.0f) * kDarkGlowSpread;
+                        inputs.push_back(half > 0 ? SkImageFilters::Blur(half, half, SkTileMode::kDecal, dark) : dark);
+                    } else if (e.id == "absent.fringeclean" && Value(e, defaults, "style", 0, t, 0) > 0.5f) {
+                        inputs.push_back(blurOf(SkImageFilters::Crop(SkRect::MakeXYWH(-area.left(), -area.top(), scene.width, scene.height), SkTileMode::kClamp, f)));
+                    } else if (e.id == "absent.feather" && Value(e, defaults, "style", 0, t, 0) > 0.5f) {
+                        inputs.push_back(FeatherAlpha(f, blur, Value(e, defaults, "iter", 0, t, 3),
+                                                      SkRect::MakeXYWH(-area.left(), -area.top(), scene.width, scene.height)));
+                    } else if (deepLook) {
+                        deepLight = DeepGlowLight(f, Value(e, defaults, "threshold", 0, t, 0.5f), Value(e, defaults, "knee", 0, t, 0.3f));
+                        const float core = std::max(Value(e, defaults, "blur", 0, t, 0), 0.0f) / 10;
+                        inputs.push_back(core > 0 ? SkImageFilters::Blur(core, core, SkTileMode::kDecal, deepLight) : deepLight);
                     } else inputs.push_back(blurOf(f));
                 }
+            }
+            if (d->wide) {
+                const float sigma = std::max(Value(e, defaults, "blur", 0, t, 0), 0.0f) / 3;
+                names.push_back("wide");
+                inputs.push_back(deepLight && sigma > 0 ? SkImageFilters::Blur(sigma, sigma, SkTileMode::kDecal, deepLight) : SkImageFilters::Empty());
+                names.push_back("wider");
+                inputs.push_back(deepLight && sigma > 0 ? SkImageFilters::Blur(sigma * 3, sigma * 3, SkTileMode::kDecal, deepLight) : SkImageFilters::Empty());
             }
             if (d->backdrop) {
                 names.push_back("backdrop");
@@ -1577,7 +1866,7 @@ bool EffectRuntime::draw(SkCanvas* canvas, const Scene& scene, const Layer& laye
             failed = !read || pixels.size() != (size_t)gw * gh * 4;
             if (failed) break;
             const float strength = Value(e, &d->defaults, "dither", 0, t, 1);
-            Diffuse(&pixels, gw, gh, *palette(e, d, t), method(e, d, t), std::isfinite(strength) ? std::max(strength, 0.0f) : 0.0f,
+            Diffuse(&pixels, gw, gh, *palette(e, d, t), method(e, d, t), std::isfinite(strength) ? std::clamp(strength, 0.0f, 8.0f) : 0.0f,
                     std::clamp(Value(e, &d->defaults, "alpha", 0, t, 1), 0.0f, 1.0f));
             image = OnGpu(Owned(std::move(pixels), gw, gh));
             imageGrid = grid;
@@ -1605,7 +1894,8 @@ bool EffectRuntime::draw(SkCanvas* canvas, const Scene& scene, const Layer& laye
         if (!seesBehind) record(source, &measured, margin);
         const float scale = canvas->getTotalMatrix().getMinScale(), pad = scale > 0 ? 4 / scale : 4;
         inside = measured.makeOffset(-at.left(), -at.top()).makeOutset(pad, pad);
-        layerBounds.join(inside.makeOffset(at.left(), at.top()));
+        const float spread = InsideGroup() ? margin : 0;
+        layerBounds.join(inside.makeOffset(at.left(), at.top()).makeOutset(spread, spread));
     }
     sk_sp<SkImageFilter> filter = this->chain(scene, layer, timeMs, at, layerBounds, inside, placed, std::move(content), std::move(under), -1, -1,
                                               capture && !window.isEmpty() ? &window : nullptr);
@@ -1640,6 +1930,16 @@ bool EffectRuntime::draw(SkCanvas* canvas, const Scene& scene, const Layer& laye
     paint.setImageFilter(captured ? SkImageFilters::Compose(std::move(filter), captured->makeWithLocalMatrix(SkMatrix::Translate(at.left(), at.top())))
                                   : std::move(filter));
     if (lift < 0) {
+        const SkMatrix m = canvas->getTotalMatrix();
+        SkMatrix back;
+        if (!captured && canvas->imageInfo().colorType() == kUnknown_SkColorType && !m.hasPerspective() && m.invert(&back)) {
+            SkPictureRecorder recorder;
+            SkCanvas* c = recorder.beginRecording(m.mapRect(layerBounds));
+            c->setMatrix(m);
+            source(c);
+            canvas->drawPicture(recorder.finishRecordingAsPicture(), &back, &paint);
+            return true;
+        }
         canvas->saveLayer(&layerBounds, &paint);
         if (!captured) source(canvas);
         canvas->restore();

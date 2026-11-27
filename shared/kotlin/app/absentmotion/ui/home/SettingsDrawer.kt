@@ -62,7 +62,6 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -126,6 +125,7 @@ fun SettingsDrawer(settings: AppSettings, drawer: androidx.compose.material3.Dra
     var language by remember { mutableStateOf(false) }
     var demoNote by remember { mutableStateOf(false) }
     var whatsNew by remember { mutableStateOf(false) }
+    var tools by remember { mutableStateOf(false) }
     ModalDrawerSheet(
         drawer, Modifier.width(280.dp), drawerShape = RectangleShape, drawerContainerColor = Am.HomeDrawer,
         windowInsets = WindowInsets(0),
@@ -143,6 +143,8 @@ fun SettingsDrawer(settings: AppSettings, drawer: androidx.compose.material3.Dra
             Category(R.string.settings_group_backup, ChromeIcons.SavePreset) {
                 BackupRows(settings, onRestored)
             }
+            LinkRow(stringResource(R.string.home_tab_tools)) { tools = true }
+            Spacer(Modifier.height(CardGap))
             LinkRow(stringResource(R.string.settings_language), currentLanguage(LocalContext.current).nativeName) { language = true }
             Spacer(Modifier.height(CardGap))
             LinkRow(stringResource(R.string.settings_help)) { help = true }
@@ -166,6 +168,7 @@ fun SettingsDrawer(settings: AppSettings, drawer: androidx.compose.material3.Dra
         }
     }
     if (language) LanguageDialog { language = false }
+    if (tools) CustomizeToolsSheet(settings) { tools = false }
     if (help) HelpScreen { help = false }
     if (about) AboutScreen(settings) { about = false }
     if (crashLogs) CrashLogsScreen { crashLogs = false }
@@ -174,7 +177,7 @@ fun SettingsDrawer(settings: AppSettings, drawer: androidx.compose.material3.Dra
         onDismissRequest = { demoNote = false },
         title = { Text(stringResource(R.string.demo_mode_is_on), color = Am.Navy) },
         text = { Text(stringResource(R.string.the_media_picker_lists_only_albums), color = Am.Navy) },
-        confirmButton = { TextButton({ demoNote = false }) { Text(stringResource(R.string.ok), color = Am.Navy) } },
+        confirmButton = { DialogPill(stringResource(R.string.ok)) { demoNote = false } },
         containerColor = Am.Card,
     )
 }
@@ -237,7 +240,7 @@ internal fun PlaybackSettings(settings: AppSettings) {
 internal fun ProjectsSettings(settings: AppSettings, onDemoMode: (Boolean) -> Unit) {
     if (!DESK) SwitchRow(stringResource(R.string.settings_open_xml), settings.xmlUpload, enabled = true) { settings.xmlUpload = it }
     SwitchRow(stringResource(R.string.settings_keep_media_copies), settings.keepMediaCopies, enabled = true) { settings.keepMediaCopies = it }
-    BundlesFolderRows(settings)
+    ExportFolderRows(settings)
     if (settings.demoModeShown) SwitchRow(stringResource(R.string.settings_demo_mode), settings.demoMode, enabled = true) { settings.demoMode = it; onDemoMode(it) }
     if (!DESK) SwitchRow(stringResource(R.string.settings_ask_mobile_data), settings.askMobileData, enabled = true) { settings.askMobileData = it }
     CaptionModelRow()
@@ -314,8 +317,8 @@ private fun PreviewCopiesRow() {
         onDismissRequest = { ask = false },
         title = { Text(stringResource(R.string.settings_clear_preview_title), color = Am.Navy) },
         text = { Text(stringResource(R.string.settings_clear_preview_text), color = Am.Navy) },
-        confirmButton = { TextButton({ ask = false; VideoProxies.clear(context) }) { Text(stringResource(R.string.settings_clear_preview_copies), color = Am.Navy) } },
-        dismissButton = { TextButton({ ask = false }) { Text(stringResource(R.string.cancel), color = Am.Navy) } },
+        confirmButton = { DialogPill(stringResource(R.string.settings_clear_preview_copies)) { ask = false; VideoProxies.clear(context) } },
+        dismissButton = { DialogPill(stringResource(R.string.cancel), primary = false) { ask = false } },
         containerColor = Am.Card,
     )
 }
@@ -332,30 +335,52 @@ private fun CaptionModelRow() {
         onDismissRequest = { ask = false },
         title = { Text(stringResource(R.string.settings_delete_model_title, stringResource(R.string.caption_model)), color = Am.Navy) },
         text = { Text(stringResource(R.string.settings_delete_model_text), color = Am.Navy) },
-        confirmButton = { TextButton({ ask = false; CaptionModel.remove(context); bytes = CaptionModel.storedBytes(context) }) { Text(stringResource(R.string.delete), color = Am.Navy) } },
-        dismissButton = { TextButton({ ask = false }) { Text(stringResource(R.string.cancel), color = Am.Navy) } },
+        confirmButton = { DialogPill(stringResource(R.string.delete)) { ask = false; CaptionModel.remove(context); bytes = CaptionModel.storedBytes(context) } },
+        dismissButton = { DialogPill(stringResource(R.string.cancel), primary = false) { ask = false } },
         containerColor = Am.Card,
     )
 }
 
 @Composable
-private fun BundlesFolderRows(settings: AppSettings) {
+private fun FolderRows(settings: AppSettings, @StringRes title: Int, @StringRes reset: Int, @StringRes lost: Int, folder: String?, fallback: String, onFolder: (String?) -> Unit) {
     val context = LocalContext.current
-    val pick = rememberBundleFolderPicker(settings)
-    val folder = settings.bundlesFolder
+    val pick = rememberFolderChoice(settings, folder, stringResource(title), onFolder)
     val view = folderView(folder)
-    ActionRow(stringResource(R.string.settings_bundles_folder), if (folder == null) defaultBundles() else view?.label.orEmpty(), chevron = true) { pick() }
-    if (view?.reachable == false) Text(stringResource(R.string.bundle_folder_lost, defaultBundles()), Modifier.padding(start = 15.dp, end = 15.dp, bottom = 6.dp), color = Am.HomeAccent, fontSize = 12.sp, lineHeight = 16.sp)
-    if (folder != null) ActionRow(stringResource(R.string.settings_bundles_default), "", chevron = false) {
-        app.absentmotion.platform.forgetFolder(context, folder)
-        settings.bundlesFolder = null
+    ActionRow(stringResource(title), if (folder == null) fallback else view?.label.orEmpty(), chevron = true) { pick() }
+    if (view?.reachable == false) Text(stringResource(lost, fallback), Modifier.padding(start = 15.dp, end = 15.dp, bottom = 6.dp), color = Am.HomeAccent, fontSize = 12.sp, lineHeight = 16.sp)
+    if (folder != null) ActionRow(stringResource(reset), "", chevron = false) {
+        onFolder(null)
+        settings.release(context, folder)
     }
 }
 
 @Composable
-internal fun defaultBundles(): String {
+private fun ExportFolderRows(settings: AppSettings) {
+    FolderRows(settings, R.string.settings_bundles_folder, R.string.settings_bundles_default, R.string.bundle_folder_lost, settings.bundlesFolder, defaultBundles()) { settings.bundlesFolder = it }
+    FolderRows(settings, R.string.settings_video_folder, R.string.settings_folder_default, R.string.export_folder_lost, settings.videoFolder, defaultFolder("Movies")) { settings.videoFolder = it }
+    FolderRows(settings, R.string.settings_sound_folder, R.string.settings_folder_default, R.string.export_folder_lost, settings.soundFolder, defaultFolder("Music")) { settings.soundFolder = it }
+}
+
+@Composable
+private fun defaultFolder(root: String): String {
     val context = LocalContext.current
-    return remember { app.absentmotion.export.MediaStoreExport(context).location("Documents/${app.absentmotion.export.AppFolder}") }
+    return remember(root) { app.absentmotion.export.MediaStoreExport(context).location("$root/${app.absentmotion.export.AppFolder}") }
+}
+
+@Composable
+internal fun defaultBundles(): String = defaultFolder("Documents")
+
+internal fun AppSettings.release(context: Context, folder: String) {
+    if (folder !in listOf(bundlesFolder, videoFolder, soundFolder)) app.absentmotion.platform.forgetFolder(context, folder)
+}
+
+@Composable
+private fun rememberFolderChoice(settings: AppSettings, folder: String?, title: String, onFolder: (String?) -> Unit): () -> Unit {
+    val context = LocalContext.current
+    return app.absentmotion.platform.rememberFolderPicker(folder, title) { picked ->
+        onFolder(picked)
+        folder?.takeIf { it != picked }?.let { settings.release(context, it) }
+    }
 }
 
 internal class FolderView(val label: String, val reachable: Boolean)
@@ -375,13 +400,8 @@ internal fun folderView(folder: String?): FolderView? {
 }
 
 @Composable
-internal fun rememberBundleFolderPicker(settings: AppSettings): () -> Unit {
-    val context = LocalContext.current
-    return app.absentmotion.platform.rememberFolderPicker(settings.bundlesFolder) { picked ->
-        settings.bundlesFolder?.takeIf { it != picked }?.let { app.absentmotion.platform.forgetFolder(context, it) }
-        settings.bundlesFolder = picked
-    }
-}
+internal fun rememberBundleFolderPicker(settings: AppSettings): () -> Unit =
+    rememberFolderChoice(settings, settings.bundlesFolder, stringResource(R.string.settings_bundles_folder)) { settings.bundlesFolder = it }
 
 @Composable
 private fun DownloaderRow() {
@@ -398,13 +418,13 @@ private fun DownloaderRow() {
         title = { Text(stringResource(R.string.settings_delete_model_title, name), color = Am.Navy) },
         text = { Text(stringResource(R.string.settings_delete_model_text), color = Am.Navy) },
         confirmButton = {
-            TextButton({
+            DialogPill(stringResource(R.string.delete)) {
                 ask = false
                 app.absentmotion.platform.videoDownloader().remove(context)
                 present = false
-            }) { Text(stringResource(R.string.delete), color = Am.Navy) }
+            }
         },
-        dismissButton = { TextButton({ ask = false }) { Text(stringResource(R.string.cancel), color = Am.Navy) } },
+        dismissButton = { DialogPill(stringResource(R.string.cancel), primary = false) { ask = false } },
         containerColor = Am.Card,
     )
 }
@@ -426,13 +446,13 @@ private fun AiModelRows() {
             title = { Text(stringResource(R.string.settings_delete_model_title, stringResource(target.title)), color = Am.Navy) },
             text = { Text(stringResource(R.string.settings_delete_model_text), color = Am.Navy) },
             confirmButton = {
-                TextButton({
+                DialogPill(stringResource(R.string.delete)) {
                     askFor = null
                     target.delete(context)
                     models = deletable()
-                }) { Text(stringResource(R.string.delete), color = Am.Navy) }
+                }
             },
-            dismissButton = { TextButton({ askFor = null }) { Text(stringResource(R.string.cancel), color = Am.Navy) } },
+            dismissButton = { DialogPill(stringResource(R.string.cancel), primary = false) { askFor = null } },
             containerColor = Am.Card,
         )
     }
@@ -463,15 +483,15 @@ private fun CutoutRows() {
         title = { Text(stringResource(R.string.settings_delete_model_title, stringResource(model.title)), color = Am.Navy) },
         text = { Text(stringResource(R.string.settings_delete_model_text), color = Am.Navy) },
         confirmButton = {
-            TextButton({
+            DialogPill(stringResource(R.string.delete)) {
                 ask = false
                 model.delete(context)
                 bytes = model.onDisk(context)
                 choice.choose(app.absentmotion.ai.CutoutQuality.Standard)
                 chosen = app.absentmotion.ai.CutoutQuality.Standard
-            }) { Text(stringResource(R.string.delete), color = Am.Navy) }
+            }
         },
-        dismissButton = { TextButton({ ask = false }) { Text(stringResource(R.string.cancel), color = Am.Navy) } },
+        dismissButton = { DialogPill(stringResource(R.string.cancel), primary = false) { ask = false } },
         containerColor = Am.Card,
     )
 }
@@ -504,8 +524,8 @@ private fun AiGpuRow() {
         onDismissRequest = { ask = false },
         title = { Text(stringResource(R.string.settings_ai_gpu), color = Am.Navy) },
         text = { Text(stringResource(R.string.ai_gpu_warning), color = Am.Navy) },
-        confirmButton = { TextButton({ ask = false; choose(true) }) { Text(stringResource(R.string.audiofx_turn_on), color = Am.Navy) } },
-        dismissButton = { TextButton({ ask = false }) { Text(stringResource(R.string.cancel), color = Am.Navy) } },
+        confirmButton = { DialogPill(stringResource(R.string.audiofx_turn_on)) { ask = false; choose(true) } },
+        dismissButton = { DialogPill(stringResource(R.string.cancel), primary = false) { ask = false } },
         containerColor = Am.Card,
     )
 }

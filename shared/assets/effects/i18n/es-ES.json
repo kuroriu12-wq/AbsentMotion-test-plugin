@@ -16,6 +16,103 @@
   "text": "Texto"
  },
  "effects": {
+  "advancedchromakey": {
+   "description": "Quita hasta cuatro colores a la vez. Cada color se puede quitar (Excluir) o proteger de las demás claves (Incluir), con su propio umbral, difuminado y sensibilidad a la luminancia. Mostrar máscara muestra en rojo lo que se conserva.",
+   "name": "Croma avanzado",
+   "params": {
+    "c1active": {
+     "label": "Color 1"
+    },
+    "c1color": {
+     "label": "Color"
+    },
+    "c1feather": {
+     "label": "Difuminado"
+    },
+    "c1luma": {
+     "label": "Sensibilidad a la luminancia"
+    },
+    "c1mode": {
+     "label": "Modo",
+     "options": [
+      "Excluir",
+      "Incluir"
+     ]
+    },
+    "c1threshold": {
+     "label": "Umbral"
+    },
+    "c2active": {
+     "label": "Color 2"
+    },
+    "c2color": {
+     "label": "Color"
+    },
+    "c2feather": {
+     "label": "Difuminado"
+    },
+    "c2luma": {
+     "label": "Sensibilidad a la luminancia"
+    },
+    "c2mode": {
+     "label": "Modo",
+     "options": [
+      "Excluir",
+      "Incluir"
+     ]
+    },
+    "c2threshold": {
+     "label": "Umbral"
+    },
+    "c3active": {
+     "label": "Color 3"
+    },
+    "c3color": {
+     "label": "Color"
+    },
+    "c3feather": {
+     "label": "Difuminado"
+    },
+    "c3luma": {
+     "label": "Sensibilidad a la luminancia"
+    },
+    "c3mode": {
+     "label": "Modo",
+     "options": [
+      "Excluir",
+      "Incluir"
+     ]
+    },
+    "c3threshold": {
+     "label": "Umbral"
+    },
+    "c4active": {
+     "label": "Color 4"
+    },
+    "c4color": {
+     "label": "Color"
+    },
+    "c4feather": {
+     "label": "Difuminado"
+    },
+    "c4luma": {
+     "label": "Sensibilidad a la luminancia"
+    },
+    "c4mode": {
+     "label": "Modo",
+     "options": [
+      "Excluir",
+      "Incluir"
+     ]
+    },
+    "c4threshold": {
+     "label": "Umbral"
+    },
+    "showMask": {
+     "label": "Mostrar máscara"
+    }
+   }
+  },
   "ascii": {
    "description": "Convierte la capa en arte de texto hecho con letras y símbolos: las partes más claras reciben caracteres más llenos. Tamaño define el ancho de cada carácter en la capa, así que los caracteres se mueven, giran y escalan con ella. Color mantiene los colores de la imagen o usa uno solo, y Líneas de borde dibuja contornos con los caracteres | - / y \\.",
    "name": "ASCII",
@@ -107,6 +204,13 @@
     "slack": {
      "label": "Holgura"
     },
+    "style": {
+     "label": "Estilo",
+     "options": [
+      "Clásico",
+      "Estándar"
+     ]
+    },
     "zshake": {
      "label": "Sacudida Z"
     }
@@ -120,7 +224,7 @@
      "label": "Enmascarar a la capa"
     },
     "mix": {
-     "label": "Mezcla"
+     "label": "Relleno"
     },
     "spill": {
      "label": "Efectos fuera de los límites"
@@ -429,6 +533,13 @@
    "params": {
     "frequency": {
      "label": "Frecuencia"
+    },
+    "style": {
+     "label": "Estilo",
+     "options": [
+      "Clásico",
+      "Estándar"
+     ]
     }
    }
   },
@@ -500,14 +611,25 @@
    "description": "Un desenfoque suave y uniforme. Con Forma en Caja, en su lugar se promedia un cuadrado uniforme alrededor de cada punto.",
    "name": "Desenfoque",
    "params": {
-    "strength": {
-     "label": "Intensidad"
+    "iterations": {
+     "label": "Iteraciones"
     },
     "shape": {
      "label": "Forma",
      "options": [
       "Suave",
-      "Caja"
+      "Caja",
+      "Cuadro rápido"
+     ]
+    },
+    "strength": {
+     "label": "Intensidad"
+    },
+    "style": {
+     "label": "Estilo",
+     "options": [
+      "Clásico",
+      "Estándar"
      ]
     }
    }
@@ -607,12 +729,75 @@
       "Centro",
       "Esquina"
      ]
+    },
+    "alight": {
+     "label": "Estilo",
+     "options": [
+      "Clásico",
+      "Estándar"
+     ]
+    },
+    "alZ": {
+     "label": "Posición Z"
+    },
+    "alLight": {
+     "label": "Dirección"
+    },
+    "alElev": {
+     "label": "Elevación"
+    },
+    "faceStyle": {
+     "label": "Estilo",
+     "options": [
+      "Clásico",
+      "Estándar"
+     ]
+    },
+    "lightStyle": {
+     "label": "Estilo",
+     "options": [
+      "Clásico",
+      "Estándar"
+     ]
+    }
+   }
+  },
+  "boxblur": {
+   "description": "Desenfoca la capa promediando un cuadrado uniforme de píxeles cercanos. Intensidad fija hasta dónde llega el desenfoque; el desenfoque gaussiano es más suave.",
+   "name": "Desenfoque de caja",
+   "params": {
+    "iterations": {
+     "label": "Iteraciones"
+    },
+    "scale": {
+     "label": "Escala"
+    },
+    "shape": {
+     "label": "Forma",
+     "options": [
+      "Suave",
+      "Caja",
+      "Cuadro rápido"
+     ]
+    },
+    "strength": {
+     "label": "Intensidad"
+    },
+    "style": {
+     "label": "Estilo",
+     "options": [
+      "Clásico",
+      "Estándar"
+     ]
     }
    }
   },
   "brightnesscontrast": {
+   "aliases": [
+    "Brillo y contraste"
+   ],
    "description": "Ajusta el brillo y el contraste de la imagen.",
-   "name": "Brillo y contraste",
+   "name": "Brillo / contraste",
    "params": {
     "brightness": {
      "label": "Brillo"
@@ -679,6 +864,45 @@
     }
    }
   },
+  "cartoon": {
+   "description": "Reduce los colores a unas pocas bandas y dibuja contornos donde la imagen cambia bruscamente. Intensidad define cuántos bordes reciben contorno.",
+   "name": "Caricatura",
+   "params": {
+    "strength": {
+     "label": "Intensidad"
+    },
+    "color": {
+     "label": "Color del contorno"
+    }
+   }
+  },
+  "channelmixer": {
+   "description": "Reconstruye la imagen a partir de sus canales rojo, verde y azul: cada canal añade su propio color, luego Gamma curva cada canal y Desplazamiento los sube o baja todos.",
+   "name": "Mezclador de canales",
+   "params": {
+    "red": {
+     "label": "Rojo"
+    },
+    "green": {
+     "label": "Verde"
+    },
+    "blue": {
+     "label": "Azul"
+    },
+    "gammaRed": {
+     "label": "Gamma rojo"
+    },
+    "gammaGreen": {
+     "label": "Gamma verde"
+    },
+    "gammaBlue": {
+     "label": "Gamma azul"
+    },
+    "offset": {
+     "label": "Desplazamiento"
+    }
+   }
+  },
   "channelremap": {
    "description": "Reconstruye cada canal de color a partir de otro canal de la capa, para falso color o para mover la luminancia al alfa.",
    "name": "Remapeo de canales (RGB)",
@@ -686,49 +910,49 @@
     "a": {
      "label": "A",
      "options": [
-      "Rojo",
-      "Verde",
-      "Azul",
-      "Alfa",
-      "Luminancia",
-      "Cero",
-      "Completo"
+      "R",
+      "G",
+      "B",
+      "A",
+      "Y",
+      "0",
+      "1"
      ]
     },
     "b": {
      "label": "B",
      "options": [
-      "Rojo",
-      "Verde",
-      "Azul",
-      "Alfa",
-      "Luminancia",
-      "Cero",
-      "Completo"
+      "R",
+      "G",
+      "B",
+      "A",
+      "Y",
+      "0",
+      "1"
      ]
     },
     "g": {
      "label": "G",
      "options": [
-      "Rojo",
-      "Verde",
-      "Azul",
-      "Alfa",
-      "Luminancia",
-      "Cero",
-      "Completo"
+      "R",
+      "G",
+      "B",
+      "A",
+      "Y",
+      "0",
+      "1"
      ]
     },
     "r": {
      "label": "R",
      "options": [
-      "Rojo",
-      "Verde",
-      "Azul",
-      "Alfa",
-      "Luminancia",
-      "Cero",
-      "Completo"
+      "R",
+      "G",
+      "B",
+      "A",
+      "Y",
+      "0",
+      "1"
      ]
     }
    }
@@ -740,49 +964,49 @@
     "a": {
      "label": "A",
      "options": [
-      "Tono",
-      "Saturación",
-      "Valor",
-      "Alfa",
-      "Luminancia",
-      "Cero",
-      "Completo"
+      "H",
+      "S",
+      "V",
+      "A",
+      "Y",
+      "0",
+      "1"
      ]
     },
     "h": {
      "label": "H",
      "options": [
-      "Tono",
-      "Saturación",
-      "Valor",
-      "Alfa",
-      "Luminancia",
-      "Cero",
-      "Completo"
+      "H",
+      "S",
+      "V",
+      "A",
+      "Y",
+      "0",
+      "1"
      ]
     },
     "s": {
      "label": "S",
      "options": [
-      "Tono",
-      "Saturación",
-      "Valor",
-      "Alfa",
-      "Luminancia",
-      "Cero",
-      "Completo"
+      "H",
+      "S",
+      "V",
+      "A",
+      "Y",
+      "0",
+      "1"
      ]
     },
     "v": {
      "label": "V",
      "options": [
-      "Tono",
-      "Saturación",
-      "Valor",
-      "Alfa",
-      "Luminancia",
-      "Cero",
-      "Completo"
+      "H",
+      "S",
+      "V",
+      "A",
+      "Y",
+      "0",
+      "1"
      ]
     }
    }
@@ -797,7 +1021,7 @@
     "color": {
      "label": "Color"
     },
-    "count": {
+    "cells": {
      "label": "Cantidad"
     },
     "offset": {
@@ -832,6 +1056,16 @@
     },
     "tolerance": {
      "label": "Tolerancia"
+    },
+    "luma": {
+     "label": "Peso de luma"
+    },
+    "style": {
+     "label": "Estilo",
+     "options": [
+      "Clásico",
+      "Estándar"
+     ]
     }
    }
   },
@@ -850,6 +1084,13 @@
      "options": [
       "Lineal",
       "Rayos"
+     ]
+    },
+    "style": {
+     "label": "Estilo",
+     "options": [
+      "Clásico",
+      "Estándar"
      ]
     }
    }
@@ -881,6 +1122,13 @@
      "options": [
       "Capa",
       "Pantalla"
+     ]
+    },
+    "style": {
+     "label": "Estilo",
+     "options": [
+      "Clásico",
+      "Estándar"
      ]
     }
    }
@@ -946,11 +1194,36 @@
       "Clásico",
       "Nítido"
      ]
+    },
+    "alight": {
+     "label": "Disposición",
+     "options": [
+      "Clásico",
+      "Estándar"
+     ]
+    }
+   }
+  },
+  "coloradjust": {
+   "description": "Ajusta brillo, contraste, saturación y viveza en un solo paso; la viveza refuerza sobre todo los colores más apagados.",
+   "name": "Ajuste de color",
+   "params": {
+    "brightness": {
+     "label": "Brillo"
+    },
+    "contrast": {
+     "label": "Contraste"
+    },
+    "saturation": {
+     "label": "Saturación"
+    },
+    "vibrance": {
+     "label": "Intensidad del color"
     }
    }
   },
   "colorbalance": {
-   "description": "Lleva las sombras, los medios tonos y las luces hacia sus propios colores (el gris deja un rango sin cambios).",
+   "description": "Lleva las sombras, los medios tonos y las luces hacia sus propios colores (el gris deja un rango sin cambios). Mantener brillo conserva el brillo de cada píxel mientras cambian los colores.",
    "name": "Balance de color",
    "params": {
     "amount": {
@@ -964,6 +1237,16 @@
     },
     "shadows": {
      "label": "Sombras"
+    },
+    "preserve": {
+     "label": "Mantener brillo"
+    },
+    "style": {
+     "label": "Estilo",
+     "options": [
+      "Clásico",
+      "Estándar"
+     ]
     }
    }
   },
@@ -987,8 +1270,11 @@
    }
   },
   "colorwheels": {
+   "aliases": [
+    "Elevación, gamma y ganancia"
+   ],
    "description": "Ruedas de color para las sombras (elevación), los medios tonos (gamma) y las luces (ganancia): un tono, cuánto empujarlo y un nivel. El desplazamiento afecta a todos los tonos. El estilo Por brillo pondera cada rueda según el brillo del píxel.",
-   "name": "Elevación, gamma y ganancia",
+   "name": "Afinación de color",
    "params": {
     "gainAmount": {
      "label": "Cantidad de ganancia"
@@ -1030,7 +1316,8 @@
      "label": "Estilo",
      "options": [
       "Clásico",
-      "Por brillo"
+      "Por brillo",
+      "Estándar"
      ]
     }
    }
@@ -1158,6 +1445,13 @@
      "options": [
       "Clásico",
       "Apilado"
+     ]
+    },
+    "alight": {
+     "label": "Disposición",
+     "options": [
+      "Clásico",
+      "Estándar"
      ]
     }
    }
@@ -1315,6 +1609,29 @@
       "Centro",
       "Esquina"
      ]
+    },
+    "style": {
+     "label": "Estilo",
+     "options": [
+      "Clásico",
+      "Estándar"
+     ]
+    },
+    "alight": {
+     "label": "Estilo",
+     "options": [
+      "Clásico",
+      "Estándar"
+     ]
+    },
+    "alZ": {
+     "label": "Posición Z"
+    },
+    "alLight": {
+     "label": "Dirección"
+    },
+    "alElev": {
+     "label": "Elevación"
     }
    }
   },
@@ -1407,6 +1724,29 @@
       "Centro",
       "Esquina"
      ]
+    },
+    "style": {
+     "label": "Estilo",
+     "options": [
+      "Clásico",
+      "Estándar"
+     ]
+    },
+    "alight": {
+     "label": "Estilo",
+     "options": [
+      "Clásico",
+      "Estándar"
+     ]
+    },
+    "alZ": {
+     "label": "Posición Z"
+    },
+    "alLight": {
+     "label": "Dirección"
+    },
+    "alElev": {
+     "label": "Elevación"
     }
    }
   },
@@ -1436,6 +1776,13 @@
     },
     "stretch": {
      "label": "Estirar"
+    },
+    "edgeStyle": {
+     "label": "Estilo",
+     "options": [
+      "Clásico",
+      "Estándar"
+     ]
     }
    }
   },
@@ -1531,6 +1878,22 @@
       "Centro",
       "Esquina"
      ]
+    },
+    "alight": {
+     "label": "Estilo",
+     "options": [
+      "Clásico",
+      "Estándar"
+     ]
+    },
+    "alZ": {
+     "label": "Posición Z"
+    },
+    "alLight": {
+     "label": "Dirección"
+    },
+    "alElev": {
+     "label": "Elevación"
     }
    }
   },
@@ -1552,6 +1915,13 @@
     },
     "threshold": {
      "label": "Umbral"
+    },
+    "style": {
+     "label": "Estilo",
+     "options": [
+      "Clásico",
+      "Estándar"
+     ]
     }
    }
   },
@@ -1630,6 +2000,22 @@
     },
     "vibrance": {
      "label": "Intensidad del color"
+    },
+    "exposure": {
+     "label": "Exposición"
+    },
+    "threshold": {
+     "label": "Umbral"
+    },
+    "knee": {
+     "label": "Suavidad del umbral"
+    },
+    "style": {
+     "label": "Estilo",
+     "options": [
+      "Clásico",
+      "Estándar"
+     ]
     }
    }
   },
@@ -1645,6 +2031,27 @@
     },
     "strength": {
      "label": "Intensidad"
+    }
+   }
+  },
+  "difference": {
+   "description": "Muestra en qué se diferencia la capa de lo que hay detrás, como el modo de fusión Diferencia pero en este punto de la lista de efectos.",
+   "name": "Diferencia",
+   "params": {
+    "amount": {
+     "label": "Cantidad"
+    }
+   }
+  },
+  "differencematte": {
+   "description": "Oculta las partes de la capa que se parecen a las capas de detrás, así solo queda lo diferente. Umbral define cuánto debe diferir un punto para quedarse y Difuminado suaviza el borde.",
+   "name": "Mate de diferencia",
+   "params": {
+    "threshold": {
+     "label": "Umbral"
+    },
+    "feather": {
+     "label": "Difuminado"
     }
    }
   },
@@ -1701,7 +2108,8 @@
      "options": [
       "R",
       "G",
-      "B"
+      "B",
+      "Luminancia"
      ]
     },
     "ychannel": {
@@ -1709,7 +2117,15 @@
      "options": [
       "R",
       "G",
-      "B"
+      "B",
+      "Luminancia"
+     ]
+    },
+    "style": {
+     "label": "Estilo",
+     "options": [
+      "Clásico",
+      "Estándar"
      ]
     }
    }
@@ -1765,10 +2181,10 @@
     "phase": {
      "label": "Fase"
     },
-    "radius": {
+    "dotRadius": {
      "label": "Radio"
     },
-    "scale": {
+    "zoom": {
      "label": "Escala"
     },
     "seed": {
@@ -1788,11 +2204,18 @@
     },
     "start": {
      "label": "Inicio"
+    },
+    "style": {
+     "label": "Estilo",
+     "options": [
+      "Clásico",
+      "Estándar"
+     ]
     }
    }
   },
   "dropshadow": {
-   "description": "Dibuja una sombra suave de la forma de la capa detrás de ella, desplazada con Desplazamiento X y Desplazamiento Y.",
+   "description": "Dibuja una sombra suave de la forma de la capa detrás de ella, desplazada con Desplazamiento X y Desplazamiento Y. Dispersión agranda la sombra antes de que se desvanezca.",
    "name": "Sombra paralela",
    "params": {
     "blur": {
@@ -1809,6 +2232,9 @@
     },
     "y": {
      "label": "Desplazamiento Y"
+    },
+    "spread": {
+     "label": "Dispersión"
     }
    }
   },
@@ -1837,11 +2263,11 @@
     "alpha": {
      "label": "Alfa"
     },
-    "composite": {
+    "mode": {
      "label": "Composición",
      "options": [
-      "Detrás",
-      "Encima"
+      "Encima",
+      "Detrás"
      ]
     },
     "count": {
@@ -1849,12 +2275,22 @@
     },
     "seconds": {
      "label": "Segundos"
+    },
+    "style": {
+     "label": "Estilo",
+     "options": [
+      "Clásico",
+      "Estándar"
+     ]
     }
    }
   },
   "edgedetect": {
-   "description": "Líneas brillantes donde cambia la imagen y oscuro en el resto.",
-   "name": "Detección de bordes",
+   "aliases": [
+    "Detección de bordes"
+   ],
+   "description": "Líneas brillantes donde cambia la imagen y oscuro en el resto. Tinta dibuja líneas oscuras sobre blanco; Color mantiene los colores propios de la imagen en los bordes.",
+   "name": "Hallar bordes",
    "params": {
     "strength": {
      "label": "Intensidad"
@@ -1863,7 +2299,8 @@
      "label": "Estilo",
      "options": [
       "Clásico",
-      "Tinta"
+      "Tinta",
+      "Color"
      ]
     },
     "spacing": {
@@ -1919,6 +2356,19 @@
     },
     "mask": {
      "label": "Enmascarar a la capa"
+    },
+    "smoothing": {
+     "label": "Suavizado"
+    },
+    "strength": {
+     "label": "Intensidad"
+    },
+    "style": {
+     "label": "Estilo",
+     "options": [
+      "Clásico",
+      "Estándar"
+     ]
     }
    }
   },
@@ -2090,6 +2540,22 @@
       "Centro",
       "Esquina"
      ]
+    },
+    "alight": {
+     "label": "Estilo",
+     "options": [
+      "Clásico",
+      "Estándar"
+     ]
+    },
+    "alZ": {
+     "label": "Posición Z"
+    },
+    "alLight": {
+     "label": "Dirección"
+    },
+    "alElev": {
+     "label": "Elevación"
     }
    }
   },
@@ -2165,8 +2631,11 @@
    }
   },
   "exposure": {
+   "aliases": [
+    "Exposición"
+   ],
    "description": "Simula la exposición fotográfica con pasos, desplazamiento y corrección de gamma. La opción Aclarar partes transparentes permite que los píxeles semitransparentes, como un borde desenfocado, se aclaren más allá del blanco.",
-   "name": "Exposición",
+   "name": "Exposición / gamma",
    "params": {
     "gamma": {
      "label": "Gamma"
@@ -2182,6 +2651,24 @@
     }
    }
   },
+  "facetrack": {
+   "aliases": [
+    "Movimiento facial"
+   ],
+   "description": "Movimiento facial para capas de vídeo: el vídeo se mueve y hace zoom para que la cara que elijas se quede en el mismo punto del encuadre. Toca Elegir cara y después toca una cara en la vista previa. La cara se sigue una sola vez a lo largo del clip y el resultado se guarda, así que la vista previa y la exportación lo usan al momento. Zoom fija el tamaño de la cara (100 % es su tamaño al elegirla), Posición indica dónde se queda en el encuadre y Suavizado hace el movimiento más estable.",
+   "name": "Seguimiento facial",
+   "params": {
+    "position": {
+     "label": "Posición"
+    },
+    "smoothing": {
+     "label": "Suavizado"
+    },
+    "zoom": {
+     "label": "Zoom"
+    }
+   }
+  },
   "fade": {
    "description": "Hace un fundido de entrada de la capa al inicio y de salida al final, durante los tiempos que establezcas.",
    "name": "Fundido de entrada/salida",
@@ -2191,14 +2678,21 @@
     },
     "fadeOut": {
      "label": "Salida"
+    },
+    "style": {
+     "label": "Estilo",
+     "options": [
+      "Clásico",
+      "Estándar"
+     ]
     }
    }
   },
   "feather": {
-   "description": "Suaviza los bordes alfa de la capa. Hacia dentro se funde con el contorno existente; Desenfocar alfa también extiende el borde suavizado hacia fuera.",
+   "description": "Suaviza los bordes alfa de la capa, fundiéndolos desde el contorno. Más Iteraciones dan un fundido más suave y profundo. Estilo Clásico: Hacia dentro se funde con el contorno existente; Desenfocar alfa también extiende el borde suavizado hacia fuera.",
    "name": "Difuminar bordes",
    "params": {
-    "blur": {
+    "strength": {
      "label": "Intensidad"
     },
     "mode": {
@@ -2206,6 +2700,16 @@
      "options": [
       "Hacia dentro",
       "Desenfocar alfa"
+     ]
+    },
+    "iter": {
+     "label": "Iteraciones"
+    },
+    "style": {
+     "label": "Estilo",
+     "options": [
+      "Clásico",
+      "Estándar"
      ]
     }
    }
@@ -2235,6 +2739,13 @@
     "edgeStrength": {
      "label": "Intensidad del borde"
     },
+    "edgeStyle": {
+     "label": "Estilo",
+     "options": [
+      "Clásico",
+      "Estándar"
+     ]
+    },
     "feather": {
      "label": "Difuminado"
     },
@@ -2258,6 +2769,13 @@
     },
     "scanStrength": {
      "label": "Intensidad de las líneas de escaneo"
+    },
+    "style": {
+     "label": "Estilo",
+     "options": [
+      "Clásico",
+      "Estándar"
+     ]
     },
     "tint": {
      "label": "Tinte"
@@ -2300,6 +2818,13 @@
      "options": [
       "Intermitente",
       "Constante"
+     ]
+    },
+    "wave": {
+     "label": "Estilo",
+     "options": [
+      "Clásico",
+      "Estándar"
      ]
     }
    }
@@ -2407,6 +2932,16 @@
       "Centro",
       "Esquina"
      ]
+    },
+    "style": {
+     "label": "Estilo",
+     "options": [
+      "Clásico",
+      "Estándar"
+     ]
+    },
+    "alZ": {
+     "label": "Posición Z"
     }
    }
   },
@@ -2420,6 +2955,9 @@
    }
   },
   "fourcolor": {
+   "aliases": [
+    "Degradado de cuatro colores"
+   ],
    "description": "Mezcla cuatro colores colocados en cuatro puntos (en píxeles desde el centro de la capa) sobre la capa.",
    "name": "Degradado de cuatro colores",
    "params": {
@@ -2479,6 +3017,13 @@
       "Distancia",
       "Suave"
      ]
+    },
+    "style": {
+     "label": "Estilo",
+     "options": [
+      "Clásico",
+      "Estándar"
+     ]
     }
    }
   },
@@ -2507,6 +3052,9 @@
     "offset": {
      "label": "Desplazamiento"
     },
+    "parallax": {
+     "label": "Paralaje"
+    },
     "scale": {
      "label": "Escala"
     },
@@ -2515,6 +3063,13 @@
     },
     "stretch": {
      "label": "Estirar"
+    },
+    "style": {
+     "label": "Estilo",
+     "options": [
+      "Clásico",
+      "Estándar"
+     ]
     }
    }
   },
@@ -2633,6 +3188,25 @@
     },
     "threshold3": {
      "label": "Intervalo 3"
+    },
+    "style": {
+     "label": "Estilo",
+     "options": [
+      "Clásico",
+      "Estándar"
+     ]
+    }
+   }
+  },
+  "gaussianblur": {
+   "description": "Un desenfoque suave y uniforme. Intensidad fija hasta dónde llega.",
+   "name": "Desenfoque gaussiano",
+   "params": {
+    "scale": {
+     "label": "Escala"
+    },
+    "strength": {
+     "label": "Intensidad"
     }
    }
   },
@@ -2719,14 +3293,26 @@
    }
   },
   "glowscan": {
-   "description": "Difumina e ilumina solo las partes de la capa cuyo brillo cae en una banda; anima Posición para barrer el resplandor de las sombras a las luces.",
+   "description": "Dibuja un contorno brillante donde el brillo de la imagen cruza el umbral, como un escaneo de contornos.",
    "name": "Barrido de resplandor",
    "params": {
+    "alpha": {
+     "label": "Alfa"
+    },
+    "blend": {
+     "label": "Fusión"
+    },
     "blur": {
      "label": "Desenfoque"
     },
     "color": {
      "label": "Color del resplandor"
+    },
+    "feather": {
+     "label": "Difuminado"
+    },
+    "fill": {
+     "label": "Relleno"
     },
     "intensity": {
      "label": "Intensidad"
@@ -2734,11 +3320,30 @@
     "position": {
      "label": "Posición"
     },
+    "radius": {
+     "label": "Radio"
+    },
     "show": {
      "label": "Mostrar solo la banda"
     },
+    "smoothing": {
+     "label": "Suavizado"
+    },
     "softness": {
      "label": "Suavidad"
+    },
+    "style": {
+     "label": "Estilo",
+     "options": [
+      "Clásico",
+      "Estándar"
+     ]
+    },
+    "threshold": {
+     "label": "Umbral"
+    },
+    "tint": {
+     "label": "Color"
     },
     "width": {
      "label": "Ancho"
@@ -2782,6 +3387,9 @@
       "Degradado",
       "Espectro"
      ]
+    },
+    "squeeze": {
+     "label": "Apretar"
     }
    }
   },
@@ -2839,6 +3447,13 @@
       "Caja",
       "Óvalo"
      ]
+    },
+    "look": {
+     "label": "Estilo",
+     "options": [
+      "Clásico",
+      "Estándar"
+     ]
     }
    }
   },
@@ -2874,6 +3489,19 @@
     },
     "width": {
      "label": "Ancho"
+    },
+    "spacing": {
+     "label": "Espaciado"
+    },
+    "smoothing": {
+     "label": "Suavizado"
+    },
+    "style": {
+     "label": "Estilo",
+     "options": [
+      "Clásico",
+      "Estándar"
+     ]
     }
    }
   },
@@ -2946,6 +3574,20 @@
     },
     "stagger": {
      "label": "Escalonado"
+    },
+    "style": {
+     "label": "Estilo",
+     "options": [
+      "Clásico",
+      "Estándar"
+     ]
+    },
+    "alight": {
+     "label": "Disposición",
+     "options": [
+      "Clásico",
+      "Estándar"
+     ]
     }
    }
   },
@@ -2980,8 +3622,11 @@
    }
   },
   "halftone": {
+   "aliases": [
+    "Semitono"
+   ],
    "description": "Puntos de impresión que crecen donde la imagen es oscura.",
-   "name": "Semitono",
+   "name": "Puntos de semitono",
    "params": {
     "angle": {
      "label": "Ángulo"
@@ -2992,17 +3637,31 @@
     "colored": {
      "label": "Puntos de color"
     },
+    "edgeStyle": {
+     "label": "Estilo",
+     "options": [
+      "Clásico",
+      "Estándar"
+     ]
+    },
     "ink": {
      "label": "Color de los puntos"
     },
     "paper": {
      "label": "Color del papel"
     },
+    "phase": {
+     "label": "Fase"
+    },
+    "strength": {
+     "label": "Intensidad"
+    },
     "style": {
      "label": "Estilo",
      "options": [
       "Clásico",
-      "Dos colores"
+      "Dos colores",
+      "Estándar"
      ]
     }
    }
@@ -3028,6 +3687,20 @@
     },
     "strength": {
      "label": "Intensidad"
+    },
+    "style": {
+     "label": "Estilo",
+     "options": [
+      "Clásico",
+      "Estándar"
+     ]
+    },
+    "edgeStyle": {
+     "label": "Estilo",
+     "options": [
+      "Clásico",
+      "Estándar"
+     ]
     }
    }
   },
@@ -3123,6 +3796,29 @@
       "Centro",
       "Esquina"
      ]
+    },
+    "style": {
+     "label": "Estilo",
+     "options": [
+      "Clásico",
+      "Estándar"
+     ]
+    },
+    "alight": {
+     "label": "Estilo",
+     "options": [
+      "Clásico",
+      "Estándar"
+     ]
+    },
+    "alZ": {
+     "label": "Posición Z"
+    },
+    "alLight": {
+     "label": "Dirección"
+    },
+    "alElev": {
+     "label": "Elevación"
     }
    }
   },
@@ -3147,6 +3843,13 @@
     },
     "seed": {
      "label": "Semilla"
+    },
+    "edgeStyle": {
+     "label": "Estilo",
+     "options": [
+      "Clásico",
+      "Estándar"
+     ]
     }
    }
   },
@@ -3205,6 +3908,19 @@
     },
     "stretch": {
      "label": "Estirar"
+    },
+    "lineWidth": {
+     "label": "Grosor de línea"
+    },
+    "feather": {
+     "label": "Difuminado"
+    },
+    "edgeStyle": {
+     "label": "Estilo",
+     "options": [
+      "Clásico",
+      "Estándar"
+     ]
     }
    }
   },
@@ -3266,6 +3982,14 @@
     },
     "stretch": {
      "label": "Estirar"
+    },
+    "alight": {
+     "label": "Estilo",
+     "options": [
+      "Clásico",
+      "Estándar",
+      "Imagen"
+     ]
     }
    }
   },
@@ -3361,10 +4085,29 @@
       "Centro",
       "Esquina"
      ]
+    },
+    "alight": {
+     "label": "Estilo",
+     "options": [
+      "Clásico",
+      "Estándar"
+     ]
+    },
+    "alZ": {
+     "label": "Posición Z"
+    },
+    "alLight": {
+     "label": "Dirección"
+    },
+    "alElev": {
+     "label": "Elevación"
     }
    }
   },
   "highlightshadow": {
+   "aliases": [
+    "Luces y sombras"
+   ],
    "description": "Recupera o realza las luces brillantes y aclara u oscurece las sombras según el brillo de cada píxel.",
    "name": "Luces y sombras",
    "params": {
@@ -3484,6 +4227,29 @@
       "Centro",
       "Esquina"
      ]
+    },
+    "style": {
+     "label": "Estilo",
+     "options": [
+      "Clásico",
+      "Estándar"
+     ]
+    },
+    "alight": {
+     "label": "Estilo",
+     "options": [
+      "Clásico",
+      "Estándar"
+     ]
+    },
+    "alZ": {
+     "label": "Posición Z"
+    },
+    "alLight": {
+     "label": "Dirección"
+    },
+    "alElev": {
+     "label": "Elevación"
     }
    }
   },
@@ -3618,21 +4384,59 @@
     }
    }
   },
+  "hueshift": {
+   "description": "Gira todos los colores el mismo ángulo en la rueda de color y mantiene el brillo.",
+   "name": "Desplazamiento de tono",
+   "params": {
+    "hue": {
+     "label": "Desplazamiento de tono"
+    }
+   }
+  },
   "innerblur": {
    "description": "Desenfoca la imagen dentro de la capa y mantiene nítido su contorno.",
    "name": "Desenfoque interior",
    "params": {
     "blur": {
      "label": "Intensidad"
+    },
+    "iterations": {
+     "label": "Iteraciones"
+    },
+    "style": {
+     "label": "Estilo",
+     "options": [
+      "Clásico",
+      "Estándar"
+     ]
     }
    }
   },
   "innerbulge": {
-   "description": "Abomba el centro de la capa hacia fuera o lo pinza hacia dentro, mientras los bordes de la capa se quedan donde están.",
+   "description": "Abomba la capa hacia fuera o la pinza hacia dentro dentro de un círculo de Radio alrededor de Centro, mientras los bordes de la capa se quedan donde están. Difuminado indica a qué distancia de los bordes empieza a moverse la capa; Gaussiano mantiene el centro ampliado de forma uniforme con una caída más corta.",
    "name": "Pinchazo/abultamiento interior",
    "params": {
     "strength": {
      "label": "Intensidad"
+    },
+    "center": {
+     "label": "Centro"
+    },
+    "radius": {
+     "label": "Radio"
+    },
+    "feather": {
+     "label": "Difuminado"
+    },
+    "gaussian": {
+     "label": "Gaussiano"
+    },
+    "style": {
+     "label": "Estilo",
+     "options": [
+      "Clásico",
+      "Estándar"
+     ]
     }
    }
   },
@@ -3665,6 +4469,13 @@
       "Redondeadas",
       "Rectas"
      ]
+    },
+    "style": {
+     "label": "Estilo",
+     "options": [
+      "Clásico",
+      "Estándar"
+     ]
     }
    }
   },
@@ -3677,6 +4488,15 @@
     },
     "invert_alpha": {
      "label": "Invertir alfa"
+    },
+    "red": {
+     "label": "Rojo"
+    },
+    "green": {
+     "label": "Verde"
+    },
+    "blue": {
+     "label": "Azul"
     }
    }
   },
@@ -3743,6 +4563,13 @@
     },
     "segments": {
      "label": "Segmentos"
+    },
+    "edgeStyle": {
+     "label": "Estilo",
+     "options": [
+      "Clásico",
+      "Estándar"
+     ]
     }
    }
   },
@@ -3768,13 +4595,34 @@
     },
     "sweep": {
      "label": "Ángulo"
+    },
+    "style": {
+     "label": "Estilo",
+     "options": [
+      "Clásico",
+      "Estándar"
+     ]
     }
    }
   },
   "lensflare": {
-   "description": "Una luz brillante con un halo que se superpone a la imagen.",
-   "name": "Destello de luz",
+   "aliases": [
+    "Destello de luz"
+   ],
+   "description": "Una luz brillante con una estrella, un halo y anillos de reflejos sobre la imagen.",
+   "name": "Destello de lente",
    "params": {
+    "alpha": {
+     "label": "Alfa"
+    },
+    "blendMode": {
+     "label": "Modo de fusión",
+     "options": [
+      "Normal",
+      "Multiplicar",
+      "Trama"
+     ]
+    },
     "brightness": {
      "label": "Brillo"
     },
@@ -3784,8 +4632,21 @@
     "color": {
      "label": "Color"
     },
+    "points": {
+     "label": "Puntas"
+    },
     "radius": {
      "label": "Radio"
+    },
+    "shine": {
+     "label": "Destello"
+    },
+    "style": {
+     "label": "Estilo",
+     "options": [
+      "Clásico",
+      "Estándar"
+     ]
     }
    }
   },
@@ -3837,6 +4698,13 @@
     },
     "mask": {
      "label": "Enmascarar a la capa"
+    },
+    "style": {
+     "label": "Estilo",
+     "options": [
+      "Clásico",
+      "Estándar"
+     ]
     }
    }
   },
@@ -3936,6 +4804,20 @@
     },
     "seed": {
      "label": "Semilla"
+    },
+    "style": {
+     "label": "Estilo",
+     "options": [
+      "Clásico",
+      "Estándar"
+     ]
+    },
+    "alight": {
+     "label": "Disposición",
+     "options": [
+      "Clásico",
+      "Estándar"
+     ]
     }
    }
   },
@@ -4048,6 +4930,21 @@
     },
     "high": {
      "label": "Umbral alto"
+    },
+    "style": {
+     "label": "Estilo",
+     "options": [
+      "Clásico",
+      "Estándar"
+     ]
+    },
+    "weighting": {
+     "label": "Modo",
+     "options": [
+      "Clásico",
+      "Luminancia",
+      "RGB"
+     ]
     }
    }
   },
@@ -4215,6 +5112,9 @@
     "inset": {
      "label": "Contraer/Expandir"
     },
+    "legacyCoordinates": {
+     "label": "Coordenadas antiguas"
+    },
     "offset": {
      "label": "Desplazamiento"
     },
@@ -4226,6 +5126,13 @@
     },
     "rotate": {
      "label": "Rotar automáticamente"
+    },
+    "style": {
+     "label": "Estilo",
+     "options": [
+      "Clásico",
+      "Estándar"
+     ]
     }
    }
   },
@@ -4354,6 +5261,25 @@
       "Centro",
       "Esquina"
      ]
+    },
+    "alight": {
+     "label": "Estilo",
+     "options": [
+      "Clásico",
+      "Estándar"
+     ]
+    },
+    "alZ": {
+     "label": "Posición Z"
+    },
+    "alLight": {
+     "label": "Dirección"
+    },
+    "alElev": {
+     "label": "Elevación"
+    },
+    "alHeight": {
+     "label": "Altura"
     }
    }
   },
@@ -4361,7 +5287,7 @@
    "description": "Desplaza la imagen de la capa y la repite en los bordes del cuadro de la capa.",
    "name": "Desplazamiento",
    "params": {
-    "feather": {
+    "seamFeather": {
      "label": "Difuminado"
     },
     "mask": {
@@ -4369,6 +5295,13 @@
     },
     "offset": {
      "label": "Desplazamiento"
+    },
+    "style": {
+     "label": "Estilo",
+     "options": [
+      "Clásico",
+      "Estándar"
+     ]
     }
    }
   },
@@ -4453,12 +5386,12 @@
      "label": "Ambiente"
     },
     "amount": {
-     "label": "Rugosidad"
+     "label": "Cantidad"
     },
     "blend": {
      "label": "Fusión"
     },
-    "blur": {
+    "bevel": {
      "label": "Bisel"
     },
     "color": {
@@ -4480,7 +5413,7 @@
      "label": "Intensidad"
     },
     "light": {
-     "label": "Color de la luz"
+     "label": "Color"
     },
     "refraction": {
      "label": "Refracción"
@@ -4489,7 +5422,7 @@
      "label": "Muestras de suavizado"
     },
     "scale": {
-     "label": "Escala de rugosidad"
+     "label": "Escala"
     },
     "seed": {
      "label": "Semilla"
@@ -4546,6 +5479,26 @@
     }
    }
   },
+  "outline": {
+   "description": "Dibuja un contorno sólido alrededor del exterior de la forma de la capa: Color define su color y Ancho su grosor en píxeles.",
+   "name": "Contorno",
+   "params": {
+    "radius": {
+     "label": "Ancho"
+    },
+    "color": {
+     "label": "Color"
+    },
+    "style": {
+     "label": "Estilo",
+     "options": [
+      "Contorno",
+      "Relleno",
+      "Bandas"
+     ]
+    }
+   }
+  },
   "pagecurl": {
    "description": "Gira la capa como una página: una esquina se levanta y se enrolla, dejando ver el reverso. Anima el progreso para pasar la página. Con Seguir la forma activado, la página se pasa desde los bordes de lo que se ve, así que una imagen redonda o un modelo 3D se enrolla desde su propio borde en lugar de desde una caja invisible.",
    "name": "Paso de página",
@@ -4573,6 +5526,27 @@
     },
     "shine": {
      "label": "Brillo"
+    },
+    "style": {
+     "label": "Estilo",
+     "options": [
+      "Clásico",
+      "Estándar"
+     ]
+    },
+    "roll": {
+     "label": "Estilo",
+     "options": [
+      "Clásico",
+      "Estándar"
+     ]
+    },
+    "space": {
+     "label": "Estilo",
+     "options": [
+      "Clásico",
+      "Estándar"
+     ]
     }
    }
   },
@@ -4920,8 +5894,28 @@
     "stretch": {
      "label": "Estirar"
     },
+    "threshold": {
+     "label": "Umbral"
+    },
     "vignette": {
      "label": "Viñeta"
+    },
+    "style": {
+     "label": "Estilo",
+     "options": [
+      "Clásico",
+      "Estándar"
+     ]
+    },
+    "edgeStyle": {
+     "label": "Estilo",
+     "options": [
+      "Clásico",
+      "Estándar"
+     ]
+    },
+    "saturation": {
+     "label": "Saturación"
     }
    }
   },
@@ -5030,6 +6024,28 @@
       "Borde superior al centro",
       "Borde inferior al centro"
      ]
+    },
+    "radius": {
+     "label": "Radio"
+    },
+    "style": {
+     "label": "Estilo",
+     "options": [
+      "Clásico",
+      "Estándar"
+     ]
+    },
+    "angle": {
+     "label": "Ángulo"
+    },
+    "scale": {
+     "label": "Escala"
+    },
+    "repeat": {
+     "label": "Repetición"
+    },
+    "mirror": {
+     "label": "Espejo"
     }
    }
   },
@@ -5040,26 +6056,26 @@
     "angle": {
      "label": "Ángulo"
     },
-    "angleChannel": {
-     "label": "Ángulo desde",
+    "phi": {
+     "label": "φ",
      "options": [
+      "Lum",
       "R",
       "G",
       "B",
-      "Luminancia",
       "Alfa"
      ]
     },
     "center": {
      "label": "Centro"
     },
-    "distanceChannel": {
-     "label": "Distancia desde",
+    "rho": {
+     "label": "ρ",
      "options": [
+      "Lum",
       "R",
       "G",
       "B",
-      "Luminancia",
       "Alfa"
      ]
     },
@@ -5092,6 +6108,13 @@
     },
     "offset": {
      "label": "Desplazamiento"
+    },
+    "style": {
+     "label": "Estilo",
+     "options": [
+      "Clásico",
+      "Estándar"
+     ]
     }
    }
   },
@@ -5138,6 +6161,14 @@
      "options": [
       "Seno",
       "Triángulo"
+     ]
+    },
+    "style": {
+     "label": "Estilo",
+     "options": [
+      "Clásico",
+      "Estándar",
+      "Estándar"
      ]
     }
    }
@@ -5275,24 +6306,43 @@
       "Centro",
       "Esquina"
      ]
+    },
+    "alight": {
+     "label": "Estilo",
+     "options": [
+      "Clásico",
+      "Estándar"
+     ]
+    },
+    "alZ": {
+     "label": "Posición Z"
+    },
+    "alLight": {
+     "label": "Dirección"
+    },
+    "alElev": {
+     "label": "Elevación"
     }
    }
   },
   "radialblur": {
-   "description": "Aplica un desenfoque de zoom radial promediando muestras a lo largo de rayos desde un punto central, con intensidad ajustable. Con Longitud en Uniforme, todas las estelas miden lo mismo en vez de crecer con la distancia al centro.",
+   "description": "Aplica un desenfoque de zoom radial promediando muestras a lo largo de rayos desde un punto central, con intensidad ajustable. Con Adaptable, las estelas crecen con la distancia al centro; si se desactiva, todas miden lo mismo.",
    "name": "Desenfoque de zoom",
    "params": {
-    "amount": {
-     "label": "Intensidad"
+    "adaptive": {
+     "label": "Adaptable"
     },
     "center": {
      "label": "Centro"
     },
-    "streak": {
-     "label": "Longitud",
+    "zoom": {
+     "label": "Intensidad"
+    },
+    "style": {
+     "label": "Estilo",
      "options": [
-      "Según la distancia",
-      "Uniforme"
+      "Clásico",
+      "Estándar"
      ]
     }
    }
@@ -5308,7 +6358,7 @@
      "label": "Ángulo"
     },
     "center": {
-     "label": "Centro"
+     "label": "Posición"
     },
     "color": {
      "label": "Color"
@@ -5318,6 +6368,13 @@
     },
     "width": {
      "label": "Ancho"
+    },
+    "alight": {
+     "label": "Disposición",
+     "options": [
+      "Clásico",
+      "Estándar"
+     ]
     }
    }
   },
@@ -5397,8 +6454,22 @@
     "seed": {
      "label": "Semilla"
     },
+    "style": {
+     "label": "Estilo",
+     "options": [
+      "Clásico",
+      "Estándar"
+     ]
+    },
     "sweep": {
      "label": "Barrido"
+    },
+    "alight": {
+     "label": "Disposición",
+     "options": [
+      "Clásico",
+      "Estándar"
+     ]
     }
    }
   },
@@ -5419,10 +6490,17 @@
      "label": "Luz"
     },
     "reach": {
-     "label": "Longitud"
+     "label": "Tamaño"
     },
     "fill": {
      "label": "Relleno"
+    },
+    "style": {
+     "label": "Estilo",
+     "options": [
+      "Clásico",
+      "Estándar"
+     ]
     }
    }
   },
@@ -5439,8 +6517,8 @@
     "direction": {
      "label": "Dirección",
      "options": [
-      "Horario",
-      "Antihorario",
+      "CW",
+      "CCW",
       "Ambos"
      ]
     },
@@ -5480,6 +6558,13 @@
     },
     "speed": {
      "label": "Velocidad"
+    },
+    "style": {
+     "label": "Estilo",
+     "options": [
+      "Clásico",
+      "Estándar"
+     ]
     }
    }
   },
@@ -5563,6 +6648,19 @@
     },
     "glossiness": {
      "label": "Nitidez del brillo"
+    },
+    "style": {
+     "label": "Estilo",
+     "options": [
+      "Clásico",
+      "Estándar"
+     ]
+    },
+    "alLight": {
+     "label": "Dirección"
+    },
+    "alElev": {
+     "label": "Elevación"
     }
    },
    "shortcuts": {
@@ -5600,6 +6698,13 @@
     },
     "scale": {
      "label": "Escala"
+    },
+    "style": {
+     "label": "Estilo",
+     "options": [
+      "Clásico",
+      "Estándar"
+     ]
     }
    }
   },
@@ -5634,12 +6739,22 @@
     },
     "thresholdAdd": {
      "label": "Añadir umbral"
+    },
+    "look": {
+     "label": "Estilo",
+     "options": [
+      "Clásico",
+      "Estándar"
+     ]
     }
    }
   },
   "reorient360": {
+   "aliases": [
+    "Reorientar esfera 360°"
+   ],
    "description": "Gira una capa de panorama 360° dentro de su esfera para nivelar el horizonte o cambiar hacia dónde mira el frente.",
-   "name": "Reorientar esfera 360°",
+   "name": "Reorientar esfera 360º",
    "params": {
     "pitch": {
      "label": "Cabeceo"
@@ -5673,6 +6788,13 @@
     },
     "time": {
      "label": "Tiempo"
+    },
+    "style": {
+     "label": "Estilo",
+     "options": [
+      "Clásico",
+      "Estándar"
+     ]
     }
    }
   },
@@ -5749,6 +6871,13 @@
     "start": {
      "label": "Inicio"
     },
+    "style": {
+     "label": "Estilo",
+     "options": [
+      "Clásico",
+      "Estándar"
+     ]
+    },
     "tangent": {
      "label": "Tangente"
     }
@@ -5764,7 +6893,7 @@
     "choke": {
      "label": "Contraer"
     },
-    "feather": {
+    "softness": {
      "label": "Difuminado"
     },
     "lockLuminance": {
@@ -5776,7 +6905,7 @@
     "target": {
      "label": "Color nuevo"
     },
-    "threshold": {
+    "tolerance": {
      "label": "Umbral"
     },
     "match": {
@@ -5849,18 +6978,25 @@
       "B"
      ]
     },
-    "mode": {
+    "split": {
      "label": "Modo",
      "options": [
       "Luz",
       "Oscuro",
       "Máscara",
       "Luminancia",
-      "Media"
+      "Alfa de luma"
      ]
     },
     "strength": {
      "label": "Intensidad"
+    },
+    "style": {
+     "label": "Estilo",
+     "options": [
+      "Clásico",
+      "Estándar"
+     ]
     }
    }
   },
@@ -5868,19 +7004,19 @@
    "description": "Dibuja una cinta ondulante de ancho variable sobre las zonas opacas de la capa; anima Fase para hacerla fluir o perfórala en la capa.",
    "name": "Cinta",
    "params": {
-    "angle": {
+    "tilt": {
      "label": "Ángulo"
     },
     "color": {
      "label": "Color"
     },
-    "frequency": {
+    "waves": {
      "label": "Frecuencia"
     },
-    "magnitude": {
+    "amplitude": {
      "label": "Magnitud"
     },
-    "offset": {
+    "shift": {
      "label": "Desplazamiento"
     },
     "phase": {
@@ -5889,14 +7025,14 @@
     "punch": {
      "label": "Perforar"
     },
-    "smoothing": {
+    "soften": {
      "label": "Suavizado"
     },
     "tint": {
      "label": "Tinte"
     },
     "tintAmount": {
-     "label": "Cantidad de tinte"
+     "label": "Color de tinte"
     },
     "width": {
      "label": "Ancho"
@@ -5934,14 +7070,26 @@
     "octaves": {
      "label": "Octavas"
     },
-    "roughness": {
-     "label": "Rugosidad"
+    "strength": {
+     "label": "Intensidad"
     },
-    "scale": {
-     "label": "Escala"
+    "detail": {
+     "label": "Detalle"
     },
     "seed": {
      "label": "Semilla"
+    }
+   }
+  },
+  "saturationvibrance": {
+   "description": "Hace los colores más intensos o más apagados. Intensidad realza con suavidad los colores apagados y deja los fuertes como están.",
+   "name": "Saturación / Intensidad",
+   "params": {
+    "saturation": {
+     "label": "Saturación"
+    },
+    "vibrance": {
+     "label": "Intensidad del color"
     }
    }
   },
@@ -6227,11 +7375,18 @@
    "description": "Aplica una máscara de enfoque con un vecindario de 3x3 para realzar los detalles finos.",
    "name": "Enfoque",
    "params": {
-    "amount": {
+    "sharpness": {
      "label": "Intensidad"
     },
     "radius": {
      "label": "Radio"
+    },
+    "style": {
+     "label": "Estilo",
+     "options": [
+      "Clásico",
+      "Estándar"
+     ]
     }
    }
   },
@@ -6308,11 +7463,29 @@
     "angle": {
      "label": "Ángulo de luz"
     },
+    "angle_d": {
+     "label": "Ángulo difuso"
+    },
+    "angle_s": {
+     "label": "Ángulo especular"
+    },
     "blur": {
-     "label": "Tamaño"
+     "label": "Radio"
+    },
+    "color_d": {
+     "label": "Color difuso"
+    },
+    "color_s": {
+     "label": "Color especular"
     },
     "depth": {
      "label": "Profundidad"
+    },
+    "elevation_d": {
+     "label": "Elevación difusa"
+    },
+    "elevation_s": {
+     "label": "Elevación especular"
     },
     "highlight": {
      "label": "Realce"
@@ -6320,8 +7493,24 @@
     "intensity": {
      "label": "Intensidad"
     },
+    "intensity_d": {
+     "label": "Intensidad difusa"
+    },
+    "intensity_s": {
+     "label": "Intensidad especular"
+    },
     "shadow": {
      "label": "Sombra"
+    },
+    "spec": {
+     "label": "Coeficiente especular"
+    },
+    "style": {
+     "label": "Estilo",
+     "options": [
+      "Clásico",
+      "Estándar"
+     ]
     }
    }
   },
@@ -6344,8 +7533,8 @@
     "blend": {
      "label": "Fusión"
     },
-    "blur": {
-     "label": "Tamaño"
+    "diffusion": {
+     "label": "Difusión"
     },
     "brightness": {
      "label": "Brillo"
@@ -6360,7 +7549,7 @@
      "label": "Altas luces"
     },
     "opacity": {
-     "label": "Opacidad"
+     "label": "Alfa"
     },
     "outside": {
      "label": "Resplandor exterior"
@@ -6370,6 +7559,13 @@
      "options": [
       "Uniforme",
       "Capa"
+     ]
+    },
+    "style": {
+     "label": "Estilo",
+     "options": [
+      "Clásico",
+      "Estándar"
      ]
     }
    }
@@ -6418,6 +7614,42 @@
     },
     "screenSpace": {
      "label": "Espacio de pantalla"
+    }
+   }
+  },
+  "spectralmap": {
+   "description": "Recolorea la imagen según su brillo con un espectro de tres colores. Repetir lo recorre más veces, Fase lo desplaza y Estrechar ensancha cada banda.",
+   "name": "Mapa espectral",
+   "params": {
+    "alpha": {
+     "label": "Alfa"
+    },
+    "blueColor": {
+     "label": "Color 3"
+    },
+    "greenColor": {
+     "label": "Color 2"
+    },
+    "phase": {
+     "label": "Fase"
+    },
+    "redColor": {
+     "label": "Color 1"
+    },
+    "repeat": {
+     "label": "Repetir"
+    },
+    "reverse": {
+     "label": "Invertir"
+    },
+    "saturation": {
+     "label": "Saturación"
+    },
+    "scaleBrightness": {
+     "label": "Escalar brillo"
+    },
+    "squeeze": {
+     "label": "Apretar"
     }
    }
   },
@@ -6517,6 +7749,22 @@
       "Centro",
       "Esquina"
      ]
+    },
+    "alight": {
+     "label": "Estilo",
+     "options": [
+      "Clásico",
+      "Estándar"
+     ]
+    },
+    "alZ": {
+     "label": "Posición Z"
+    },
+    "alLight": {
+     "label": "Dirección"
+    },
+    "alElev": {
+     "label": "Elevación"
     }
    }
   },
@@ -6546,6 +7794,13 @@
    "params": {
     "rpm": {
      "label": "RPM"
+    },
+    "style": {
+     "label": "Estilo",
+     "options": [
+      "Clásico",
+      "Estándar"
+     ]
     }
    }
   },
@@ -6558,6 +7813,13 @@
     },
     "sweep": {
      "label": "Ángulo"
+    },
+    "style": {
+     "label": "Estilo",
+     "options": [
+      "Clásico",
+      "Estándar"
+     ]
     }
    }
   },
@@ -6616,8 +7878,11 @@
    }
   },
   "splittone": {
+   "aliases": [
+    "Tono dividido"
+   ],
    "description": "Tiñe las sombras hacia un tono y las luces hacia otro, manteniendo el negro, el blanco y el brillo. Nivel de sombra curva el brillo y Nivel de luz desplaza el punto donde empieza el color de las luces. El estilo Mapa de degradado da a cada píxel un color solo a partir de su brillo.",
-   "name": "Tono dividido",
+   "name": "Color caliente",
    "params": {
     "highlightAmount": {
      "label": "Cantidad de luz"
@@ -6659,7 +7924,7 @@
     "feather": {
      "label": "Difuminado"
     },
-    "saturation": {
+    "sat": {
      "label": "Saturación"
     },
     "threshold": {
@@ -6732,6 +7997,13 @@
     },
     "shine": {
      "label": "Destello"
+    },
+    "edgeStyle": {
+     "label": "Estilo",
+     "options": [
+      "Clásico",
+      "Estándar"
+     ]
     }
    }
   },
@@ -6754,20 +8026,17 @@
    }
   },
   "starpolyhedron": {
-   "description": "Coloca la capa sobre una estrella formada por dos pirámides cruzadas.",
+   "description": "Coloca la capa sobre una estrella cuyas puntas se elevan hacia una arista por delante y por detrás, con luz y profundidad.",
    "name": "Poliedro estelar",
    "params": {
-    "light": {
-     "label": "Ángulo de luz"
+    "orientA": {
+     "label": "Orientación α"
     },
-    "perspective": {
-     "label": "Perspectiva"
+    "orientB": {
+     "label": "Orientación β"
     },
-    "position": {
-     "label": "Posición"
-    },
-    "radius": {
-     "label": "Radio"
+    "orientG": {
+     "label": "Orientación γ"
     },
     "rotX": {
      "label": "Rotación X"
@@ -6778,11 +8047,83 @@
     "rotZ": {
      "label": "Rotación Z"
     },
+    "starSize": {
+     "label": "Tamaño"
+    },
+    "starDepth": {
+     "label": "Profundidad"
+    },
+    "pointLength": {
+     "label": "Longitud de las puntas"
+    },
+    "smoothing": {
+     "label": "Suavizado"
+    },
+    "points": {
+     "label": "Puntas"
+    },
+    "alPos": {
+     "label": "Posición"
+    },
+    "alZ": {
+     "label": "Posición Z"
+    },
+    "alScale": {
+     "label": "Escala"
+    },
+    "intensity": {
+     "label": "Intensidad de la luz"
+    },
+    "alShine": {
+     "label": "Brillo"
+    },
+    "spec": {
+     "label": "Especularidad"
+    },
+    "alAmbient": {
+     "label": "Ambiente"
+    },
+    "alColor": {
+     "label": "Color"
+    },
+    "lightDir": {
+     "label": "Dirección"
+    },
+    "lightDepth": {
+     "label": "Elevación"
+    },
+    "alMirror": {
+     "label": "Espejo"
+    },
+    "alRepeatX": {
+     "label": "Repetir X"
+    },
+    "alRepeatY": {
+     "label": "Repetir Y"
+    },
+    "alTexAngle": {
+     "label": "Ángulo de textura"
+    },
+    "alCrop": {
+     "label": "Recorte"
+    },
+    "radius": {
+     "label": "Radio"
+    },
+    "position": {
+     "label": "Posición"
+    },
     "scale": {
      "label": "Escala"
     },
+    "perspective": {
+     "label": "Perspectiva"
+    },
     "shading": {
      "label": "Sombreado"
+    },
+    "light": {
+     "label": "Ángulo de luz"
     },
     "shine": {
      "label": "Brillo"
@@ -6838,6 +8179,13 @@
      "options": [
       "Centro",
       "Esquina"
+     ]
+    },
+    "style": {
+     "label": "Estilo",
+     "options": [
+      "Clásico",
+      "Estándar"
      ]
     }
    }
@@ -6947,6 +8295,29 @@
       "Centro",
       "Esquina"
      ]
+    },
+    "style": {
+     "label": "Estilo",
+     "options": [
+      "Clásico",
+      "Estándar"
+     ]
+    },
+    "alight": {
+     "label": "Estilo",
+     "options": [
+      "Clásico",
+      "Estándar"
+     ]
+    },
+    "alZ": {
+     "label": "Posición Z"
+    },
+    "alLight": {
+     "label": "Dirección"
+    },
+    "alElev": {
+     "label": "Elevación"
     }
    }
   },
@@ -6962,14 +8333,35 @@
     }
    }
   },
+  "streakstrips": {
+   "description": "Corta la capa en franjas paralelas y estira una línea de la imagen a lo ancho de cada franja, como un escaneo con fallos.",
+   "name": "Franjas estiradas",
+   "params": {
+    "alpha": {
+     "label": "Alfa"
+    },
+    "angle": {
+     "label": "Ángulo"
+    },
+    "count": {
+     "label": "Cantidad"
+    },
+    "maskToLayer": {
+     "label": "Enmascarar a la capa"
+    },
+    "phase": {
+     "label": "Fase"
+    }
+   }
+  },
   "stretch": {
    "description": "Corta la capa por una línea y separa las dos mitades, estirando los píxeles de la línea hacia el hueco.",
    "name": "Segmento estirado",
    "params": {
-    "angle": {
+    "cutAngle": {
      "label": "Ángulo"
     },
-    "offset": {
+    "shift": {
      "label": "Desplazamiento"
     },
     "relative": {
@@ -6978,7 +8370,7 @@
     "spread": {
      "label": "Dispersión"
     },
-    "stretch": {
+    "span": {
      "label": "Estiramiento"
     }
    }
@@ -6995,6 +8387,13 @@
     },
     "scale": {
      "label": "Escala"
+    },
+    "style": {
+     "label": "Estilo",
+     "options": [
+      "Clásico",
+      "Estándar"
+     ]
     }
    }
   },
@@ -7023,8 +8422,24 @@
     "smoothing": {
      "label": "Suavizado"
     },
+    "style": {
+     "label": "Estilo",
+     "options": [
+      "Clásico",
+      "Estándar"
+     ]
+    },
     "width": {
      "label": "Anchura"
+    }
+   }
+  },
+  "strokecolor": {
+   "description": "Pinta los trazos de la capa de un solo color: el contorno de una forma o de un texto y cada trazo de lápiz y pincel de un dibujo.",
+   "name": "Color del trazo",
+   "params": {
+    "color": {
+     "label": "Color"
     }
    }
   },
@@ -7040,6 +8455,13 @@
     },
     "start": {
      "label": "Inicio"
+    },
+    "style": {
+     "label": "Estilo",
+     "options": [
+      "Clásico",
+      "Estándar"
+     ]
     }
    }
   },
@@ -7053,7 +8475,7 @@
     "angle2": {
      "label": "Ángulo 2"
     },
-    "frequency": {
+    "freq": {
      "label": "Frecuencia"
     },
     "phase": {
@@ -7064,6 +8486,13 @@
      "options": [
       "Seno",
       "Triángulo"
+     ]
+    },
+    "style": {
+     "label": "Estilo",
+     "options": [
+      "Clásico",
+      "Estándar"
      ]
     }
    }
@@ -7236,6 +8665,13 @@
       "Palabra",
       "Línea"
      ]
+    },
+    "style": {
+     "label": "Estilo",
+     "options": [
+      "Clásico",
+      "Estándar"
+     ]
     }
    },
    "presets": {
@@ -7256,7 +8692,7 @@
      "label": "Personalizado"
     },
     "charset": {
-     "label": "Caracteres",
+     "label": "Juego de caracteres",
      "options": [
       "Letras",
       "Mayúsculas",
@@ -7368,50 +8804,71 @@
     "wobbly": "Tambaleante"
    }
   },
+  "textspacing": {
+   "description": "Cambia el espacio entre las letras y entre las líneas de una capa de texto. Espaciado de letras separa las letras, o las junta por debajo del 0 %. Espaciado de líneas fija la separación entre líneas: 100 % es lo normal y 200 % la duplica. Añade fotogramas clave a cualquiera de los dos para animar el espaciado.",
+   "name": "Espaciado de texto",
+   "params": {
+    "letterspacing": {
+     "label": "Espaciado de letras"
+    },
+    "linespacing": {
+     "label": "Espaciado de líneas"
+    }
+   }
+  },
   "texttransform": {
-   "description": "Mueve, escala, gira, desvanece y tiñe letras, palabras o líneas dentro de un rango. El ancla determina si el escalado y la rotación usan cada componente o el centro de la capa. Desplaza el rango con Desfase para que el cambio recorra el texto.",
+   "description": "Mueve, escala, gira, desvanece y tiñe letras, palabras o líneas dentro de un rango. El ancla determina si el escalado y la rotación usan cada componente o el centro de la capa. Desplaza el rango con Fase para que el cambio recorra el texto.",
    "name": "Transformar texto",
    "params": {
-    "anchor": {
+    "anchorTo": {
      "label": "Ancla",
      "options": [
-      "Componente",
-      "Capa"
+      "Capa",
+      "Componente"
      ]
+    },
+    "easeIn": {
+     "label": "Suavizado de entrada"
+    },
+    "easeOut": {
+     "label": "Suavizado de salida"
     },
     "end": {
      "label": "Fin"
     },
     "offset": {
-     "label": "Desfase"
+     "label": "Fase"
     },
-    "opacity": {
+    "alpha": {
      "label": "Opacidad"
     },
+    "overlap": {
+     "label": "Solapamiento"
+    },
     "position": {
-     "label": "Posición"
+     "label": "Desfase"
     },
     "randomOrder": {
      "label": "Orden aleatorio"
     },
     "rotation": {
-     "label": "Rotación"
+     "label": "Ángulo"
     },
-    "scale": {
+    "scaleBy": {
      "label": "Escala"
     },
     "seed": {
      "label": "Semilla"
     },
-    "shape": {
+    "curve": {
      "label": "Forma",
      "options": [
       "Cuadrada",
+      "Suave",
+      "Triángulo",
       "Subida",
       "Bajada",
-      "Triángulo",
-      "Redonda",
-      "Suave"
+      "Redonda"
      ]
     },
     "smoothness": {
@@ -7420,15 +8877,33 @@
     "start": {
      "label": "Inicio"
     },
+    "stretch": {
+     "label": "Estirar"
+    },
     "tint": {
      "label": "Tinte"
     },
     "unit": {
-     "label": "Basado en",
+     "label": "Componente",
      "options": [
       "Carácter",
       "Palabra",
-      "Línea"
+      "Línea",
+      "Contorno"
+     ]
+    },
+    "version": {
+     "label": "Rango",
+     "options": [
+      "Antiguo",
+      "Estándar"
+     ]
+    },
+    "style": {
+     "label": "Estilo",
+     "options": [
+      "Clásico",
+      "Estándar"
      ]
     }
    },
@@ -7464,7 +8939,7 @@
     "level": {
      "label": "Umbral"
     },
-    "softness": {
+    "feather": {
      "label": "Difuminado"
     }
    }
@@ -7518,6 +8993,20 @@
     },
     "stretch": {
      "label": "Estirar"
+    },
+    "style": {
+     "label": "Estilo",
+     "options": [
+      "Clásico",
+      "Estándar"
+     ]
+    },
+    "edgeStyle": {
+     "label": "Estilo",
+     "options": [
+      "Clásico",
+      "Estándar"
+     ]
     }
    }
   },
@@ -7581,6 +9070,20 @@
     },
     "stretch": {
      "label": "Estirar"
+    },
+    "style": {
+     "label": "Estilo",
+     "options": [
+      "Clásico",
+      "Estándar"
+     ]
+    },
+    "edgeStyle": {
+     "label": "Estilo",
+     "options": [
+      "Clásico",
+      "Estándar"
+     ]
     }
    }
   },
@@ -7596,7 +9099,8 @@
       "MM:SS",
       "MM:SS.hh",
       "SS.hh",
-      "Fotogramas"
+      "Fotogramas",
+      "MM:SS:FF"
      ]
     },
     "offset": {
@@ -7615,11 +9119,21 @@
    }
   },
   "timequant": {
+   "aliases": [
+    "Velocidad de fotogramas"
+   ],
    "description": "Hace que esta capa se mueva a una velocidad de fotogramas menor, como un vídeo entrecortado o de stop-motion.",
-   "name": "Velocidad de fotogramas",
+   "name": "Cuantización de tiempo",
    "params": {
     "fps": {
-     "label": "Fotogramas/s"
+     "label": "Pasos/s"
+    },
+    "style": {
+     "label": "Estilo",
+     "options": [
+      "Clásico",
+      "Estándar"
+     ]
     }
    }
   },
@@ -7727,6 +9241,22 @@
       "Centro",
       "Esquina"
      ]
+    },
+    "alight": {
+     "label": "Estilo",
+     "options": [
+      "Clásico",
+      "Estándar"
+     ]
+    },
+    "alZ": {
+     "label": "Posición Z"
+    },
+    "alLight": {
+     "label": "Dirección"
+    },
+    "alElev": {
+     "label": "Elevación"
     }
    }
   },
@@ -7766,6 +9296,23 @@
     },
     "twist": {
      "label": "Torsión"
+    },
+    "style": {
+     "label": "Estilo",
+     "options": [
+      "Clásico",
+      "Estándar"
+     ]
+    },
+    "wrapStyle": {
+     "label": "Estilo",
+     "options": [
+      "Clásico",
+      "Estándar"
+     ]
+    },
+    "depth": {
+     "label": "Profundidad"
     }
    }
   },
@@ -7825,6 +9372,13 @@
     },
     "stretch": {
      "label": "Estiramiento"
+    },
+    "style": {
+     "label": "Estilo",
+     "options": [
+      "Clásico",
+      "Estándar"
+     ]
     }
    }
   },
@@ -7871,6 +9425,16 @@
     },
     "screenSpace": {
      "label": "Espacio de pantalla"
+    },
+    "style": {
+     "label": "Estilo",
+     "options": [
+      "Clásico",
+      "Estándar"
+     ]
+    },
+    "singleAxis": {
+     "label": "Un solo eje"
     }
    }
   },
@@ -7893,6 +9457,13 @@
       "Capa",
       "Pantalla"
      ]
+    },
+    "edgeStyle": {
+     "label": "Estilo",
+     "options": [
+      "Clásico",
+      "Estándar"
+     ]
     }
    }
   },
@@ -7903,7 +9474,7 @@
     "amount": {
      "label": "Cantidad"
     },
-    "radius": {
+    "blurRadius": {
      "label": "Intensidad"
     },
     "showMask": {
@@ -7917,6 +9488,13 @@
      "options": [
       "Gris",
       "Rojo"
+     ]
+    },
+    "style": {
+     "label": "Estilo",
+     "options": [
+      "Clásico",
+      "Estándar"
      ]
     }
    }
@@ -7999,8 +9577,11 @@
    }
   },
   "viewer360": {
+   "aliases": [
+    "Visor 360°"
+   ],
    "description": "Muestra una capa panorámica de 360° a través de una cámara virtual que puedes girar y ampliar.",
-   "name": "Visor 360°",
+   "name": "Visor 360º",
    "params": {
     "fov": {
      "label": "Campo de visión"
@@ -8082,7 +9663,7 @@
     "phase": {
      "label": "Fase"
     },
-    "scale": {
+    "cellScale": {
      "label": "Escala"
     },
     "seed": {
@@ -8090,8 +9671,84 @@
     }
    }
   },
+  "vortexblur": {
+   "description": "Desenfoca la capa en un remolino alrededor de Centro, con más fuerza en el medio y desvaneciéndose en Radio (una fracción de la pantalla). Aberración cromática separa los canales rojo, verde y azul alrededor de Canal central.",
+   "name": "Desenfoque de vórtice",
+   "params": {
+    "center": {
+     "label": "Centro"
+    },
+    "strength": {
+     "label": "Intensidad"
+    },
+    "radius": {
+     "label": "Radio"
+    },
+    "aberration": {
+     "label": "Aberración cromática"
+    },
+    "centerChannel": {
+     "label": "Canal central",
+     "options": [
+      "Rojo",
+      "Verde",
+      "Azul"
+     ]
+    }
+   }
+  },
+  "warpblur": {
+   "description": "Emborrona la capa siguiendo un ruido fractal suave, de modo que cada punto deja una estela de distinta longitud y dirección. Dirección elige hacia dónde van las estelas, Un solo eje las mantiene solo en esa dirección y Sesgo empuja todas las estelas hacia el mismo lado.",
+   "name": "Desenfoque de deformación",
+   "params": {
+    "parallax": {
+     "label": "Paralaje"
+    },
+    "offset": {
+     "label": "Desplazamiento"
+    },
+    "strength": {
+     "label": "Fuerza"
+    },
+    "evolution": {
+     "label": "Evolución"
+    },
+    "direction": {
+     "label": "Dirección",
+     "options": [
+      "Horizontal",
+      "Vertical",
+      "Ambos",
+      "Radial",
+      "Espiral",
+      "Torsión"
+     ]
+    },
+    "scale": {
+     "label": "Escala"
+    },
+    "stretch": {
+     "label": "Estiramiento"
+    },
+    "seed": {
+     "label": "Semilla"
+    },
+    "singleAxis": {
+     "label": "Un solo eje"
+    },
+    "screenSpace": {
+     "label": "Espacio de pantalla"
+    },
+    "octaves": {
+     "label": "Octavas"
+    },
+    "bias": {
+     "label": "Sesgo"
+    }
+   }
+  },
   "wavewarp": {
-   "description": "Curva la capa con una onda sinusoidal: Espaciado define cuántas ondas la cruzan, Magnitud cuánto empujan, Ángulo la dirección en la que avanzan las ondas y Ángulo de deformación la dirección en la que empujan. Espacio de pantalla ajusta el tamaño de las ondas a la pantalla en vez de a la capa. Magnitud cruzada añade una segunda onda, con el tamaño que marca Espaciado cruzado, que avanza según Ángulo de deformación y empuja según Ángulo. Con Origen en Inferior izquierda de pantalla, las ondas se miden desde esa esquina de la pantalla según su lado corto, y Fase las desplaza.",
+   "description": "Curva la capa con una onda sinusoidal: Espaciado define cuántas ondas la cruzan, Magnitud cuánto empujan, Ángulo la dirección en la que avanzan las ondas y Ángulo de deformación la dirección en la que empujan. Espacio de pantalla ajusta el tamaño de las ondas a la pantalla en vez de a la capa. Magnitud cruzada añade una segunda onda, con el tamaño que marca Espaciado cruzado, que avanza según Ángulo de deformación y empuja según Ángulo. Con Origen en Inferior izquierda de pantalla, las ondas se miden desde esa esquina de la pantalla según su lado corto, y Fase las desplaza. Amortiguación desvanece las ondas hacia Ancla de amortiguación, un punto a lo ancho de la capa de 0 a 1 según Ángulo; Espaciado de amortiguación estira las ondas cerca del ancla por encima de 0 y lejos de ella por debajo de 0.",
    "name": "Deformación de onda",
    "params": {
     "angle": {
@@ -8109,7 +9766,7 @@
     "speed": {
      "label": "Velocidad"
     },
-    "warpAngle": {
+    "warp": {
      "label": "Ángulo de deformación"
     },
     "screenSpace": {
@@ -8127,6 +9784,29 @@
       "Esquina de la capa",
       "Inferior izquierda de pantalla"
      ]
+    },
+    "damping": {
+     "label": "Amortiguación"
+    },
+    "dampingSpace": {
+     "label": "Espaciado de amortiguación"
+    },
+    "dampingOrigin": {
+     "label": "Ancla de amortiguación"
+    },
+    "style": {
+     "label": "Estilo",
+     "options": [
+      "Clásico",
+      "Estándar"
+     ]
+    },
+    "axes": {
+     "label": "Estilo",
+     "options": [
+      "Clásico",
+      "Estándar"
+     ]
     }
    }
   },
@@ -8141,13 +9821,20 @@
      "label": "Fin"
     },
     "feather": {
-     "label": "Difuminado"
+     "label": "Suavidad"
     },
     "softness": {
-     "label": "Suavidad"
+     "label": "Difuminado"
     },
     "start": {
      "label": "Inicio"
+    },
+    "style": {
+     "label": "Estilo",
+     "options": [
+      "Clásico",
+      "Estándar"
+     ]
     }
    }
   },
@@ -8200,8 +9887,96 @@
       "Desactivado"
      ]
     },
-    "strength": {
+    "zoom": {
      "label": "Intensidad"
+    },
+    "alight": {
+     "label": "Disposición",
+     "options": [
+      "Clásico",
+      "Estándar"
+     ]
+    }
+   }
+  },
+  "ring": {
+   "description": "Envuelve la capa alrededor de un anillo de caras planas, como un tubo corto, con luz y profundidad.",
+   "name": "Anillo",
+   "params": {
+    "orientA": {
+     "label": "Orientación α"
+    },
+    "orientB": {
+     "label": "Orientación β"
+    },
+    "orientG": {
+     "label": "Orientación γ"
+    },
+    "rotX": {
+     "label": "Rotación X"
+    },
+    "rotY": {
+     "label": "Rotación Y"
+    },
+    "rotZ": {
+     "label": "Rotación Z"
+    },
+    "radius": {
+     "label": "Radio"
+    },
+    "thickness": {
+     "label": "Ancho"
+    },
+    "height": {
+     "label": "Longitud"
+    },
+    "smoothing": {
+     "label": "Suavizado"
+    },
+    "position": {
+     "label": "Posición"
+    },
+    "alZ": {
+     "label": "Posición Z"
+    },
+    "scale": {
+     "label": "Escala"
+    },
+    "intensity": {
+     "label": "Intensidad de la luz"
+    },
+    "shine": {
+     "label": "Brillo"
+    },
+    "spec": {
+     "label": "Especularidad"
+    },
+    "ambient": {
+     "label": "Ambiente"
+    },
+    "lightColor": {
+     "label": "Color"
+    },
+    "lightDir": {
+     "label": "Dirección"
+    },
+    "lightDepth": {
+     "label": "Elevación"
+    },
+    "texMirror": {
+     "label": "Espejo"
+    },
+    "texRepeatX": {
+     "label": "Repetir X"
+    },
+    "texRepeatY": {
+     "label": "Repetir Y"
+    },
+    "texAngle": {
+     "label": "Ángulo de textura"
+    },
+    "texCrop": {
+     "label": "Recorte"
     }
    }
   }

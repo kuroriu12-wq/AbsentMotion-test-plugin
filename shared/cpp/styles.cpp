@@ -108,10 +108,11 @@ const ShaderMode kShaderModes[] = {
     {"divide", true, "return b / max(s, 1e-6);"},
 };
 
-sk_sp<SkBlender> ShaderBlender(const std::string& id) {
-    thread_local std::map<std::string, sk_sp<SkBlender>> cache;
-    if (auto hit = cache.find(id); hit != cache.end()) return hit->second;
-    sk_sp<SkBlender> blender;
+sk_sp<SkRuntimeEffect> ShaderBlend(const std::string& id, bool premul) {
+    thread_local std::map<std::string, sk_sp<SkRuntimeEffect>> cache;
+    const std::string key = premul ? id + "/premul" : id;
+    if (auto hit = cache.find(key); hit != cache.end()) return hit->second;
+    sk_sp<SkRuntimeEffect> effect;
     for (const ShaderMode& mode : kShaderModes) {
         if (id != mode.id) continue;
         std::string sksl = kBlendHelpers;
@@ -122,33 +123,49 @@ sk_sp<SkBlender> ShaderBlender(const std::string& id) {
         } else {
             sksl += std::string("float3 mixColor(float3 s, float3 b) { ") + mode.code + " }\n";
         }
-        sksl += R"(
+        sksl += premul ? "uniform half again;\n" : "";
+        sksl += std::string(R"(
 half4 main(half4 src, half4 dst) {
     float sa = float(src.a), da = float(dst.a);
     if (sa <= 0.0) return dst;
-    float3 s = clamp(float3(src.rgb) / sa, 0.0, 1.0);
+    float3 s = clamp(float3(src.rgb))") + (premul ? "" : " / sa") + R"(, 0.0, 1.0);
     float3 b = da > 0.0 ? clamp(float3(dst.rgb) / da, 0.0, 1.0) : float3(0.0);
     float3 mixed = clamp(mixColor(s, b), 0.0, 1.0);
+    float w = sa)" + (premul ? " * float(again)" : "") + R"(;
     float alpha = sa + da * (1.0 - sa);
-    float3 rgb = (1.0 - da) * float3(src.rgb) + (1.0 - sa) * float3(dst.rgb) + sa * da * mixed;
+    float3 rgb = (1.0 - da) * float3(src.rgb) + (1.0 - w) * float3(dst.rgb) + w * da * mixed;
     return half4(half3(min(rgb, float3(alpha))), half(alpha));
 })";
         auto result = SkRuntimeEffect::MakeForBlender(SkString(sksl.c_str()));
-        if (result.effect) blender = result.effect->makeBlender(nullptr);
+        if (result.effect) effect = result.effect;
         else __android_log_print(ANDROID_LOG_ERROR, "AMStyles", "blend %s: %s", id.c_str(), result.errorText.c_str());
         break;
     }
+    cache[key] = effect;
+    return effect;
+}
+
+sk_sp<SkBlender> ShaderBlender(const std::string& id) {
+    thread_local std::map<std::string, sk_sp<SkBlender>> cache;
+    if (auto hit = cache.find(id); hit != cache.end()) return hit->second;
+    sk_sp<SkRuntimeEffect> effect = ShaderBlend(id, false);
+    sk_sp<SkBlender> blender = effect ? effect->makeBlender(nullptr) : nullptr;
     cache[id] = blender;
     return blender;
 }
 
-void SetBlend(SkPaint* paint, const std::string& id) {
+void SetBlend(SkPaint* paint, const std::string& id, float again = -1) {
     if (id.empty() || id == "normal") return;
     if (id == "screen") paint->setBlendMode(SkBlendMode::kScreen);
     else if (id == "mask") paint->setBlendMode(SkBlendMode::kDstIn);
     else if (id == "exclude") paint->setBlendMode(SkBlendMode::kDstOut);
     else if (id == "clipping-mask") paint->setBlendMode(SkBlendMode::kSrcATop);
+    else if (sk_sp<SkRuntimeEffect> premul = again >= 0 ? ShaderBlend(id, true) : nullptr) paint->setBlender(premul->makeBlender(SkData::MakeWithCopy(&again, sizeof again)));
     else if (auto blender = ShaderBlender(id)) paint->setBlender(blender);
+}
+
+float PremulOpacity(const Layer& l, double timeMs) {
+    return l.premulBlend ? std::clamp(l.opacity.get(0, l.localTime(timeMs), 1) * MotionOpacity(l, timeMs), 0.0f, 1.0f) : -1;
 }
 
 bool IsNormal(const std::string& id) { return id.empty() || id == "normal"; }
@@ -238,7 +255,7 @@ SkM44 Turn(float degrees) { return SkM44::Rotate({0, 0, 1}, degrees * kRadians);
 
 constexpr int kMaxParentDepth = 16;
 
-SkMatrix MatrixOf(const Placement& p, const Layer& l, float t);
+SkMatrix MatrixOf(const Placement& p, const Layer& l, float t, bool flat = false);
 int Fps();
 
 const Layer* PathSource(const std::vector<Layer>& siblings, const Layer& l) {
@@ -251,7 +268,7 @@ const Layer* PathSource(const std::vector<Layer>& siblings, const Layer& l) {
     return nullptr;
 }
 
-Placement Effective(const std::vector<Layer>& siblings, const Layer& l, double timeMs, int depth) {
+Placement Effective(const std::vector<Layer>& siblings, const Layer& l, double timeMs, int depth, bool followPath = true) {
     Placement own = Own(l, timeMs);
     if (depth >= kMaxParentDepth) return own;
     const Layer* parent = nullptr;
@@ -274,19 +291,22 @@ Placement Effective(const std::vector<Layer>& siblings, const Layer& l, double t
         own.z = p.z + offset.z;
         ParentRoll(l, timeMs, &own);
     }
-    if (!FollowsPath(l)) return own;
+    if (!followPath || !FollowsPath(l)) return own;
     const Layer* source = PathSource(siblings, l);
     if (!source) return own;
     const Layer& below = *source;
     const float t = below.localTime(timeMs);
     const SkPath path = below.text ? TextGlyphPath(below, t, Fps()) : Cropped(below, t, ShapePath(below, t));
-    FollowPath(l, timeMs, path.makeTransform(MatrixOf(parent == &below ? p : Effective(siblings, below, timeMs, depth + 1), below, t)), &own);
+    const bool legacy = UsesLegacyPathCoordinates(l, timeMs);
+    const Placement guide = parent == &below && !legacy ? p : Effective(siblings, below, timeMs, depth + 1, !legacy);
+    FollowPath(l, timeMs, PathFromTop(l, timeMs, path).makeTransform(MatrixOf(guide, below, t)), &own);
     return own;
 }
 
-SkMatrix MatrixOf(const Placement& p, const Layer& l, float t) {
-    SkMatrix m = l.projected ? p.space.asM33() : SkMatrix::Translate(p.location.fX, p.location.fY);
-    if (!l.projected) m.preRotate(p.rotation);
+SkMatrix MatrixOf(const Placement& p, const Layer& l, float t, bool flat) {
+    const bool projected = l.projected && !flat;
+    SkMatrix m = projected ? p.space.asM33() : SkMatrix::Translate(p.location.fX, p.location.fY);
+    if (!projected) m.preRotate(p.rotation);
     m.preSkew(tanf(l.skew.get(0, t, 0)), tanf(l.skew.get(1, t, 0)));
     m.preScale(p.scale.fX, p.scale.fY);
     m.preTranslate(-p.pivot.fX, -p.pivot.fY);
@@ -347,7 +367,8 @@ SkPath DrawStrokeEnd(SkCanvas* canvas, SkPaint paint, SkPoint p, SkVector d, flo
 SkPath DrawStroke(SkCanvas* canvas, const Layer& l, const SkPath& path, float t, float alpha, bool outline = true) {
     const float width = l.stroke.size.get(0, t, 0);
     if (!(width > 0) || path.isEmpty()) return {};
-    const SkColor4f color = ColorAt(l.stroke.color, t, kBlack, alpha);
+    const Anim* recolor = StrokeRecolor(l);
+    const SkColor4f color = ColorAt(recolor ? *recolor : l.stroke.color, t, kBlack, alpha);
     SkPaint paint = StrokePaint(l, width, color);
     const bool ends = (l.stroke.start != "none" || l.stroke.end != "none") && l.stroke.endSize > 0;
     const SkPath tapered = l.kind == "shape" && !l.text ? TaperedStroke(l, path, width, t) : SkPath();
@@ -714,13 +735,20 @@ Drawn DrawBody(SkCanvas* canvas, const Layer& l, double timeMs, float t, const S
     if (edged) {
         const float width = l.stroke.size.get(0, t, 0);
         SkPaint edge;
-        if (width > 0) edge.setImageFilter(EdgeFilter(nullptr, "centered", width / 2, ColorAt(l.stroke.color, t, kBlack, alpha), PixelUnit(canvas)));
+        if (width > 0) edge.setImageFilter(EdgeFilter(nullptr, "centered", width / 2, ColorAt(StrokeRecolor(l) ? *StrokeRecolor(l) : l.stroke.color, t, kBlack, alpha), PixelUnit(canvas)));
         canvas->saveLayer(nullptr, &edge);
     }
     canvas->save();
     canvas->concat(m);
     if (l.kind == "embedScene") {
+        const bool tinted = l.fillType == "color";
+        if (tinted) {
+            SkPaint tint;
+            tint.setColorFilter(SkColorFilters::Blend(ColorAt(l.fillColor, t, kWhite), nullptr, SkBlendMode::kSrcATop));
+            canvas->saveLayer(nullptr, &tint);
+        }
         DrawGroup(canvas, l, timeMs, pictures);
+        if (tinted) canvas->restore();
         canvas->restore();
         if (edged) canvas->restore();
         return drawn;
@@ -1174,7 +1202,8 @@ void DrawParticles(SkCanvas* canvas, const std::vector<Layer>& siblings, const L
 void DrawContent(SkCanvas* canvas, const std::vector<Layer>& siblings, const Layer& l, double timeMs, float alpha,
                  bool decorate, const MediaPictures& pictures, const std::vector<LayerCopy>* copies) {
     const float t = l.localTime(timeMs);
-    const SkMatrix m = SiblingMatrix(siblings, l, timeMs);
+    const SkMatrix seen = SiblingMatrix(siblings, l, timeMs);
+    SkMatrix m = seen;
     const SkPath path = BodyPath(l, t);
     Drawn drawn;
     const SkPath scenePath = path.makeTransform(m);
@@ -1185,6 +1214,11 @@ void DrawContent(SkCanvas* canvas, const std::vector<Layer>& siblings, const Lay
     const auto order = [&](const LayerEffect& e) { return std::clamp((int)std::lround(Setting(e, "layer", t, 0)), 0, 2); };
     const bool emits = std::any_of(l.effects.begin(), l.effects.end(), Emits);
     const bool alone = emits && std::any_of(l.effects.begin(), l.effects.end(), [&](const LayerEffect& e) { return Emits(e) && order(e) == 2; });
+    SkMatrix flat, projection, unproject;
+    Placement facing;
+    const bool onPlane = effects && l.projected && l.kind != "model" && !copies && !emits && !gEffects->lifted(l) && !gEffects->behind(l) &&
+                         SeenPlacement(l, timeMs, &facing, true) && (flat = MatrixOf(facing, l, t, true)).invert(&unproject) &&
+                         (projection = SkMatrix::Concat(seen, unproject)).invert(&unproject) && projection.isFinite();
     auto own = [&](SkCanvas* canvas) {
         if (!copies) {
             drawn = DrawBody(canvas, l, timeMs, t, m, path, alpha, pictures, bordered);
@@ -1321,9 +1355,19 @@ void DrawContent(SkCanvas* canvas, const std::vector<Layer>& siblings, const Lay
     if (under) below = [&](SkCanvas* canvas) {
         Override plain;
         plain.unitOpacity = true;
+        if (!onPlane) return DrawOne(canvas, siblings, *under, timeMs, pictures, plain);
+        canvas->save();
+        canvas->concat(unproject);
         DrawOne(canvas, siblings, *under, timeMs, pictures, plain);
+        canvas->restore();
     };
-    SkRect effectArea = scenePath.getBounds();
+    if (onPlane) {
+        canvas->save();
+        canvas->concat(projection);
+        m = flat;
+        gGroupDepth++;
+    }
+    SkRect effectArea = onPlane ? path.makeTransform(m).getBounds() : scenePath.getBounds();
     SkMatrix effectMatrix = m;
     if (effects && l.kind == "embedScene" && gEffects->wraps && gEffects->wraps(l)) {
         const SkRect content = DrawnBounds(l, timeMs, m);
@@ -1337,6 +1381,12 @@ void DrawContent(SkCanvas* canvas, const std::vector<Layer>& siblings, const Lay
         }
     }
     if (!effects || !gEffects->draw(canvas, *gScene, l, timeMs, effectArea, effectMatrix, picture, below)) picture(canvas);
+    if (onPlane) {
+        gGroupDepth--;
+        canvas->restore();
+        m = seen;
+        drawn.stroked = drawn.stroked.makeTransform(projection);
+    }
     if (effects && gEffects->lifted(l) && !(gEffects->spills && gEffects->spills(l, timeMs)) && !scenePath.isEmpty()) {
         SkPaint mask;
         mask.setAntiAlias(true);
@@ -1517,7 +1567,7 @@ void DrawShuttered(SkCanvas* canvas, const std::vector<Layer>& siblings, const L
     }
     if (ov.blend || !IsNormal(l.blending)) {
         if (ov.blend) composite.setBlendMode(ov.mode);
-        else SetBlend(&composite, l.blending);
+        else SetBlend(&composite, l.blending, PremulOpacity(l, timeMs));
         sample.blend = true;
         sample.mode = SkBlendMode::kSrcOver;
     }
@@ -1527,7 +1577,15 @@ void DrawShuttered(SkCanvas* canvas, const std::vector<Layer>& siblings, const L
         canvas->restore();
         return;
     }
-    const auto at = [&](double u) { return std::clamp(timeMs + lead - open * (1 - u), (double)l.startTime, (double)l.endTime); };
+    const auto at = [&](double u) {
+        const double when = timeMs + lead - open * (1 - u);
+        return shutter.anyTime ? when : std::clamp(when, (double)l.startTime, (double)l.endTime);
+    };
+    struct AnyTimeScope {
+        bool was;
+        explicit AnyTimeScope(bool on) : was(ShutterAnyTime()) { SetShutterAnyTime(on || was); }
+        ~AnyTimeScope() { SetShutterAnyTime(was); }
+    } anyTimeScope(shutter.anyTime);
     const bool steady = Steady(siblings, l, at(0), at(1));
     int samples = shutter.samples;
     if (shutter.adaptive && !steady) samples = std::clamp((int)std::ceil(Reach(siblings, l, timeMs + lead - open / 2, open) / 2), samples, 64);
@@ -1591,9 +1649,17 @@ void DrawShuttered(SkCanvas* canvas, const std::vector<Layer>& siblings, const L
     canvas->restore();
 }
 
+static SkVector LeadOffset(const Layer& l, double ms) {
+    const std::vector<Keyframe>& k = l.location.keys;
+    if (k.size() < 2 || k[0].t > 0 || !(k[1].t > k[0].t) || l.endTime <= l.startTime || !(ms < 0)) return {0, 0};
+    const double per = ms / ((k[1].t - k[0].t) * (l.endTime - l.startTime));
+    const auto step = [&](size_t i) { return i < k[0].v.size() && i < k[1].v.size() ? (float)((k[1].v[i] - k[0].v[i]) * per) : 0.0f; };
+    return {step(0), step(1)};
+}
+
 void DrawOne(SkCanvas* canvas, const std::vector<Layer>& siblings, const Layer& l, double timeMs,
              const MediaPictures& pictures, const Override& ov) {
-    if (!l.activeAt(timeMs) || l.kind == "nullobj" || l.kind == "camera" || l.kind == "light") return;
+    if ((!l.activeAt(timeMs) && !(ov.shuttered && ShutterAnyTime())) || l.kind == "nullobj" || l.kind == "camera" || l.kind == "light") return;
     if (l.fillType == "media" && !pictures(l.mediaUri, l.id)) return;
     if (!ov.feedback) for (const LayerEffect& e : l.effects) {
         if (e.hidden || e.id != "absent.videofeedback") continue;
@@ -1645,7 +1711,7 @@ void DrawOne(SkCanvas* canvas, const std::vector<Layer>& siblings, const Layer& 
         const bool grouped = !ov.blend && !IsNormal(l.blending) && !SeesPrevious(siblings, l);
         if (grouped) {
             SkPaint composite;
-            SetBlend(&composite, l.blending);
+            SetBlend(&composite, l.blending, PremulOpacity(l, timeMs));
             canvas->saveLayer(nullptr, &composite);
             plain.blend = true;
             plain.mode = SkBlendMode::kSrcOver;
@@ -1692,7 +1758,7 @@ void DrawOne(SkCanvas* canvas, const std::vector<Layer>& siblings, const Layer& 
         const bool grouped = !ov.blend && !IsNormal(l.blending) && !SeesPrevious(siblings, l);
         if (grouped) {
             SkPaint composite;
-            SetBlend(&composite, l.blending);
+            SetBlend(&composite, l.blending, PremulOpacity(l, timeMs));
             canvas->saveLayer(nullptr, &composite);
             plain.blend = true;
             plain.mode = SkBlendMode::kSrcOver;
@@ -1700,8 +1766,20 @@ void DrawOne(SkCanvas* canvas, const std::vector<Layer>& siblings, const Layer& 
         auto past = [&](int i) {
             Override faded = plain;
             faded.alpha = ov.alpha * (1 + (echo.alpha - 1) * i / echo.count);
-            const double at = std::clamp(timeMs - 1000.0 * echo.seconds * i / echo.count, (double)l.startTime, (double)l.endTime);
+            const double want = timeMs - 1000.0 * echo.seconds * i / echo.count;
+            const double at = std::clamp(want, (double)l.startTime, (double)l.endTime);
+            SkVector early = echo.standard && want < at ? LeadOffset(l, std::max(want, at - 2000.0 / Fps()) - at) : SkVector{0, 0};
+            for (const Layer& s : siblings) {
+                if (l.parent == 0 || s.id != l.parent || &s == &l || early.isZero()) continue;
+                const Placement p = Effective(siblings, s, at, 1);
+                const SkV4 o = Turn(p.rotation) * p.tilt * SkV4{early.fX * p.scale.fX, early.fY * p.scale.fY, 0, 0};
+                early = {o.x, o.y};
+                break;
+            }
+            canvas->save();
+            canvas->translate(early.fX, early.fY);
             DrawOne(canvas, siblings, l, at, pictures, faded);
+            canvas->restore();
             if (gBreak) (*gBreak)();
         };
         if (!echo.atop) for (int i = echo.count; i >= 1; i--) past(i);
@@ -1756,7 +1834,7 @@ void DrawOne(SkCanvas* canvas, const std::vector<Layer>& siblings, const Layer& 
         SkPaint layerPaint;
         layerPaint.setAlphaf(opacity);
         if (ov.blend) layerPaint.setBlendMode(ov.mode);
-        else SetBlend(&layerPaint, l.blending);
+        else SetBlend(&layerPaint, l.blending, l.premulBlend ? opacity : -1);
         if (shadow) {
             const Edge& s = l.shadow;
             const float sigma = std::max(s.size.get(0, t, 4), 0.0f) * 0.5f;
@@ -1812,6 +1890,8 @@ bool EffectOwnerMatrix(int64_t owner, double timeMs, SkMatrix* matrix) {
 
 int ProjectFps() { return Fps(); }
 
+SkSize ProjectSize() { return gScene ? SkSize::Make(gScene->width, gScene->height) : SkSize::MakeEmpty(); }
+
 const std::vector<Layer>* EffectSiblings() { return gEffectList; }
 
 SceneScope::SceneScope(const Scene& scene) : fPrevious(gScene) {
@@ -1861,6 +1941,7 @@ bool TextGuideBelow(const Layer& layer, float t, SkPath* path) {
 
 void ParseStyle(const XmlNode& n, Layer* l) {
     l->blending = AttrOf(n, "blending");
+    l->premulBlend = AttrOf(n, "blendSource") == "premul";
     l->clippingMask = AttrOf(n, "clippingMask") == "true";
     l->parent = strtoll(AttrOf(n, "parent").c_str(), nullptr, 10);
     l->pathLayer = strtoll(AttrOf(n, "pathLayer").c_str(), nullptr, 10);
@@ -2005,18 +2086,22 @@ static bool ContentRect(const Layer& l, double timeMs, const SkMatrix& matrix, S
     const double innerTime = NestedTime(l, timeMs);
     if (innerTime >= 0 && (l.innerBackground >> 24) != 0) return true;
     const SkMatrix origin = SkMatrix::Concat(matrix, SkMatrix::Translate(-l.innerWidth / 2.0f, -l.innerHeight / 2.0f));
-    float left = INFINITY, top = INFINITY, right = -INFINITY, bottom = -INFINITY;
+    SkRect content = SkRect::MakeEmpty();
+    bool any = false;
     SkRect child;
     for (const Layer& c : l.inner()) {
         if (innerTime < 0 || !c.activeAt(innerTime) || c.kind == "nullobj" || c.kind == "camera" || c.kind == "light") continue;
         if (!ContentRect(c, innerTime, SkMatrix::Concat(origin, SiblingMatrix(l.inner(), c, innerTime)), &child, drawn, cropped)) continue;
-        left = std::min(left, child.fLeft);
-        top = std::min(top, child.fTop);
-        right = std::max(right, child.fRight);
-        bottom = std::max(bottom, child.fBottom);
+        if (c.blending == "mask") {
+            if (any && !content.intersect(child)) any = false;
+            continue;
+        }
+        if (c.blending == "exclude") continue;
+        if (any) content.join(child);
+        else content = child;
+        any = true;
     }
-    SkRect content = SkRect::MakeLTRB(left, top, right, bottom);
-    if (left <= right && top <= bottom && (!cut || content.intersect(*out))) *out = content;
+    if (any && (!cut || content.intersect(*out))) *out = content;
     return true;
 }
 
@@ -2070,9 +2155,10 @@ void DrawContentIcon(SkCanvas* canvas, const Layer& layer, const MediaPictures& 
 static std::mutex gOrientedLock;
 static std::set<std::string> gOrientedIds;
 
-void NoteOrientedEffect(const std::string& id) {
+void NoteOrientedEffect(const std::string& id, bool oriented) {
     std::lock_guard<std::mutex> hold(gOrientedLock);
-    gOrientedIds.insert(id);
+    if (oriented) gOrientedIds.insert(id);
+    else gOrientedIds.erase(id);
 }
 
 static void FaceForward(std::vector<Layer>* seen) {
@@ -2233,7 +2319,7 @@ void Collect(SkCanvas* canvas, const std::vector<Layer>& layers, const Layer& l,
     pass->depth = l.sight.depth;
     pass->perPixel = DepthPerPixel(l, timeMs);
     pass->look = SkPaint();
-    SetBlend(&pass->look, l.blending);
+    SetBlend(&pass->look, l.blending, l.premulBlend ? opacity : -1);
     SeenFlat(l, timeMs, &pass->flat);
     {
         depth::Scope scope(pass);
@@ -2264,7 +2350,7 @@ void DrawList(SkCanvas* canvas, const std::vector<Layer>& listed, int width, int
         const float t = base.localTime(timeMs);
         SkPaint stack;
         stack.setAlphaf(std::clamp(base.opacity.get(0, t, 1) * MotionOpacity(base, timeMs), 0.0f, 1.0f));
-        SetBlend(&stack, base.blending);
+        SetBlend(&stack, base.blending, PremulOpacity(base, timeMs));
         Echo echo;
         const bool seeded = SeesPrevious(layers, base) && !EchoOf(base, timeMs, &echo) && !base.effect("absent.videofeedback") &&
                             (base.fillType != "media" || pictures(base.mediaUri, base.id));

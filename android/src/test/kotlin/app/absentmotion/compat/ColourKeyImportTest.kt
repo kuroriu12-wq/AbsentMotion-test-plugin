@@ -45,9 +45,25 @@ class ColourKeyImportTest {
 
     @Test fun hueShiftTurnsColoursAroundKeepingVideoBrightness() {
         val e = migrate("effects.hueshift", "hue" to "120")
-        close(-120f, e.number("hue"))
-        close(2f, e.number("style"))
-        close(1f, e.number("saturation"))
+        assertEquals("absent.hueshift", e["id"])
+        close(120f, e.number("hue"))
+        val sv = migrate("effects.satvib", "saturation" to "-0.5", "vib" to "1.5")
+        assertEquals("absent.saturationvibrance", sv["id"])
+        close(-0.5f, sv.number("saturation"))
+        close(1.5f, sv.number("vibrance"))
+    }
+
+    @Test fun colorTintBecomesColorizeKeepingBrightness() {
+        val plain = migrate("effects.colortint")
+        assertEquals("absent.colorize", plain["id"])
+        close(0f, plain.number("amount"))
+        close(1f, plain.number("style"))
+        val tint = result("effects.colortint", "tint" to "-150,0.75,0")
+        val e = tint.scene.node.children.single { it.name == "shape" }.children.single { it.name == "effect" }
+        close(-150f, e.number("hue"))
+        close(0.75f, e.number("amount"))
+        assertTrue(tint.dropped.toString(), tint.dropped.isEmpty())
+        assertEquals(setOf("Colorize: tint (3)"), result("effects.colortint", "tint" to "30,1,0.5").dropped)
     }
 
     @Test fun colorizeAndHotColorStartFromAlightsDefaults() {
@@ -82,42 +98,50 @@ class ColourKeyImportTest {
             close(0f, plain.number("softness"))
         }
         val oldPlain = migrate("effects.lumakey")
-        close(0.25f, oldPlain.number("threshold"))
-        close(0f, oldPlain.number("softness"))
+        close(0.5f, oldPlain.number("threshold"))
+        close(0.05f, oldPlain.number("softness"))
+        close(1f, oldPlain.number("style"))
         val band = migrate("effects.lumakey3", "lowThreshold" to "0.25", "highThreshold" to "0.75", "feather" to "0.2875", "invert" to "true")
         close(0.25f - 0.645f * 0.2875f, band.number("threshold"))
         close(0.645f * 0.2875f, band.number("softness"))
         close(0.75f, band.number("high"))
         assertEquals("true", band.text("invert"))
         val old = migrate("effects.lumakey", "threshold" to "0.625", "feather" to "0.225")
-        close(0.625f * 0.625f - 0.645f * 0.225f, old.number("threshold"))
-        close(0.645f * 0.225f, old.number("softness"))
+        close(0.625f, old.number("threshold"))
+        close(0.225f, old.number("softness"))
         assertFalse(old.children.any { it["name"] == "high" })
+    }
+
+    @Test fun strokeColorImportsAsItsOwnEffect() {
+        val e = migrate("effects.drawing.strokecolor", "color" to "#ff112233")
+        assertEquals("absent.strokecolor", e["id"])
+        assertEquals("#ff112233", e.text("color"))
+        assertTrue(result("effects.drawing.strokecolor", "color" to "#ff112233").dropped.isEmpty())
     }
 
     @Test fun keysAndColourMapsGetTheirImportOnlyChoices() {
         val chroma = migrate("effects.chromakey")
         close(0f, chroma.number("tolerance"))
         close(0f, chroma.number("softness"))
-        val spectral = migrate("spectralmap", "saturation" to "0.25")
-        close(1f, spectral.number("style"))
-        close(1.5f, spectral.number("saturation"))
-        assertEquals(listOf("#ff0000ff", "#ff00ff00", "#ffff0000"), listOf("color1", "color2", "color3").map { spectral.text(it) })
+        val spectral = migrate("spectralmap", "saturation" to "0.25", "squeeze" to "0.31")
+        assertEquals("absent.spectralmap", spectral["id"])
+        close(0.25f, spectral.number("saturation"))
+        close(0.31f, spectral.number("squeeze"))
         val spot = migrate("spotcolor")
         close(1f, spot.number("grey"))
         close(2f, spot.number("choke"))
         val spot2 = migrate("spotcolor2", "saturation" to "0.25", "choke" to "8.75")
         close(1f, spot2.number("grey"))
-        close(1f, spot2.number("saturation"))
+        close(0.25f, spot2.number("sat"))
         close(8.75f, spot2.number("choke"))
         val replace = migrate("replacecolor")
         close(1f, replace.number("match"))
         close(2f, replace.number("choke"))
-        close(0f, replace.number("threshold"))
-        close(0f, replace.number("feather"))
+        close(0f, replace.number("tolerance"))
+        close(0f, replace.number("softness"))
         val swap = migrate("replacecolor", "threshold" to "1.1875", "feather" to "0.6875", "lockLuminance" to "true")
-        close(1.1875f * 0.2f, swap.number("threshold"))
-        close(0.6875f * 1.03f, swap.number("feather"))
+        close(1.1875f, swap.number("tolerance"))
+        close(0.6875f, swap.number("softness"))
         close(2f, swap.number("choke"))
         assertEquals("true", swap.text("lockLuminance"))
     }
@@ -125,7 +149,9 @@ class ColourKeyImportTest {
     @Test fun fourColorGradientStartsFromAlightsCornerColoursAndSmoothFalloff() {
         val e = migrate("fourcolorgradient")
         assertEquals(listOf("#ffff0000", "#ff00ff00", "#ff0000ff", "#ffff00ff"), listOf("color1", "color2", "color3", "color4").map { e.text(it) })
-        for (p in listOf("point1", "point2", "point3", "point4")) assertEquals(listOf(0f, 0f), e.text(p)!!.split(',').map { it.trim().toFloat() })
+        assertEquals(listOf(listOf(0f, -500f), listOf(500f, -500f), listOf(500f, 0f), listOf(0f, 0f)),
+            listOf("point1", "point2", "point3", "point4").map { p -> e.text(p)!!.split(',').map { it.trim().toFloat() } })
+        close(1f, e.number("style"))
         close(0.75f, e.number("opacity"))
         close(1f, e.number("softness"))
         close(1f, e.number("falloff"))

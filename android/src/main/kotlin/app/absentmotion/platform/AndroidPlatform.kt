@@ -77,7 +77,7 @@ typealias Toast = android.widget.Toast
 fun fontFamily(library: app.absentmotion.fonts.FontLibrary, name: String) = androidx.compose.ui.text.font.FontFamily(library.typeface(name))
 
 
-fun androidx.compose.ui.graphics.drawscope.DrawScope.drawLiveStroke(path: DrawPath, filled: Boolean, color: Int, width: Float, opacity: Float, matrix: Matrix, eraser: Boolean) {
+fun androidx.compose.ui.graphics.drawscope.DrawScope.drawLiveStroke(path: DrawPath, filled: Boolean, color: Int, width: Float, opacity: Float, matrix: Matrix, eraser: Boolean, softness: Float = 0f) {
     drawIntoCanvas { canvas ->
         val c = canvas.nativeCanvas
         val paint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG)
@@ -87,6 +87,7 @@ fun androidx.compose.ui.graphics.drawscope.DrawScope.drawLiveStroke(path: DrawPa
             paint.style = android.graphics.Paint.Style.STROKE; paint.strokeWidth = width
             paint.strokeCap = android.graphics.Paint.Cap.ROUND; paint.strokeJoin = android.graphics.Paint.Join.ROUND
         }
+        if (softness > 0f) paint.maskFilter = android.graphics.BlurMaskFilter(softness / 0.57735f, android.graphics.BlurMaskFilter.Blur.NORMAL)
         c.save(); c.concat(matrix); c.drawPath(path.path.asAndroidPath(), paint); c.restore()
     }
 }
@@ -106,6 +107,15 @@ suspend fun slotPicture(context: Context, uri: String, video: Boolean): androidx
 }
 
 class MediaPicker(private val launchBlock: () -> Unit) { fun launch() = launchBlock() }
+@androidx.compose.runtime.Composable
+fun rememberVideosPicker(onResult: (List<Uri>) -> Unit): MediaPicker {
+    val context = LocalContext.current
+    val launcher = androidx.activity.compose.rememberLauncherForActivityResult(androidx.activity.result.contract.ActivityResultContracts.PickMultipleVisualMedia()) { uris ->
+        uris.forEach { runCatching { context.contentResolver.takePersistableUriPermission(it, android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION) } }
+        onResult(uris)
+    }
+    return MediaPicker { launcher.launch(androidx.activity.result.PickVisualMediaRequest(androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia.VideoOnly)) }
+}
 @androidx.compose.runtime.Composable
 fun rememberMediaPicker(videoOnly: Boolean = false, imageOnly: Boolean = false, onResult: (Uri?) -> Unit): MediaPicker {
     val context = LocalContext.current
@@ -223,11 +233,17 @@ fun exportEngine(engine: app.absentmotion.engine.EngineThread): app.absentmotion
 
 fun exportDone(result: app.absentmotion.export.ExportResult) {}
 
+fun stagedExportDir(context: Context): java.io.File? = context.getExternalFilesDir(null)?.let { java.io.File(it, "export-staged") }
+
+fun stagedExportUri(context: Context, file: java.io.File): Uri = androidx.core.content.FileProvider.getUriForFile(context, context.packageName + ".files", file)
+
 suspend fun compressVideoOnDesktop(uri: String, job: app.absentmotion.tools.VideoJob, audio: Boolean, durationUs: Long, out: java.io.File, progress: (Float) -> Unit, startUs: Long = 0, endUs: Long = 0) = Unit
 
 suspend fun extractAudioOnDesktop(uri: String, job: app.absentmotion.tools.AudioJob, durationUs: Long, out: java.io.File, progress: (Float) -> Unit) = Unit
 
 suspend fun trimCopyOnDesktop(uri: String, startUs: Long, endUs: Long, out: java.io.File, progress: (Float) -> Unit) = Unit
+
+suspend fun mergeOnDesktop(uris: List<String>, clips: List<app.absentmotion.tools.MergeFacts>, job: app.absentmotion.tools.MergeJob, out: java.io.File, progress: (Float) -> Unit) = Unit
 
 object PlatformFeatures {
     const val desktop = false
@@ -282,21 +298,22 @@ fun revealLibraryFolder(path: String) {}
 
 fun revealFolderLabel(): String = ""
 
-internal const val CAPTION_MODEL_NAME = "ggml-base-q5_1.bin"
-internal const val CAPTION_MODEL_BYTES = 59_707_625L
+internal const val CAPTION_MODEL_NAME = "ggml-small-q8_0.bin"
+internal const val CAPTION_MODEL_BYTES = 264_464_607L
 internal fun loadCaptionLibrary() {
-    val fast = runCatching { app.absentmotion.engine.NativeEngine.fastCaptionCpu() }
-        .getOrElse { fastCaptionCpu(runCatching { java.io.File("/proc/cpuinfo").readText() }.getOrDefault("")) }
-    android.util.Log.i("AMCaptions", "caption library " + loadCaptionLibrary(fast, System::loadLibrary))
+    val level = runCatching { app.absentmotion.engine.NativeEngine.captionCpuLevel() }
+        .getOrElse { captionCpuLevel(runCatching { java.io.File("/proc/cpuinfo").readText() }.getOrDefault("")) }
+    android.util.Log.i("AMCaptions", "caption library " + loadCaptionLibrary(level, System::loadLibrary))
 }
-internal fun loadCaptionLibrary(fast: Boolean, load: (String) -> Unit): String {
-    if (fast) try { load("whisper_jni_fast"); return "whisper_jni_fast" } catch (_: UnsatisfiedLinkError) {}
+internal fun loadCaptionLibrary(level: Int, load: (String) -> Unit): String {
+    for (name in listOf("whisper_jni_i8", "whisper_jni_fast").takeLast(level.coerceIn(0, 2))) try { load(name); return name } catch (_: UnsatisfiedLinkError) {}
     load("whisper_jni")
     return "whisper_jni"
 }
-internal fun fastCaptionCpu(cpuinfo: String): Boolean {
+internal fun captionCpuLevel(cpuinfo: String): Int {
     val cores = cpuinfo.lineSequence().filter { it.startsWith("Features") }.map { it.substringAfter(':').trim().split(Regex("\\s+")).toSet() }.toList()
-    return cores.isNotEmpty() && cores.all { it.containsAll(listOf("asimddp", "asimdhp", "fphp", "atomics", "asimdrdm", "crc32")) }
+    if (cores.isEmpty() || !cores.all { it.containsAll(listOf("asimddp", "asimdhp", "fphp", "atomics", "asimdrdm", "crc32")) }) return 0
+    return if (cores.all { "i8mm" in it }) 2 else 1
 }
 internal fun captionTextHeight(fonts: app.absentmotion.fonts.FontLibrary, text: String, font: String, size: Float, wrap: Int): Float {
     val paint = android.text.TextPaint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply { textSize = size * 3f; typeface = fonts.typeface(font) }
@@ -540,7 +557,7 @@ fun forgetFolder(context: android.content.Context, folder: String) {
 }
 
 @androidx.compose.runtime.Composable
-fun rememberFolderPicker(start: String?, onPicked: (String) -> Unit): () -> Unit {
+fun rememberFolderPicker(start: String?, title: String, onPicked: (String) -> Unit): () -> Unit {
     val context = androidx.compose.ui.platform.LocalContext.current
     val launcher = androidx.activity.compose.rememberLauncherForActivityResult(androidx.activity.result.contract.ActivityResultContracts.OpenDocumentTree()) { uri ->
         if (uri != null) {

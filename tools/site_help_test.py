@@ -195,7 +195,8 @@ class HelpLocaleTest(unittest.TestCase):
     def test_supported_tags_match_the_app(self):
         tags = sb.supported_tags()
         self.assertEqual(tags[0], "en")
-        self.assertEqual(len(tags), 25)
+        self.assertEqual(len(tags), 26)
+        self.assertIn("nl", tags)
         self.assertTrue({"ar", "fa"} <= set(tags))
         self.assertEqual(sb.RTL, {"ar", "fa", "ur"})
 
@@ -230,11 +231,29 @@ class WebsiteSearchTest(unittest.TestCase):
             self.assertIn('<link rel="canonical" href="%s">' % url, html)
             self.assertIn('<meta property="og:url" content="%s">' % url, html)
             self.assertIn('og:image" content="%sassets/og.png"' % sb.SITE_URL, html)
-        data = json.loads(re.search(r'<script type="application/ld\+json">(.*?)</script>', self.files["index.html"].decode()).group(1))
-        app = data["@graph"][1]
+        blocks = [json.loads(b) for b in re.findall(r'<script type="application/ld\+json">(.*?)</script>', self.files["index.html"].decode())]
+        self.assertEqual(("WebSite", "AbsentMotion"), (blocks[0]["@type"], blocks[0]["name"]))
+        app = blocks[1]["@graph"][0]
         self.assertEqual(("SoftwareApplication", "0"), (app["@type"], app["offers"]["price"]))
         self.assertNotIn("ld+json", self.files["getting-started.html"].decode())
         self.assertIn("assets/og.png", self.files)
+
+    def test_moved_effect_pages_redirect_to_the_new_page(self):
+        site = dict(self.files)
+        sb.add_moved(site, sb.load_effects(), True)
+        stub = site["effects/framerate.html"].decode()
+        self.assertIn('content="0; url=timequantization"', stub)
+        self.assertIn('<link rel="canonical" href="%seffects/timequantization">' % sb.SITE_URL, stub)
+        self.assertNotIn(sb.SITE_URL + "effects/framerate", site["sitemap.xml"].decode())
+        english = sb.Site("app")
+        app = english.build()
+        locale = make(english, "ar", locale_data(english, "ar"))
+        app.update(sb.Site("app", locale, english).build(), **{"assets/rtl.css": sb.RTL_CSS.encode()})
+        sb.add_moved(app, english.effects, False)
+        for path in ("effects/liftgammagain.html", "ar/effects/liftgammagain.html"):
+            self.assertIn('content="0; url=colortune.html"', app[path].decode())
+        self.assertIn('<html lang="ar" dir="rtl">', app["ar/effects/framerate.html"].decode())
+        self.assertEqual([], sb.check_links(site, "site") + sb.check_links(app, "app") + sb.check_app_html(app))
 
 
 if __name__ == "__main__":

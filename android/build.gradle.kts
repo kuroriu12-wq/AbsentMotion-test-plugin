@@ -62,7 +62,7 @@ android {
 
     buildTypes {
         release {
-            signingConfig = signingConfigs.findByName("release")
+            signingConfig = signingConfigs.findByName("release") ?: signingConfigs.getByName("debug")
             vcsInfo.include = false
             isMinifyEnabled = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), file("proguard-rules.pro"))
@@ -211,6 +211,12 @@ tasks.withType<Test>().configureEach {
         .withPropertyName("hostLibraries").withPathSensitivity(PathSensitivity.RELATIVE)
 }
 
+configurations.matching { it.name.endsWith("UnitTestRuntimeClasspath") }.configureEach {
+    resolutionStrategy.dependencySubstitution {
+        substitute(module("io.github.dokar3:quickjs-kt-android")).using(module("io.github.dokar3:quickjs-kt-jvm:1.0.18"))
+    }
+}
+
 dependencies {
     implementation(platform("androidx.compose:compose-bom:2026.09.00"))
     implementation("androidx.compose.ui:ui")
@@ -220,8 +226,10 @@ dependencies {
     implementation("androidx.camera:camera-camera2:1.6.2")
     implementation("androidx.camera:camera-view:1.6.2")
     implementation("androidx.exifinterface:exifinterface:1.4.2")
+    implementation("com.google.zxing:core:3.5.4")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0")
+    implementation("io.github.dokar3:quickjs-kt:1.0.18")
     testImplementation("junit:junit:4.13.2")
     testImplementation("net.sf.kxml:kxml2:2.3.0")
     testImplementation("org.json:json:20260814")

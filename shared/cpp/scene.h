@@ -108,7 +108,7 @@ struct LayerEffect {
 
 struct FreehandStroke {
     int tool = 0;
-    float width = 5, color[4] = {1, 1, 1, 1};
+    float width = 5, color[4] = {1, 1, 1, 1}, hardness = 1;
     SkPath geometry;
     bool filled = false;
     std::vector<SkPoint> points;
@@ -152,7 +152,7 @@ struct Layer {
     std::string label, shape, fillType, outlineShape;
     std::string mediaUri, mediaFillMode;
     int startTime = 0, endTime = 0;
-    bool hidden = false, video = false, force3d = false, mixPieces = true;
+    bool hidden = false, video = false, force3d = false, mixPieces = true, alight = false;
     Anim location, pivot, scale, rotation, skew, opacity, fillColor, tilt;
     std::vector<Property> props;
     std::vector<LayerEffect> effects;
@@ -163,6 +163,7 @@ struct Layer {
     Edge shadow;
     Gradient gradient;
     std::string blending;
+    bool premulBlend = false;
     bool clippingMask = false;
     int64_t parent = 0;
     int64_t pathLayer = 0;
@@ -179,7 +180,9 @@ struct Layer {
     std::vector<FreehandStroke> strokes;
     Camera camera;
     std::string lightType;
+    std::vector<std::pair<int, uint32_t>> tints;
     Anim steps;
+    bool stepMiddle = false;
     bool placed = false;
     bool projected = false;
     Sight sight;
@@ -195,7 +198,7 @@ struct Layer {
     }
     double steppedMs(double timeMs) const {
         const float fps = stepRate(timeMs);
-        return fps > 0 ? HeldMs(timeMs, startTime, fps) : timeMs;
+        return fps > 0 ? (stepMiddle ? MiddleMs(timeMs, startTime, fps) : HeldMs(timeMs, startTime, fps)) : timeMs;
     }
     float localTime(double timeMs) const {
         return endTime > startTime ? (float)((steppedMs(timeMs) - startTime) / (endTime - startTime)) : 0.0f;
@@ -237,7 +240,7 @@ SkV3 Illuminate(const LightSet& lights, SkV3 normal, SkV3 position);
 struct Echo {
     int count = 0;
     float seconds = 0, alpha = 1;
-    bool atop = false;
+    bool atop = false, standard = false;
 };
 
 struct ShutterBlur {
@@ -246,14 +249,18 @@ struct ShutterBlur {
     bool fast = false;
     bool adaptive = false;
     bool trailing = false;
+    bool anyTime = false;
     bool position = true, scale = true, rotation = true;
 };
 
 bool MotionEffect(const std::string& id);
 bool TextEffect(const std::string& id);
 bool DrawingEffect(const std::string& id);
+const Anim* StrokeRecolor(const Layer& layer);
 bool ShutterBlurOf(const Layer& layer, double timeMs, ShutterBlur* blur);
 void SetFastShutterBlur(bool fast);
+void SetShutterAnyTime(bool on);
+bool ShutterAnyTime();
 sk_sp<SkImageFilter> SmearFilter(SkVector moved);
 void ApplyMotion(const Layer& layer, double timeMs, Placement* placement);
 void ParentTerms(const Layer& layer, double timeMs, const Placement& parent, SkPoint* scale, float* rotation);
@@ -261,6 +268,8 @@ void ParentRoll(const Layer& layer, double timeMs, Placement* own);
 float MotionOpacity(const Layer& layer, double timeMs);
 bool EchoOf(const Layer& layer, double timeMs, Echo* echo);
 bool FollowsPath(const Layer& layer);
+bool UsesLegacyPathCoordinates(const Layer& layer, double timeMs);
+SkPath PathFromTop(const Layer& layer, double timeMs, const SkPath& path);
 bool TextGuideBelow(const Layer& layer, float t, SkPath* path);
 void FollowPath(const Layer& layer, double timeMs, const SkPath& path, Placement* placement);
 void ParseSteps(Layer* layer);
@@ -311,7 +320,7 @@ bool CameraViewOn();
 bool CameraFrame(const std::vector<Layer>& layers, const Layer& camera, int width, int height, double timeMs, SkPoint corners[4], bool depthOrder = false);
 bool SeeLayers(const std::vector<Layer>& layers, int width, int height, bool top, int fps, double timeMs, bool depthOrder, std::vector<Layer>* seen,
                bool pieces = false);
-bool SeenPlacement(const Layer& layer, double timeMs, Placement* placement);
+bool SeenPlacement(const Layer& layer, double timeMs, Placement* placement, bool flat = false);
 void SeenPieces(const Layer& layer, double timeMs, SkPoint center, const SkM44& orientation, PieceView* view);
 bool SeenFlat(const Layer& layer, double timeMs, depth::Flat* flat);
 void SplitSeen(std::vector<Layer>* seen, double timeMs);
@@ -338,16 +347,25 @@ SkRect MediaRect(const Layer& layer, const SkRect& bounds, int width, int height
 void DrawMedia(SkCanvas* canvas, const Layer& layer, const SkPath& path, float opacity,
                const MediaPictures& pictures);
 
+struct ModelSkin {
+    std::vector<int> parents, ids, jointBones, joints;
+    std::vector<float> locals, inverseBinds, bind, bindNormals, weights;
+    SkM44 normalise;
+};
 struct Model {
     std::vector<float> positions, normals, uvs;
     std::vector<uint32_t> colors;
-    std::vector<int> triangles, slots;
+    std::vector<int> triangles, slots, parts;
     bool twoSided = false;
+    std::shared_ptr<const ModelSkin> skin;
 };
+bool SetModelParts(Model* model, std::vector<int> parts, std::vector<int> skinInts, std::vector<float> skinFloats);
 void SetModel(const std::string& uri, std::shared_ptr<const Model> model);
 void DrawModel(SkCanvas* canvas, const Layer& layer, double timeMs, float alpha, const MediaPictures& pictures);
 SkRect ModelBounds(const Layer& layer, double timeMs);
 size_t ModelFaces(const Layer& layer);
+std::vector<float> ModelJoints(const std::vector<Layer>& layers, const Layer& layer, int width, int height, double timeMs, bool depthOrder);
+Layer Sighted(const std::vector<Layer>& layers, const Layer& layer, int width, int height, double timeMs, bool depthOrder);
 struct LayerEffects {
     std::function<bool(const Layer&)> active;
     std::function<bool(const Layer&)> lifted;
@@ -365,6 +383,7 @@ void DrawScene(SkCanvas* canvas, const Scene& scene, double timeMs, const MediaP
                const LayerEffects* effects = nullptr);
 void SetLayerEffects(const LayerEffects* effects, const Scene* scene, bool world = false);
 int ProjectFps();
+SkSize ProjectSize();
 const std::vector<Layer>* EffectSiblings();
 class SceneScope {
 public:
@@ -374,7 +393,7 @@ private:
     const Scene* fPrevious;
 };
 void SetLayerBreak(const std::function<void()>* each);
-void NoteOrientedEffect(const std::string& id);
+void NoteOrientedEffect(const std::string& id, bool oriented = true);
 bool WorldView();
 bool InsideGroup();
 bool EffectOwnerMatrix(int64_t owner, double timeMs, SkMatrix* matrix);

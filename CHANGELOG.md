@@ -6,6 +6,355 @@ All notable changes to AbsentMotion are listed here, newest first. The format fo
 Versions before 2.0.0 were never published or numbered. The entry for 1.0.0 stands for the feature set as it stood on
 2026-10-12.
 
+## [5.3.2] - 2026-11-26
+
+### Added
+
+#### Effects
+- **Face Tracking** - pick a **face** and the video **moves and zooms** so it stays in place. It is tracked once and kept until you change its settings. Searching **face motion** finds it too.
+- **Text Spacing** - **letter spacing** and **line spacing** for text, with keyframes.
+- **New effects** - **Advanced Chroma Key**, **Box Blur**, **Gaussian Blur**, **Hue Shift**, **Saturation / Vibrance**, **Spectral Map**, **Stroke Color**, **Streak Strips** and **Ring**, each with Alight Motion's settings.
+- **Lens Flare** - the old **Light Flare**, now with **Shine**, **Points**, **Alpha** and **Blending Mode** and a new look.
+- **Glow Scan** and **Star Polyhedron** - rebuilt with Alight Motion's settings.
+
+#### Community
+- **New** - the first page shows everything that was added, **grouped by day**.
+- **Effects included** - shown as **tiles**, each with its picture and name.
+- **Thumbnails** - every Community effect has **its own picture**, still or moving.
+
+### Changed
+
+#### Effects
+- **Deep Glow** - a smoother, richer glow built in light from several sizes, with new **Exposure**, **Threshold** and **Threshold Softness** settings. Projects you already made keep their glow.
+- **Find effects like in Alight Motion** - effects also show in the **category Alight Motion uses**, and every effect is found by its **English name** in any language.
+- **Alight Motion's names** - **Time Quantization**, **Color Tune**, **Hot Color**, **Exposure / Gamma**, **Highlights and Shadows**, **Find Edges** and **Halftone Dots**. Searching the **old names** still finds them.
+
+#### AI tools
+- **Reduce Noise** - a much stronger clean-up that removes **hiss**, **fan noise**, **traffic**, **chatter** and some **room echo** while voices stay **natural**. Its model downloads **once** (4.1 MB), and a new **Amount** slider sets how much is removed.
+
+#### Editor
+- **Paste Style** - also pastes the copied layer's **effects**, **animations** and **transitions**.
+- **Fonts install by themselves** - fonts a project needs **download on their own**. A weight Google Fonts doesn't have uses the **closest one**.
+- **Tool row** - with the playhead past a clip, **Extend end** comes first, then **Move to the playhead**.
+- **What's new** - sections **slide** open and shut.
+- **Paste Style on computers** - in the **Edit** menu and when you **right-click** a clip, with every part like on the phone.
+- **Added** is always the **last category** in the Effects Library.
+
+#### Export
+- **Export again at once** - exporting an **unchanged project** again with the same settings shows the **finished video straight away**.
+- **Windows** - videos keep to the **bit rate you chose** on AMD graphics, and **size estimates** match the real size.
+
+#### Alight Motion import
+- **3D shapes** - **Cube**, **Box**, **Ring**, **Cylinder**, **Torus**, **Ellipsoid**, **Hexagonal Prism**, **Octahedron**, **Pyramid**, **Star Prism**, **Spherize**, **Hollow Box** and **Three-axis Cross** use Alight Motion's **camera and light** and look **the same**.
+- **Now the same** - **Auto-Shake**, **Swirl**, **Pixelate**, **Unsharp Mask**, **Radial Shadow**, **Polar Coordinates**, **Kaleidoscope**, **Curl**, **Star**, **Radial Rays**, **Dark Glow**, **Glow Scan**, **Halftone Dots**, **Halftone Lines**, **Fill Behind**, **Stroke Taper** and the **Linear**, **Radial**, **Grid** and **Along Path** repeats.
+- **Closer** - **Tunnel**, **Page Curl**, **Heart**, **Raster Extrude**, **Lens Flare**, **Streak Strips**, **Contour Strips**, **CMYK Halftone Dots**, **Energy Beam**, **Zoom Streaks**, **Vortex Blur**, **Random Jitter**, **Flicker**, the **old Cube** and the **Tile** and **Hexagon** effects.
+- **Settings and keyframes** - imported effects keep far more of Alight Motion's settings and their **full keyframed range**, such as **Inner Blur** and **Box Blur** Iterations, **Spin Blur**'s centre, **Luma Key**, **Invert** and the **Swirl**, **Pinch/Bulge** and **Ripple** centres.
+- **Drawings** - pen and brush strokes are no longer **thicker** than in Alight Motion.
+- **Sharp edges** - pictures and videos keep **sharp edges** when turned or scaled, like Alight Motion.
+- **181** effects look the same, and **12** are very close.
+- **Your saved projects keep their look.**
+
+### Fixed
+- **3D layers** - **Wipe** and other effects work on 3D layers that are **turned**, following the layer's own surface.
+- **Split sound** - the second piece of a split or separated sound no longer stays **silent** until you pause and play again.
+- **Fonts** - the **Fonts not on this phone** message is gone; fonts that can't be downloaded are tried once more on their own.
+
+## [5.3.1] - 2026-11-25
+
+### Added
+
+#### Tools
+- **Merge** - join **videos** in the order you choose. Videos that match are joined **without re-encoding**; others are fitted to the **first video's size**, with silence for clips without sound.
+- **Convert Image** - turn pictures into **PNG**, **JPG**, **WebP** or **GIF**. Animated **GIF** and **WebP** stay **animated**.
+- **Tools page** - starts with **Compress**, **Trim**, **Extract Audio**, **Video Downloader** and **Send between devices**. The highlighted **Add more tools** at the end lists the rest.
+
+#### Captions
+- **Import SRT** - turn an **.srt** subtitle file into caption layers with the look you chose, from the **Auto Captions** sheet.
+
+#### Export
+- **Same as source** - a project that is **one video** can keep that video's **bit rate**.
+- **Export folders** - choose a **Videos and GIFs** folder and a **Sounds** folder in **Settings > Projects**.
+
+#### Look
+- **Light Green** theme - navy editor with mint highlights and a light grey home, in **Settings > Theme**.
+
+#### Editor
+- **Other keyframes** - while an effect is open, the layer's **other keyframes** show as **dim diamonds** on the timeline, and keyframes you drag **snap** to them.
+
+### Changed
+
+#### Auto captions
+- **Far more accurate** - **Standard** now uses a **264 MB** model and **Higher precision** an **874 MB** one, instead of two small models.
+- **Faster** on newer phones.
+- **Cleaner** - repeated and made-up lines are left out, captions **end with the speech**, and lines split at **natural pauses**.
+- The **old caption models** are deleted to free space.
+
+#### Export
+- **Exact size estimates** - every estimate is **measured from your project** with the codec, quality, size, frame rate, **Smooth** and **AI Smooth** you chose. It shows **Calculating…** for a moment first.
+- **Bit rate kept** - videos come out at the **bit rate you chose**, no longer far bigger.
+
+#### Alight Motion import
+- **Layers with a pivot** stay where Alight Motion draws them.
+- **Groups** longer than what's inside them **hold the last frame**.
+- **Screen**, **Lighten**, **Darken**, **Hard Light** and **Soft Light** layers blend with their opacity like Alight Motion.
+- **Text** - **Drawing Progress** draws text outlines in, and **Text Transform** eases each letter in and out like Alight Motion.
+- **Wave Warp** - angled waves move like Alight Motion's.
+- **Page Curl** - the page **rolls up** like Alight Motion's, with its shine and shadow.
+- **Gradient Map** - new **Squeeze** setting, kept on import.
+- **Find Edges**, **Time Quantization**, **Move Along Path**, **Lens Blur** and **Chromatic Zoom Blur** now look **the same**.
+- **Rays**, **Pixelate**, **Offset**, **Circular Ripple**, **Inner Glow**, **Repeat Along Path** and **Spherize** are closer.
+- **Effect settings like Alight Motion's** - about **30 effects** show Alight Motion's **names**, **numbers**, **ranges** and **order**.
+- **Measured more strictly** - every effect is now checked with **varied settings** too. **155** look the same, and **15** are very close.
+- **Your saved projects keep their look.**
+
+## [5.3.0] - 2026-11-24
+
+### Added
+
+#### Dutch
+- **Nederlands** - AbsentMotion now speaks **Dutch**: the whole app, every effect's name, settings and description, and the help pages. Pick it in **Settings > Language**, or it starts in Dutch when your device is set to Dutch.
+
+#### Send between devices
+- **Send between devices** - send a project from your **phone to your computer**, or back, on the **same Wi-Fi**. Open **Tools > Send between devices** or a project's **•••** menu > **Send to another device**.
+- **Scan to connect** - the other device **scans the code** with its **camera**. No account, nothing goes online, and the code **works once**.
+- **Sending back** - a project that comes back **replaces the original** if you didn't change it there; otherwise **both are kept**.
+- **Receive** from **Import** on computers or the **link dialog** on phones.
+
+#### 3D models
+- **Textures panel** - **replace**, **tint** or **remove** the picture of each material.
+- **Missing pictures** - **add the pictures** a model lost on import.
+- **Pose panel** - models with **bones** (glTF or GLB) show **every bone** on the preview, including in-between and end bones. Pick one and **turn it** on X, Y and Z, with **keyframes**, or **Reset pose**.
+
+#### Drawing
+- **Brush settings** - **Smoothing**, **Opacity**, **Hardness** and **Pressure** (Off, Stylus or Speed) for Freehand.
+- **Zoom and pan while drawing** - with **two fingers**, the **mouse wheel** or a **middle-button drag**.
+- **Eraser** - keeps its **own size** and can erase **whole strokes**.
+- **Pen tool** - tap the **first point** to close a path, and **double-tap** a point to switch **sharp** and **curved**.
+- **Hold to straighten** a stroke, and **tap with fingers** to undo and redo.
+- **Keys on computers** - **Space** to pan, **Alt** to zoom, **[ ]** for size, **B P F E** for tools, **1-0** for opacity, **Alt-click** to pick a color, **Shift-click** for straight lines, **Shift** for 45° lines, **Alt-drag** for handles, and **Enter**, **Esc** and **Delete** in the Pen tool. The brush shows its **outline**.
+
+#### Effects
+- **New effects** - **Cartoon**, **Channel Mixer**, **Color Adjust**, **Difference**, **Difference Matte**, **Outline**, **Vortex Blur** and **Warp Blur**.
+- **Color Balance** - new **Keep Brightness** switch.
+- **Chroma Key** - new **Luma** setting.
+- **Drop Shadow** - new **Spread** setting.
+- **Edge Detect** - new **Color** setting.
+- **Polar Coordinates** - new **Radius** that cuts a hole in the middle.
+- **Zoom Blur** - **Center**, **Strength** and **Adaptive**, like Alight Motion.
+- **Squeeze** - **Strength** from **-2 to 2**.
+- **Warp Blur** and **Turbulent Displace** - **Offset**, **Stretch**, **Seed** and **Parallax** shape the noise.
+- **Style row** - effects that now match Alight Motion have a **Classic / Standard** style, so **saved projects keep their look**.
+- **Recommended learns from you** - the three suggestions show up to **two effects you use most** on that kind of layer (video, photo, text, shape, group or 3D model) and at least **one that fits the layer**. Old habits fade, and effects you keep passing over make room for others.
+- **New** lists only the effects added in **this version** (5.3 and its updates).
+
+#### Timeline
+- **Extend to the playhead** - with **several clips selected**, **Trim end** also **extends** the shorter clips, so **every selected clip ends at the playhead**. Videos stop at the end of their footage.
+
+#### Import and projects
+- **Fill / Fit / Stretch** - choose how a **picture or video fill** sits in its layer.
+- **QR codes from pictures** - **Import project from link** reads **Alight Motion** and **AbsentMotion** QR codes from your **gallery** or **files**, **several at once**.
+- **Alight Motion importer** tool - keeps **links** and **QR codes** in one place.
+
+#### Export
+- **Save video** - a finished **video**, **GIF** or **image** waits on **Ready to save**: **Save video**, **Save GIF** or **Save image** keeps it, **Share** sends it without saving, and **OK** leaves it unsaved. Exporting the **same unchanged project** with the same settings again shows it **at once**, without exporting it again.
+
+#### Home and tools
+- **Select several projects** - **hold** a project to select it, then tap others. **Select all**, **Duplicate** and **Delete** work on all of them at once; **Export** and **Send to another device** on one.
+- **Customize tools** - choose which tools show, and in which order, on the **Tools page** and **inside a project**. Open it from **Settings > Tools** or the **sliders button** on the Tools page. It replaces **Change layout**.
+- **Every tool in a project** - **Enhance Image**, the **Alight Motion importer** and **Send between devices** (which sends the open project) join the Tools in the **+** menu.
+
+#### Community
+- **Download counts** on every item.
+- **Effects included** - see which effects a project or preset uses.
+- **Details beside the picture** - creator, description, tags, effects and downloads, on wide screens; on phones they show **without scrolling**.
+
+### Changed
+
+#### Alight Motion import
+- **156 effects look the same** as in Alight Motion, **measured frame by frame** against Alight Motion's own frames (5.2.3 had 67). **14** more are **very close**.
+- **25 more Alight Motion effects** and effect versions from older projects now import.
+- **Your saved projects keep their look** - only imported projects and newly added effects use the new looks.
+- **Values past the usual range** - keyframes **above 1** or **below 0** are no longer cut off, so sweeps move like Alight Motion's.
+- **Text** - lines, letter spacing, edges and centring are placed like **Alight Motion**.
+- **Missing fonts** - opening or importing a project **downloads its Google Fonts** first.
+- **Pictures** in imported projects are drawn **as sharp** as in Alight Motion.
+- **Text Transform** - ranges count **letters without spaces**, with **Square**, **Smooth** and **Triangle** shapes, **Ease In**, **Ease Out**, **Overlap**, **Contour** and **anchor** pivots. **Random Order** shuffles like Alight Motion for **every seed**, and **Offset** imports as **Position**.
+- **3D solids** - **Box**, **Cube**, **Cylinder**, **Ellipsoid** and **Tri-Prism** are **lit** like Alight Motion.
+- **Blink 2** - keyframed **Frequency** keeps the right speed.
+- **Box Blur** (first version) - same **spacing** and **edges**.
+- **Channel Map HSV** - **Luminance** choice matches.
+- **Checker** - **Amount 0** fills the layer, and the first version's **cell size** matches.
+- **Chroma Key** (first version) - keys the **same colors**, with the same **feather**.
+- **Color Tune** - **Gamma** acts on **shadows and highlights**, like Alight Motion.
+- **Colorize** - **tint** comes across.
+- **Contour** - **line width** and **Count** match.
+- **Counter** - same **digits** and **placement**.
+- **Contour Gradient** - reaches the same **width** past the layer.
+- **Cube 2** - **edge size**, **light**, **ambient** and **face pictures** match.
+- **Displacement Map 1, 2 and 3** and **Polar Displacement** - same **channels** and **offsets**.
+- **Echo Keyframes** - same **copy count**, copies **before the clip** keep moving, and **Composite** comes across.
+- **Edge Glow** - same **edges**, **smoothing**, **spread** and glow **outside the layer**.
+- **Fade** - same **easing**.
+- **Feather** - same **softness**.
+- **Fill Behind** - background **zoom** and **edges** match.
+- **Flip Layer** (first version) - same **size**.
+- **Four-Color Gradient** - same **point positions** and **blend**.
+- **Glow** - reaches as **far** as Alight Motion's.
+- **Grid** and **Grid 2** - same **spacing**, **line width**, **smoothing** and **edges**.
+- **Halftone Dots** and **Halftone Lines** - **closer** dot sizes and line widths.
+- **Highlights & Shadows**, **Vibrance**, **RGB Separation** and **Sharpen** - same look.
+- **Hollow Box** - same **face pictures**.
+- **Inner Glow** - same **radius**, and no glow where a layer **meets the frame edge**.
+- **Inner Pinch/Bulge** - same **radius** and **feather**.
+- **Light Glow** - same **threshold** and **glow**.
+- **Long Shadow** and **Radial Shadow** - same **shadow length**.
+- **Luma Key 1, 2 and 3** - same **thresholds**.
+- **Luma Stamper** - stamps the color **by brightness**, with the same **gamma**.
+- **Matte Fringe** - no fringe where a layer **meets the frame edge**.
+- **Mirror**, **Solid Color** and **Solid Matte** - **Alpha above 1** works like Alight Motion.
+- **Motion Blur** - the blur is **centred** on the frame, and the **first frame** blurs too.
+- **Move Along Path** - circle paths **start at 12 o'clock**.
+- **Oscillate 2**, **Pulsate 1 and 2** and **Pulse Opacity 1 and 2** - same **speed**.
+- **Page Curl** - the back shows the picture tinted by **Back Color**, closer **flap size**.
+- **Palette Map** - **Alpha above 1** works like Alight Motion.
+- **Parenting Helper** - same look.
+- **Pinch/Bulge** - **Strength below -1** comes across.
+- **Pixelate 1 and 2** - **square** cells, **Size 0** and **edge** cells match.
+- **Plus**, **Star Polygon** and **Heart 2** - closer **size** and **position**.
+- **Polar Coordinates** - same **mapping**.
+- **Posterize** - same **levels**, and **Step Count below 1** works.
+- **Random Displacement** - same **noise**, within 0.2 px.
+- **Rays** - same **reach**, and short rays **glow** like Alight Motion's.
+- **Repeat**, **Repeat Grid**, **Repeat Line**, **Repeat Radial** and **Repeat Along Path** - copies **stack** and **space out** the same way.
+- **Replace Color** - same **threshold** and **feather**.
+- **Ridges 1 and 2** - same **noise**.
+- **Smooth Bevel** - same look.
+- **Soft Glow** - same **glow** per color.
+- **Spectral Map** - small **Repeat** values work.
+- **Spin** - keyframed **RPM** matches.
+- **Spin Blur** - same **edges**.
+- **Squeeze** and **Zoom Blur** - same look.
+- **Stretch** and **Stretch 2** - same **edge smear**, and **Scale 0** shows nothing.
+- **Stretch Segment** - same **direction** and **distance**.
+- **Stripes** - same **layout**, **width** and **smoothing**.
+- **Swing** - same **speed** and **angle**.
+- **Text Progress** - types the same **letters**, centred the same way.
+- **Timecode** - shows **MM:SS:FF** like Alight Motion.
+- **Transform** - same **edges** when zoomed out.
+- **Tunnel** - stays inside the **layer's ellipse**, closer mapping.
+- **Turbulence 1 and 2** - same **noise**, **intensity** and **stretch**.
+- **Turbulent Displace** - same **noise**, and **X**, **Y** and **R** directions come across.
+- **Vignette** - **Strength above 1** keeps darkening.
+- **Voronoi** (first version) - same **cell size**.
+- **Warp Blur** - same **noise field**.
+- **Wave Warp** - same **damping**, **direction**, **spacing** and **edges**.
+- **Wipe** - works in the **layer's box**, like Alight Motion.
+
+#### Effect controls
+- **One tap on a value** opens the **keypad**.
+- **Sections** you can **fold**, like Alight Motion's, for Text Transform, 3D Light Source, Texture Mapping and more.
+- **Choices as pills** - 2 or 3 choices show as **pills**, more as a **list**.
+- **Sliders** where Alight Motion has sliders, with a **mark at the default**.
+- **Ruler steps** per setting, and a **vertical swipe** on a ruler **scrolls the panel**.
+- **Keyframe mark** on every row, and values show with Alight Motion's **degrees** and **decimals**.
+- **Short panels** fit their last row.
+
+#### Editor and app
+- **Pill buttons** - every dialog button is a **pill**: the main action in color, the other in grey.
+- **Video preview** shows the **full-quality frame** as soon as playback stops.
+- **New text** uses **whole-pixel** letter spacing like Alight Motion. **Older projects** keep their layout.
+- **Sharper pictures** when they're shown smaller than a quarter of their size.
+- **Text on computers** has the **same weight** as on phones.
+- **Community** - **shimmering placeholders** while the page loads, and **bigger cards** on wide windows.
+- **Send between devices** keeps the phone's **Wi-Fi at full speed** during a transfer.
+
+#### Computers
+- **Windows** - installs from the old **.msi** move to the **faster updater** with the next update, and the **desktop shortcut stays** where you put it.
+- **Windows** - when **Smart App Control** or an **antivirus** blocks part of AbsentMotion, the app names the **blocked file** and says **how to allow it**.
+- **Mac** - the install help has the **Terminal command** that lets AbsentMotion open.
+
+### Fixed
+
+#### Editor
+- **Puppet** applied to a group whose layer already has a puppet **keeps the whole picture**.
+- **Bent layers** inside a group can reach **past its frame**.
+- **Fill & Color** on a **group** colors the **whole group**.
+- **Elements** with depth or tilt **no longer shift** when saved.
+- **Group & Mask** takes the size of **what the mask shows**, so Tiles and other effects on the group leave **no gaps**.
+- **Camera layer** view in the preview shows **only the project frame**, like the export.
+- **Spin** and other speed effects move the **right way** before a layer starts.
+- **Text Transform** letters sit on the **right baseline**.
+- **Easing** works when two keyframes sit at the **same time**.
+- **Drawing** - only the **left mouse button** draws, and **hold to straighten** follows the **vibration** setting.
+- **Easing** page stays open when the playhead is **on a keyframe**. On the first keyframe it shows the curve to the next one.
+- **Pose** remembers the **bone** and **axis** you picked when you come back from another page.
+
+#### Effects
+- **3D shapes** with Soft or Direct lighting no longer **glow** through see-through parts of the picture.
+- **Outline** in Fill style draws its **color** at the right strength.
+- **Echo** follows a **turned or scaled parent** before the layer starts.
+- **Broken numbers** in an effect fall back to the **default** instead of spoiling the picture.
+
+#### 3D models
+- **Textures** are found when names have **quotes**, another **case** or a **copy number**.
+- **.mtl files** are found the same way.
+- **glTF** picked without its **.bin** says **which file is missing**.
+- **Small textures** no longer **crash** on Android.
+- **Picture names** that start with **digits** show **in full** in the Textures panel.
+
+#### Send between devices and Community
+- A **cancelled** connection is **closed** properly.
+- The code **keeps working** when a phone **drops off** mid-connection.
+- **Damaged replies** are reported instead of failing silently.
+- **Cancelling** while a project is being **packed** leaves **no file** behind.
+- **Community** download counts no longer go **empty** after leaving the tab.
+
+#### Export
+- A **failed save** at the end of an export is reported as an **error**.
+- **Dither** strength can't go **too high**.
+- Export **cleanup** no longer clashes with a running export.
+
+#### Alight Motion import
+- **Colorize** hue sweeps no longer **stand still**.
+- **Flip Layer 3** only shines when its **light is on**.
+- **Four-Color Gradient** keeps its **fourth point**.
+- **Luma Key 3** High Threshold **1** keeps the **whole picture**.
+- **Echo Keyframes** Composite and **Channel Remap (HSV)** options come across.
+- **3D Cube** edges are the **right size**.
+- **Lens Blur** is no longer **four times too strong**.
+- **Spherize** (first version) no longer shrinks to **5%** at Z Distance 0.
+- **Swing** no longer runs **twice as fast**.
+- **Blink 2** no longer **doubles** its speed with keyframed Frequency.
+- **Stretch Segment** no longer stretches the **wrong way**.
+- **Move Along Path** circles no longer start at **3 o'clock**.
+- **Directional Blur** keeps keyframed angles **past 360°**.
+- **Vortex Blur** and **Chromatic Vortex Blur** keep their **centre** in the middle of the layer.
+- **Cube** and **Hollow Box** faces no longer get **dark edges**.
+- **Linked settings** in imported effects keep their **animation**.
+- **Spin**, **Swing** and **Pulse** blur correctly **before a layer starts**.
+- **Emoji** in animated imported text keep **clean edges**, and turn on their own in **Contour** mode.
+- **Text on a path** places letters that are cut into pieces correctly.
+- A **turned-off Text Transform** no longer changes how imported text is placed.
+
+## [5.2.3] - 2026-11-21
+
+### Added
+
+- **Import projects from links**. Preview public Alight Motion shares before importing. On Android, open supported links with AbsentMotion or Alight Motion.
+- **Recommended effects**. The Effects browser opens with three effects picked for the selected layer from its type, its animation, its current effects, Recents and Favorites. A green or blue screen in the clip or picture brings Chroma Key first, beat marks bring a Beat effect, a quick clip in a longer edit brings Shake, a cut-out picture brings Drop Shadow and dark footage brings Exposure.
+- **Added effects**. Add effects other people made from an `.abmfx` pack or `.json` file in Effects > Added, on phones by opening or sharing the file and on computers by dropping it on the window. The app shows each effect on a sample picture and checks it works on the device first. Hold an added effect to remove it, and a project that uses an added effect you don't have says which one is missing. Added effects stay in Effects > Added, one folder per creator, with an added badge on every tile and in the layer's effect list. Hold an effect to show it in the category its creator chose (built-in categories only), or hold a creator folder to show it as its own category at the bottom of the Effects Library. Effects update by version, and Fun Pack by AbsentMotion is the first Community effect pack.
+- **Community effects**. The Community tab has an Effects page next to Projects and Presets, and the Community guide explains how to make and share an effect.
+- **Drag to reorder Tools**. In Change layout, hold a tool and drag it anywhere in the list, alongside the up and down arrows. The list scrolls when you drag near its top or bottom.
+
+### Fixed
+
+- **Alight Motion import** preserves more settings and animations in older projects, including Oscillate, Move Along Path, 360° Reorient Sphere and Blur.
+- **Grouping** has a labeled Group button. Mask and Exclude are in Group options.
+- **Preview audio** stops promptly when paused and stays in sync when the audio buffer runs low.
+- **Effect colors** can open the full picker or sample the preview with the eyedropper.
+- **Vignette** shades visible corners when a layer fills the project and extends beyond the frame.
+- **Settings menu on Android**: the dark area beside it blocks every tap while the menu is open, opening or closing, and a tap there only closes it.
+
 ## [5.2.2] - 2026-11-20
 
 ### Added

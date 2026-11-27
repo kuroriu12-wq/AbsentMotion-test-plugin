@@ -464,7 +464,7 @@ class Site:
                 '<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)"><meta name="theme-color" content="#1c1e24" media="(prefers-color-scheme: dark)">'
             ) % (base, base, base, url, escape(title), escape(description), url, SITE_URL)
             if kind == "download":
-                meta += '<script type="application/ld+json">%s</script>' % self.app_data(description)
+                meta += self.app_data(description)
         style = '<link rel="stylesheet" href="%sassets/site.css">' % shared + ('<link rel="stylesheet" href="%sassets/rtl.css">' % shared if self.rtl else "")
         return (
             '<!doctype html>\n%s<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
@@ -474,15 +474,15 @@ class Site:
         ) % (html, escape(title), escape(description), meta, style, script, "site" if site else "app", kind, '<a class="skip" href="#main">Skip to the content</a>' if site else "", top, side, body, foot)
 
     def app_data(self, description):
+        site = {"@context": "https://schema.org", "@type": "WebSite", "name": "AbsentMotion", "alternateName": ["Absent Motion"], "url": SITE_URL}
         data = {"@context": "https://schema.org", "@graph": [
-            {"@type": "WebSite", "name": "AbsentMotion", "url": SITE_URL},
             {"@type": "SoftwareApplication", "name": "AbsentMotion", "url": SITE_URL, "description": description,
              "applicationCategory": "MultimediaApplication", "applicationSubCategory": "Video editor",
              "operatingSystem": "Android 8 or newer, macOS 11 or newer, Windows 10 and 11, Linux",
              "softwareVersion": self.version, "downloadUrl": REPO + "/releases/latest", "image": SITE_URL + "assets/og.png",
              "license": "https://www.gnu.org/licenses/gpl-3.0.html", "isAccessibleForFree": True,
              "offers": {"@type": "Offer", "price": "0", "priceCurrency": "USD"}}]}
-        return json.dumps(data, ensure_ascii=False).replace("</", "<\\/")
+        return "".join('<script type="application/ld+json">%s</script>' % json.dumps(d, ensure_ascii=False).replace("</", "<\\/") for d in (site, data))
 
     def add_sitemap(self):
         pages = sorted((p for p in self.files if p.endswith(".html")), key=lambda p: (p != "index.html", p))
@@ -656,7 +656,7 @@ class Site:
         out.append('<nav class="jump" aria-label="%s">%s</nav>' % (self.t("Categories"), " ".join('<a href="#cat-%s">%s</a>' % (k, escape(self.category(k))) for k, n in CATEGORIES)))
         for key, _ in CATEGORIES:
             name = escape(self.category(key))
-            members = [e for e in self.effects if e["category"] == key]
+            members = [e for e in self.effects if e["category"] == key or key in (e.get("also") or ())]
             out.append('<section class="fx-cat" id="cat-%s" data-cat="%s"><h2>%s <span>%d</span></h2><ul class="%s">' % (key, key, name, len(members), "fx-grid" if site else "fx-list"))
             for e in members:
                 text = escape((e["name"] + " " + e["description"]).lower())
@@ -785,7 +785,7 @@ def load_effects():
         data = json.loads((EFFECTS / (key + ".json")).read_text())
         if data.get("hidden") or data.get("internal"):
             continue
-        out.append({k: data.get(k) for k in ("id", "name", "category", "description", "params", "presets", "since")})
+        out.append({k: data.get(k) for k in ("id", "name", "category", "also", "description", "params", "presets", "since")})
         out[-1]["params"] = data.get("params", [])
         out[-1]["page"] = re.sub(r"[^a-z0-9]", "", data["name"].lower())
     return out
@@ -835,6 +835,27 @@ def page_url(path):
 
 def clean_links(text):
     return re.sub(r'\bhref="([^"]*)"', lambda m: 'href="%s"' % clean_link(m.group(1)), text)
+
+
+MOVED = {"liftgammagain": "colorwheels", "splittone": "splittone", "exposure": "exposure", "highlightsshadows": "highlightshadow",
+         "edgedetect": "edgedetect", "halftone": "halftone", "framerate": "timequant",
+         "adjustmentlayer": "backdrop", "lightflare": "lensflare"}
+
+
+def add_moved(files, effects, site):
+    pages = {e["id"]: e["page"] + ".html" for e in effects}
+    for old, key in MOVED.items():
+        new = pages[key]
+        for path in [p for p in files if p == "effects/" + new or p.endswith("/effects/" + new)]:
+            stub = path[:-len(new)] + old + ".html"
+            if stub in files:
+                continue
+            page = files[path].decode()
+            name = re.search(r"<h1>(.*?)</h1>", page).group(1)
+            target = clean_link(new) if site else new
+            files[stub] = ('<!doctype html>\n%s<head><meta charset="utf-8"><meta http-equiv="refresh" content="0; url=%s"><link rel="canonical" href="%s">'
+                           '<meta name="robots" content="noindex"><title>%s | AbsentMotion</title></head><body><p><a href="%s">%s</a></p></body></html>\n'
+                           % (re.search(r"<html[^>]*>", page).group(0), target, page_url(path) if site else new, name, target, name)).encode()
 
 
 def page_key(files, key):
@@ -1152,6 +1173,8 @@ def main():
         problems += built.errors + check_navigation(app_files, locale.tag, english_paths)
         if built.rtl:
             app_files["assets/rtl.css"] = RTL_CSS.encode()
+    add_moved(site_files, site.effects, True)
+    add_moved(app_files, app.effects, False)
     problems += check_links(site_files, "site") + check_links(app_files, "app")
     problems += check_text(site_files) + check_text(app_files) + check_app_html(app_files)
     if args.check:

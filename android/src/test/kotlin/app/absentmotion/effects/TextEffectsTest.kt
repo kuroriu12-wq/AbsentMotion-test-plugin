@@ -16,9 +16,9 @@ class TextEffectsTest {
     @Test fun theTextCategoryHoldsTheTextAnimators() {
         assertEquals("Text", EffectCatalog.Categories["text"])
         val animators = catalog.listed("text").filter { it.shortcut == null }
-        assertEquals(setOf("textprogress", "texttransform", "textrandomizer", "textshake", "fontweight", "textblips", "countupdown", "timecode", "textpath"), animators.map { it.key }.toSet())
+        assertEquals(setOf("textprogress", "texttransform", "textrandomizer", "textshake", "fontweight", "textspacing", "textblips", "countupdown", "timecode", "textpath"), animators.map { it.key }.toSet())
         assertEquals(listOf("text3d"), catalog.listed("text").mapNotNull { it.shortcut })
-        assertTrue(animators.all { it.native && it.sksl == null && it.since == when (it.key) { "textpath" -> "4.2.0"; "textshake", "textblips", "fontweight" -> "5.0.0"; else -> "3.0.0" } })
+        assertTrue(animators.all { it.native && it.sksl == null && it.since == when (it.key) { "textpath" -> "4.2.0"; "textshake", "textblips", "fontweight" -> "5.0.0"; "textspacing" -> "5.3.2"; else -> "3.0.0" } })
         assertTrue(listOf("absent.drawingprogress", "absent.stroketaper").all { catalog.find(it)?.native == true })
     }
 
@@ -57,8 +57,8 @@ class TextEffectsTest {
         val percent = catalog.find("absent.textprogress")!!.params.first { it.id == "progress" }
         assertTrue(percent.percent && percent.min == 0f && percent.max == 1f)
         assertEquals("start", percent.after)
-        val anchor = catalog.find("absent.texttransform")!!.params.first { it.id == "anchor" }
-        assertEquals(listOf("Component", "Layer"), anchor.options)
-        assertEquals("0.000000", anchor.default)
+        val anchor = catalog.find("absent.texttransform")!!.params.first { it.id == "anchorTo" }
+        assertEquals(listOf("Layer", "Component"), anchor.options)
+        assertEquals("1.000000", anchor.default)
     }
 }

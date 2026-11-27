@@ -5,7 +5,7 @@ import android.graphics.Rect
 import android.graphics.Bitmap
 import android.view.Surface
 
-class NativeEngine(backend: Backend) : AutoCloseable {
+class NativeEngine(internal val backend: Backend) : AutoCloseable {
     enum class Backend { GRAPHITE, GANESH, GL }
 
     private var handle = nativeCreate(backend.ordinal)
@@ -88,6 +88,7 @@ class NativeEngine(backend: Backend) : AutoCloseable {
     fun layerMatrix(layerId: Long, timeMs: Double): FloatArray? = nativeLayerMatrix(handle, layerId, timeMs)
 
     fun layerBounds(layerId: Long, timeMs: Double): FloatArray? = nativeLayerBounds(handle, layerId, timeMs)
+    fun modelJoints(layerId: Long, timeMs: Double): FloatArray? = nativeModelJoints(handle, layerId, timeMs)
 
     fun layerOutline(layerId: Long, timeMs: Double): String? = nativeLayerOutline(handle, layerId, timeMs)
 
@@ -100,7 +101,8 @@ class NativeEngine(backend: Backend) : AutoCloseable {
     fun shapeIcon(xml: String, size: Int, color: Int): ByteArray? = nativeShapeIcon(handle, xml.toByteArray(), size, color)
 
     fun setModel(uri: String, mesh: app.absentmotion.media.Mesh?): Boolean =
-        nativeSetModel(uri.toByteArray(), mesh?.positions, mesh?.normals, mesh?.uvs, mesh?.colors, mesh?.triangles, mesh?.slots, mesh?.twoSided == true)
+        nativeSetModel(uri.toByteArray(), mesh?.positions, mesh?.normals, mesh?.uvs, mesh?.colors, mesh?.triangles, mesh?.slots, mesh?.twoSided == true,
+            mesh?.parts, mesh?.skin?.ints(), mesh?.skin?.floats())
 
     override fun close() {
         nativeDestroy(handle)
@@ -118,7 +120,7 @@ class NativeEngine(backend: Backend) : AutoCloseable {
 
         fun ease(easing: String, u: Float): Float = if (easing.isEmpty()) u else nativeEase(easing, floatArrayOf(u))[0]
 
-        fun fastCaptionCpu(): Boolean = nativeFastCaptionCpu()
+        fun captionCpuLevel(): Int = nativeCaptionCpuLevel()
 
         fun shapeOutline(scene: String, t: Float, rounded: Boolean): String? = nativeShapeOutline(scene.toByteArray(), t, rounded)
 
@@ -173,7 +175,7 @@ class NativeEngine(backend: Backend) : AutoCloseable {
         @JvmStatic private external fun nativeTrim(engine: Long)
         @JvmStatic private external fun nativeEase(easing: String, us: FloatArray): FloatArray
         @JvmStatic private external fun nativeBlipTimes(text: ByteArray, speed: Float, pause: Float, every: Int): FloatArray
-        @JvmStatic private external fun nativeFastCaptionCpu(): Boolean
+        @JvmStatic private external fun nativeCaptionCpuLevel(): Int
         @JvmStatic private external fun nativeVulkanDevice(): String?
         @JvmStatic private external fun nativeLayerBounds(engine: Long, layerId: Long, timeMs: Double): FloatArray?
         @JvmStatic private external fun nativeLayerQuad(engine: Long, layerId: Long, timeMs: Double): FloatArray?
@@ -185,6 +187,8 @@ class NativeEngine(backend: Backend) : AutoCloseable {
         @JvmStatic private external fun nativePreviewStill(engine: Long, timeMs: Double, width: Int, height: Int, accurateBlur: Boolean): ByteArray?
         @JvmStatic private external fun nativeShapeIcon(engine: Long, xml: ByteArray, size: Int, color: Int): ByteArray?
         @JvmStatic private external fun nativeSetModel(uri: ByteArray, positions: FloatArray?, normals: FloatArray?, uvs: FloatArray?,
-                                                      colors: IntArray?, triangles: IntArray?, slots: IntArray?, twoSided: Boolean): Boolean
+                                                      colors: IntArray?, triangles: IntArray?, slots: IntArray?, twoSided: Boolean,
+                                                      parts: IntArray?, skinInts: IntArray?, skinFloats: FloatArray?): Boolean
+        @JvmStatic private external fun nativeModelJoints(engine: Long, layerId: Long, timeMs: Double): FloatArray?
     }
 }

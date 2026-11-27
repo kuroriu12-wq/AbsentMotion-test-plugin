@@ -41,6 +41,14 @@ add_library(motion_tracker OBJECT tracker/tracker.cpp tracker_jni.cpp)
 set_target_properties(motion_tracker PROPERTIES POSITION_INDEPENDENT_CODE ON)
 target_compile_options(motion_tracker PRIVATE -O3 -fvisibility=hidden)
 
+add_library(face_detector OBJECT faces/yunet.cpp faces_jni.cpp)
+set_target_properties(face_detector PROPERTIES POSITION_INDEPENDENT_CODE ON)
+target_compile_options(face_detector PRIVATE -O3 -fvisibility=hidden)
+
+add_library(deep_filter OBJECT deepfilter/deepfilter.cpp)
+set_target_properties(deep_filter PROPERTIES POSITION_INDEPENDENT_CODE ON)
+target_compile_options(deep_filter PRIVATE -O3 -fvisibility=hidden)
+
 add_library(amengine SHARED ndk_images.cpp preview.cpp camera.cpp depth.cpp drawing.cpp effects.cpp easing.cpp engine.cpp gl_yuv.cpp interpolation.cpp jni.cpp model.cpp motion.cpp particles.cpp pieces3d.cpp scene.cpp shapes.cpp styles.cpp text.cpp textanim.cpp warp.cpp xml.cpp denoise_jni.cpp audio_dsp.cpp audio_fx_jni.cpp)
 if(AM_COMPAT)
     target_sources(amengine PRIVATE encoder_copy.cpp)
@@ -60,7 +68,7 @@ list(TRANSFORM SKIA_LIBS APPEND .a)
 target_link_libraries(amengine PRIVATE
     -Wl,--start-group ${SKIA_LIBS} -Wl,--end-group
     -Wl,--gc-sections
-    rnnoise absent_bg motion_tracker m vulkan android nativewindow jnigraphics mediandk EGL GLESv3 log)
+    rnnoise absent_bg motion_tracker face_detector deep_filter m vulkan android nativewindow jnigraphics mediandk EGL GLESv3 log)
 
 set(LAME_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../third_party/lame)
 set(LAME_SOURCES bitstream encoder fft gain_analysis id3tag lame mpglib_interface newmdct presets psymodel quantize
@@ -99,27 +107,33 @@ target_link_libraries(whisper_jni PRIVATE whisper -Wl,--gc-sections -Wl,--exclud
 get_target_property(GGML_CPU_DIR ggml-cpu SOURCE_DIR)
 get_target_property(GGML_CPU_SOURCES ggml-cpu SOURCES)
 list(TRANSFORM GGML_CPU_SOURCES PREPEND ${GGML_CPU_DIR}/)
-add_library(ggml-cpu-fast STATIC EXCLUDE_FROM_ALL ${GGML_CPU_SOURCES})
-foreach(property INCLUDE_DIRECTORIES COMPILE_DEFINITIONS COMPILE_OPTIONS COMPILE_FEATURES C_STANDARD C_EXTENSIONS CXX_STANDARD CXX_EXTENSIONS
-                 POSITION_INDEPENDENT_CODE LINK_LIBRARIES INTERFACE_LINK_LIBRARIES)
-    get_target_property(value ggml-cpu ${property})
-    if(value)
-        list(TRANSFORM value REPLACE "^-march=armv8-a$" "-march=armv8.2-a+dotprod+fp16")
-        set_target_properties(ggml-cpu-fast PROPERTIES ${property} "${value}")
-    endif()
-endforeach()
-if(ANDROID_ABI STREQUAL "x86_64")
-    target_compile_options(ggml-cpu-fast PRIVATE -mavx -mavx2 -mfma -mf16c)
-endif()
 get_directory_property(GGML_CPU_DIR_DEFINITIONS DIRECTORY ${GGML_CPU_DIR} COMPILE_DEFINITIONS)
-target_compile_definitions(ggml-cpu-fast PRIVATE ${GGML_CPU_DIR_DEFINITIONS})
-add_library(whisper_jni_fast SHARED whisper_jni.cpp)
-target_compile_options(whisper_jni_fast PRIVATE -O3 -g0 -fvisibility=hidden -Wall)
-target_include_directories(whisper_jni_fast PRIVATE $<TARGET_PROPERTY:whisper,INTERFACE_INCLUDE_DIRECTORIES> $<TARGET_PROPERTY:ggml,INTERFACE_INCLUDE_DIRECTORIES>
-                           $<TARGET_PROPERTY:ggml-base,INTERFACE_INCLUDE_DIRECTORIES>)
-target_link_libraries(whisper_jni_fast PRIVATE $<TARGET_FILE:whisper> -Wl,--gc-sections -Wl,--exclude-libs,ALL $<TARGET_FILE:ggml> ggml-cpu-fast
-                      $<TARGET_FILE:ggml-base> m dl atomic)
-add_dependencies(whisper_jni_fast whisper ggml ggml-base)
+function(caption_library suffix arch)
+    add_library(ggml-cpu-${suffix} STATIC EXCLUDE_FROM_ALL ${GGML_CPU_SOURCES})
+    foreach(property INCLUDE_DIRECTORIES COMPILE_DEFINITIONS COMPILE_OPTIONS COMPILE_FEATURES C_STANDARD C_EXTENSIONS CXX_STANDARD CXX_EXTENSIONS
+                     POSITION_INDEPENDENT_CODE LINK_LIBRARIES INTERFACE_LINK_LIBRARIES)
+        get_target_property(value ggml-cpu ${property})
+        if(value)
+            list(TRANSFORM value REPLACE "^-march=armv8-a$" "-march=${arch}")
+            set_target_properties(ggml-cpu-${suffix} PROPERTIES ${property} "${value}")
+        endif()
+    endforeach()
+    if(ANDROID_ABI STREQUAL "x86_64")
+        target_compile_options(ggml-cpu-${suffix} PRIVATE -mavx -mavx2 -mfma -mf16c)
+    endif()
+    target_compile_definitions(ggml-cpu-${suffix} PRIVATE ${GGML_CPU_DIR_DEFINITIONS})
+    add_library(whisper_jni_${suffix} SHARED whisper_jni.cpp)
+    target_compile_options(whisper_jni_${suffix} PRIVATE -O3 -g0 -fvisibility=hidden -Wall)
+    target_include_directories(whisper_jni_${suffix} PRIVATE $<TARGET_PROPERTY:whisper,INTERFACE_INCLUDE_DIRECTORIES> $<TARGET_PROPERTY:ggml,INTERFACE_INCLUDE_DIRECTORIES>
+                               $<TARGET_PROPERTY:ggml-base,INTERFACE_INCLUDE_DIRECTORIES>)
+    target_link_libraries(whisper_jni_${suffix} PRIVATE $<TARGET_FILE:whisper> -Wl,--gc-sections -Wl,--exclude-libs,ALL $<TARGET_FILE:ggml> ggml-cpu-${suffix}
+                          $<TARGET_FILE:ggml-base> m dl atomic)
+    add_dependencies(whisper_jni_${suffix} whisper ggml ggml-base)
+endfunction()
+caption_library(fast armv8.2-a+dotprod+fp16)
+if(ANDROID_ABI STREQUAL "arm64-v8a")
+    caption_library(i8 armv8.2-a+dotprod+fp16+i8mm)
+endif()
 
 set(NCNN_DIR ${AM_ROOT}/third_party/ncnn)
 set(RIFE_WARP_DIR ${AM_ROOT}/third_party/rife_warp)

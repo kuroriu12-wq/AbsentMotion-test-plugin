@@ -6,9 +6,11 @@
 #include <cstdlib>
 #include <map>
 #include <mutex>
+#include <optional>
 #include <string>
 #include <string_view>
 #include <sys/stat.h>
+#include "drawing.h"
 #include "textanim.h"
 #include "warp.h"
 #include "include/core/SkContourMeasure.h"
@@ -22,6 +24,8 @@
 #include "include/core/SkTypeface.h"
 #include "include/core/SkPathBuilder.h"
 #include "include/effects/SkImageFilters.h"
+#include "include/effects/SkRuntimeEffect.h"
+#include "include/pathops/SkPathOps.h"
 #ifdef __APPLE__
 #include "include/ports/SkFontMgr_mac_ct.h"
 #elif defined(_WIN32)
@@ -32,6 +36,9 @@
 #include "include/ports/SkFontMgr_fontconfig.h"
 #endif
 #include "include/ports/SkFontScanner_FreeType.h"
+#ifdef AM_FREETYPE_FILES
+#include "include/ports/SkFontMgr_empty.h"
+#endif
 #include "modules/skparagraph/include/ParagraphBuilder.h"
 #include "modules/skparagraph/include/TypefaceFontProvider.h"
 #include "modules/skunicode/include/SkUnicode_icu.h"
@@ -48,12 +55,11 @@ struct TextLine {
 };
 struct TextLayout {
     std::string content, family, path, align, emoji, flags, locale;
-    float size = 54, width = 512, height = 0, padTop = 0, letterSpacing = 0, lineSpacing = 1, lineHeight = 0, step = 0;
+    float size = 54, width = 512, height = 0, letterSpacing = 0, lineSpacing = 1;
     int weight = 400, index = 0;
-    bool italic = false, imported = false, axes = false, wrap = true;
+    bool italic = false, imported = false, axes = false, wrap = true, pixel = false, androidLayout = false;
     sk_sp<FontCollection> fonts;
     std::vector<TextLine> lines;
-    std::unique_ptr<Paragraph> paragraph;
     bool inked = false;
     SkRect ink = SkRect::MakeEmpty();
     std::map<std::string, std::unique_ptr<Paragraph>> shown;
@@ -77,6 +83,14 @@ sk_sp<SkFontMgr> systemFonts() {
 #endif
     return manager;
 }
+sk_sp<SkFontMgr> FileFonts(const sk_sp<SkFontMgr>& fallback) {
+#ifdef AM_FREETYPE_FILES
+    static auto manager = SkFontMgr_New_Custom_Empty();
+    return manager ? manager : fallback;
+#else
+    return fallback;
+#endif
+}
 const char kEmojiFamily[] = "absent-emoji";
 const char kFlagFamily[] = "absent-emoji-flags";
 const char kEmojiLocale[] = "und-Zsye";
@@ -87,7 +101,7 @@ sk_sp<SkTypeface> EmojiFace(const std::string& path) {
     if (auto found = faces.find(path); found != faces.end()) return found->second;
     const char* locale[] = {kEmojiLocale};
     sk_sp<SkTypeface> face = path.empty() ? systemFonts()->matchFamilyStyleCharacter(nullptr, SkFontStyle(), locale, 1, 0x1F600)
-                                          : systemFonts()->makeFromFile(path.c_str());
+                                          : FileFonts(systemFonts())->makeFromFile(path.c_str());
     if (face) faces[path] = face;
     return face;
 }
@@ -130,7 +144,7 @@ sk_sp<SkTypeface> TextFace(const TextLayout& text, const sk_sp<SkFontMgr>& manag
     const std::string file = text.path + "\n" + std::to_string(text.index) + "\n" + stamp;
     Cached base;
     if (!find(file, &base)) {
-        base.face = manager->makeFromFile(text.path.c_str(), text.index);
+        base.face = FileFonts(manager)->makeFromFile(text.path.c_str(), text.index);
         if (!base.face) return nullptr;
         const int count = base.face->getVariationDesignParameters({});
         if (count > 0 && count <= 64) {
@@ -199,20 +213,20 @@ std::vector<std::pair<size_t, size_t>> EmojiRuns(SkUnicode* unicode, const std::
     return runs;
 }
 std::unique_ptr<Paragraph> paragraph(TextLayout& text, const std::string& content,
-                                     bool rtl, float wordSpacing, bool prepared, float height = 0, bool tabular = false) {
+                                     bool rtl, float wordSpacing, bool prepared, bool tabular = false) {
     TextStyle style;
     style.setColor(SK_ColorWHITE);
     style.setFontSize(text.size);
     style.setFontStyle(SkFontStyle(text.weight, SkFontStyle::kNormal_Width,
         text.italic ? SkFontStyle::kItalic_Slant : SkFontStyle::kUpright_Slant));
     style.setFontFamilies({SkString(text.family)});
-    style.setLetterSpacing(text.letterSpacing * text.size);
+    style.setLetterSpacing(text.pixel ? std::round(text.letterSpacing * text.size) : text.letterSpacing * text.size);
     style.setWordSpacing(wordSpacing);
     if (!text.locale.empty()) style.setLocale(SkString(text.locale));
     if (tabular) style.addFontFeature(SkString("tnum"), 1);
-    if (height > 0) {
-        style.setHeight(height);
-        style.setHeightOverride(true);
+    if (text.pixel) {
+        style.setSubpixel(false);
+        style.setFontHinting(SkFontHinting::kNone);
     }
     ParagraphStyle settings;
     settings.setTextStyle(style);
@@ -233,7 +247,8 @@ std::unique_ptr<Paragraph> paragraph(TextLayout& text, const std::string& conten
     }
     builder->addText(content.data() + done, content.size() - done);
     auto result = builder->Build();
-    result->layout(prepared ? std::max(text.width, text.size * content.size() * 2) : text.width);
+    result->layout(prepared ? std::max(text.width, (text.size * 2 + std::fabs(text.letterSpacing * text.size)) * content.size())
+                            : text.width + text.letterSpacing * text.size);
     return result;
 }
 float Natural(TextLayout& text, const std::string& content, bool rtl) {
@@ -262,11 +277,6 @@ float Spread(TextLayout& text, const std::string& content, bool rtl) {
     const auto spaces = std::count(content.begin(), content.end(), ' ');
     return spaces ? (text.width - Natural(text, content, rtl)) / spaces : 0;
 }
-float PlainStep(TextLayout& text) {
-    std::vector<LineMetrics> metrics;
-    paragraph(text, " \n \n ", false, 0, false, text.lineHeight)->getLineMetrics(metrics);
-    return metrics.size() == 3 ? (float)(metrics[2].fBaseline - metrics[1].fBaseline) : text.size;
-}
 std::string Visible(std::string raw) {
     size_t at;
     if (SpaceBefore(raw, 0, raw.size(), &at)) raw.resize(at);
@@ -285,7 +295,7 @@ bool RightToLeft(const std::string& s, size_t from, size_t to) {
 bool Rewrapped(TextLayout& text, const std::string& src, size_t from, size_t to, bool rtl, std::vector<TextLine>* made, std::vector<Span>* spans) {
     const size_t close = Unbroken(src, from, to);
     if (close <= from) return false;
-    auto p = paragraph(text, src.substr(from, close - from), rtl, 0, false, text.lineHeight);
+    auto p = paragraph(text, src.substr(from, close - from), rtl, 0, false);
     const size_t count = p->lineNumber();
     if (count == 0) return false;
     size_t next = from + p->getActualTextRange(0, true).start;
@@ -303,19 +313,7 @@ bool Rewrapped(TextLayout& text, const std::string& src, size_t from, size_t to,
     }
     return true;
 }
-void Place(TextLayout& text, std::vector<TextLine>& made, float step, float plain) {
-    std::string joined;
-    for (size_t j = 0; j < made.size(); j++) joined += (j ? "\n" : "") + made[j].content;
-    std::vector<LineMetrics> metrics;
-    paragraph(text, joined, made[0].rtl, 0, false, text.lineHeight)->getLineMetrics(metrics);
-    for (size_t j = 1; j < made.size(); j++) {
-        const float extra = metrics.size() == made.size() ? (float)(metrics[j].fBaseline - metrics[j - 1].fBaseline) - plain : 0;
-        made[j].baseline = made[j - 1].baseline + step + extra;
-    }
-}
-bool Respace(TextLayout& text, const std::string& src, std::vector<TextLine>& lines, std::vector<Span>& spans, float step) {
-    bool changed = false;
-    float plain = 0;
+void Respace(TextLayout& text, const std::string& src, std::vector<TextLine>& lines, std::vector<Span>& spans) {
     const auto hard = [&](size_t i) { return i + 1 == lines.size() || Broken(src, spans[i]); };
     for (size_t i = 0; i < lines.size();) {
         const Span s = spans[i];
@@ -335,8 +333,6 @@ bool Respace(TextLayout& text, const std::string& src, std::vector<TextLine>& li
             i++;
             continue;
         }
-        if (plain == 0) plain = PlainStep(text);
-        if (!(step > 0)) step = plain;
         std::vector<size_t> cut{s.from};
         size_t at = run;
         for (int n : rows) {
@@ -370,20 +366,13 @@ bool Respace(TextLayout& text, const std::string& src, std::vector<TextLine>& li
             made.push_back(std::move(rest));
             placed.push_back({cut[keep], s.to});
         }
-        made[0].baseline = lines[i].baseline;
-        Place(text, made, step, plain);
-        const float grown = made.back().baseline - lines[last].baseline;
         const size_t added = made.size();
         lines.erase(lines.begin() + i, lines.begin() + last + 1);
         spans.erase(spans.begin() + i, spans.begin() + last + 1);
         lines.insert(lines.begin() + i, std::make_move_iterator(made.begin()), std::make_move_iterator(made.end()));
         spans.insert(spans.begin() + i, placed.begin(), placed.end());
-        for (size_t k = i + added; k < lines.size(); k++) lines[k].baseline += grown;
-        text.height += grown;
-        changed = true;
         i += merged ? keep : added;
     }
-    return changed;
 }
 bool Located(TextLayout& text, std::vector<Span>* spans) {
     const std::string& src = text.content;
@@ -406,7 +395,7 @@ bool Located(TextLayout& text, std::vector<Span>* spans) {
 void Unhang(TextLayout& text) {
     std::vector<Span> spans;
     if (Located(text, &spans)) {
-        Respace(text, text.content, text.lines, spans, text.step);
+        Respace(text, text.content, text.lines, spans);
         return;
     }
     std::string joined;
@@ -415,40 +404,50 @@ void Unhang(TextLayout& text) {
         spans.push_back({joined.size(), joined.size() + line.content.size() + 1});
         joined += line.content + "\n";
     }
-    Respace(text, joined, text.lines, spans, text.step);
+    Respace(text, joined, text.lines, spans);
 }
-void SplitParagraph(TextLayout& text) {
-    Paragraph& p = *text.paragraph;
+void SplitParagraph(TextLayout& text, Paragraph& p) {
     const int count = (int)p.lineNumber();
-    if (count == 0) return;
     const std::string& src = text.content;
     std::vector<TextLine> lines(count);
     std::vector<Span> spans(count);
-    bool over = false, rtl = false, anyRtl = false;
+    bool rtl = false;
     for (int i = 0; i < count; i++) {
         const size_t from = p.getActualTextRange(i, true).start;
         const size_t to = i + 1 < count ? p.getActualTextRange(i + 1, true).start : src.size();
         if (from > to || to > src.size()) return;
         if (i == 0 || Broken(src, spans[i - 1])) rtl = RightToLeft(src, from, std::min(src.find('\n', from), src.size()));
-        std::string raw = Visible(src.substr(from, to - from));
-        LineMetrics metrics;
-        p.getLineMetricsAt(i, &metrics);
-        lines[i].baseline = text.padTop + (float)metrics.fBaseline;
+        lines[i].content = Visible(src.substr(from, to - from));
         lines[i].rtl = rtl;
-        anyRtl = anyRtl || rtl;
-        over = over || (text.wrap && Overflows(text, raw, rtl));
-        lines[i].content = std::move(raw);
         spans[i] = {from, to};
     }
-    const bool always = anyRtl || !text.wrap;
-    if (!over && !always) return;
     for (int i = 0; i + 1 < count && text.align == "justify"; i++) {
         if (!Broken(src, spans[i])) lines[i].wordSpacing = Spread(text, lines[i].content, lines[i].rtl);
     }
-    if (!(text.wrap && Respace(text, src, lines, spans, 0)) && !always) return;
+    if (text.wrap) Respace(text, src, lines, spans);
     text.lines = std::move(lines);
-    text.paragraph.reset();
+}
+float Rounded(double v) { return v >= 0 ? (float)std::floor(v + 0.5) : -(float)std::floor(-v + 0.5); }
+void Stack(TextLayout& text, SkFontMetrics m, const SkTypeface* face) {
+    if (text.lines.empty()) text.lines.emplace_back();
     for (auto& line : text.lines) line.paragraph = paragraph(text, line.content, line.rtl, line.wordSpacing, true);
+    SkString family;
+    if (face) face->getFamilyName(&family);
+    if (family.equals("Roboto") || family.equals("Roboto Mono")) {
+        m.fTop = std::min(m.fTop, -text.size * (family.equals("Roboto") ? 2163 : 2146) / 2048);
+        m.fBottom = std::max(m.fBottom, text.size * 555 / 2048);
+    }
+    const float top = std::floor(text.pixel ? m.fTop : std::min(m.fTop, m.fAscent)), bottom = std::ceil(text.pixel ? m.fBottom : std::max(m.fBottom, m.fDescent));
+    float v = 0;
+    for (size_t i = 0; i < text.lines.size(); i++) {
+        LineMetrics line;
+        const bool measured = text.lines[i].paragraph->getLineMetricsAt(0, &line);
+        const float above = i == 0 ? top : std::floor(std::min(m.fAscent, measured ? (float)-line.fAscent : 0.f) + 0.5f);
+        const float below = i + 1 == text.lines.size() ? bottom : std::floor(std::max(m.fDescent, measured ? (float)line.fDescent : 0.f) + 0.5f);
+        text.lines[i].baseline = v - above;
+        v += below - above + (i + 1 < text.lines.size() ? Rounded((below - above) * (text.lineSpacing - 1.0)) : 0.f);
+    }
+    text.height = v;
 }
 void layout(TextLayout& text) {
     if (text.fonts) return;
@@ -478,19 +477,15 @@ void layout(TextLayout& text) {
     SkFont font(face, text.size);
     SkFontMetrics metrics;
     font.getMetrics(&metrics);
-    const float natural = metrics.fDescent - metrics.fAscent + metrics.fLeading;
-    text.lineHeight = text.lineSpacing != 1 && natural > 0 ? text.lineSpacing * natural / text.size : 0;
     if (!text.lines.empty()) {
         if (text.wrap) Unhang(text);
-        for (auto& line : text.lines) line.paragraph = paragraph(text, line.content, line.rtl, line.wordSpacing, true);
     } else {
-        text.paragraph = paragraph(text, text.content, false, 0, !text.wrap, text.lineHeight);
-        text.padTop = std::max(0.f, metrics.fAscent - metrics.fTop);
-        text.height = text.paragraph->getHeight() + text.padTop + std::max(0.f, metrics.fBottom - metrics.fDescent);
-        SplitParagraph(text);
+        SplitParagraph(text, *paragraph(text, text.content, false, 0, !text.wrap));
     }
+    Stack(text, metrics, face.get());
 }
 }
+void AlightText(TextLayout& text, bool transformed) { text.androidLayout = !transformed; }
 std::shared_ptr<TextLayout> ParseText(const XmlNode& n) {
     auto text = std::make_shared<TextLayout>();
     if (auto content = n.child("content")) text->content = content->text;
@@ -507,11 +502,13 @@ std::shared_ptr<TextLayout> ParseText(const XmlNode& n) {
     text->locale = attr(n, "_locale");
     text->imported = attr(n, "font").starts_with("imported?");
     text->axes = attr(n, "_fontAxes") == "true";
+    text->pixel = attr(n, "textMetrics") == "pixel";
     for (const auto& child : n.children) {
         if (child->name == "effect" && attr(*child, "id") == "absent.textpath" && attr(*child, "hidden") != "true") text->wrap = false;
     }
     for (const auto& child : n.children) {
-        if (child->name != "effect" || attr(*child, "id") != "com.alightcreative.effects.textspacing" || attr(*child, "hidden") == "true") continue;
+        const std::string id = attr(*child, "id");
+        if (child->name != "effect" || (id != "absent.textspacing" && id != "com.alightcreative.effects.textspacing") || attr(*child, "hidden") == "true") continue;
         for (const auto& p : child->children) {
             if (attr(*p, "name") == "letterspacing") text->letterSpacing = number(*p, "value", 0);
             if (attr(*p, "name") == "linespacing") text->lineSpacing = number(*p, "value", 1);
@@ -521,12 +518,9 @@ std::shared_ptr<TextLayout> ParseText(const XmlNode& n) {
     text->letterSpacing = number(n, "_letterSpacing", text->letterSpacing);
     text->lineSpacing = number(n, "_lineSpacing", text->lineSpacing);
     if (auto prepared = n.child("_layout")) {
-        text->height = number(*prepared, "height", text->size);
-        text->step = number(*prepared, "step", 0);
         for (const auto& line : prepared->children) {
             TextLine l;
             l.content = line->text;
-            l.baseline = number(*line, "baseline", text->size);
             l.rtl = attr(*line, "rtl") == "true";
             l.wordSpacing = number(*line, "wordSpacing", 0);
             l.start = line->attr("from") ? std::strtol(line->attr("from"), nullptr, 10) : -1;
@@ -546,16 +540,29 @@ SkPath TextPath(const Layer& layer, float t) {
     return SkPath::Rect(SkRect::MakeXYWH(-text.width / 2, -text.height / 2, text.width, text.height));
 }
 namespace {
+float Run(const TextLayout& text, const TextLine& line, Paragraph& p) {
+    if (line.rtl || !(text.letterSpacing < 0)) return p.getMaxIntrinsicWidth();
+    float run = 0;
+    bool drawn = false;
+    p.visit([&](int, const Paragraph::VisitorInfo* info) {
+        if (!info) return;
+        run += info->advanceX;
+        drawn = drawn || info->count > 0;
+    });
+    return drawn ? run - text.letterSpacing * text.size / 2 : 0;
+}
 float LineX(const TextLayout& text, const TextLine& line, Paragraph& p) {
     float x = -text.width / 2;
-    const float run = p.getMaxIntrinsicWidth();
-    if (text.align == "center") x += (text.width - run) / 2;
+    const float run = Run(text, line, p);
+    if (text.align == "center") x += (text.width - (text.androidLayout ? (float)((int)run & ~1) : run)) / 2;
     else if (text.align == "right") x += text.width - run;
     return line.split && line.rtl ? x + run - p.getLongestLine() : x;
 }
+float Baseline(const TextLayout& text, Paragraph& p) {
+    return text.pixel ? std::floor(p.getAlphabeticBaseline() + 0.5f) : p.getAlphabeticBaseline();
+}
 template <typename F> void EachParagraph(TextLayout& text, F&& at) {
-    if (text.paragraph) at(*text.paragraph, -text.width / 2, -text.height / 2 + text.padTop);
-    for (auto& line : text.lines) at(*line.paragraph, LineX(text, line, *line.paragraph), line.baseline - text.height / 2 - line.paragraph->getAlphabeticBaseline());
+    for (auto& line : text.lines) at(*line.paragraph, LineX(text, line, *line.paragraph), line.baseline - text.height / 2 - Baseline(text, *line.paragraph));
 }
 template <typename F> void EachGlyph(TextLayout& text, F&& at) {
     EachParagraph(text, [&](Paragraph& paragraph, float x, float y) {
@@ -584,8 +591,10 @@ void DrawRuns(SkCanvas* canvas, TextLayout& text, bool colored, const SkPaint& p
     EachParagraph(text, [&](Paragraph& paragraph, float x, float y) {
         paragraph.visit([&](int, const Paragraph::VisitorInfo* info) {
             if (!info || Colored(info->font) != colored) return;
+            SkFont font = info->font;
+            font.setBaselineSnap(false);
             canvas->drawGlyphs({info->glyphs, (size_t)info->count}, {info->positions, (size_t)info->count},
-                               {x + info->origin.fX, y + info->origin.fY}, info->font, paint);
+                               {x + info->origin.fX, y + info->origin.fY}, font, paint);
         });
     });
 }
@@ -603,7 +612,7 @@ const SkRect& InkBounds(TextLayout& text) {
 }
 namespace {
 const char* const kTextIds[] = {"absent.textprogress", "absent.texttransform", "absent.textrandomizer", "absent.countupdown",
-                                "absent.timecode", "absent.textpath", "absent.textshake", "absent.textblips", "absent.fontweight"};
+                                "absent.timecode", "absent.textpath", "absent.textshake", "absent.textblips", "absent.fontweight", "absent.textspacing"};
 
 struct Piece {
     Paragraph* paragraph;
@@ -621,6 +630,8 @@ struct Glyph {
     float alpha = 1, blur = 0;
     SkColor4f tint = {0, 0, 0, 0};
     float advance = 0;
+    SkPath piece;
+    int part = -1;
 };
 
 int Choice(const LayerEffect& e, const char* name, float t, int fallback, int last) {
@@ -643,8 +654,16 @@ std::string Shown(const Layer& l, float t, int fps, std::string text, bool* tabu
             *tabular = true;
         } else if (e.id == "absent.timecode") {
             const double clock = Choice(e, "source", t, 0, 1) == 1 ? now / 1000.0 : local;
-            text = textanim::FormatTimecode(clock * e.value("speed", t, 1) + e.value("offset", t, 0), fps, Choice(e, "format", t, 0, 5));
+            text = textanim::FormatTimecode(clock * e.value("speed", t, 1) + e.value("offset", t, 0), fps, Choice(e, "format", t, 0, 6));
             *tabular = true;
+        } else if (e.id == "absent.textprogress" && e.value("style", t, 0) >= 0.5f) {
+            const std::vector<uint32_t> points = textanim::CodePoints(text);
+            const int n = (int)points.size();
+            const int from = std::clamp((int)std::lround(e.value("start", t, 0) * n), 0, n);
+            const int to = std::clamp((int)std::lround(e.value("progress", t, 1) * n), from, n);
+            std::string kept;
+            for (int i = from; i < to; i++) kept += textanim::Utf8(points[i]);
+            text = kept;
         } else if (e.id == "absent.textrandomizer") {
             const Property* custom = e.prop("characters");
             const int64_t tick = (int64_t)std::floor(local * std::max(0.0f, e.value("speed", t, 12)) + 1e-6);
@@ -660,32 +679,24 @@ std::string Shown(const Layer& l, float t, int fps, std::string text, bool* tabu
 }
 
 Paragraph* Laid(TextLayout& text, int index, const std::string& content, bool tabular) {
-    Paragraph* plain = text.lines.empty() ? text.paragraph.get() : text.lines[index].paragraph.get();
-    if (!tabular && content == (text.lines.empty() ? text.content : text.lines[index].content)) return plain;
+    if (!tabular && content == text.lines[index].content) return text.lines[index].paragraph.get();
     auto& slot = text.shown[std::to_string(index) + (tabular ? "t" : "p") + content];
-    if (!slot) {
-        if (text.lines.empty()) slot = paragraph(text, content, false, 0, false, text.lineHeight, tabular);
-        else slot = paragraph(text, content, text.lines[index].rtl, text.lines[index].wordSpacing, true, 0, tabular);
-    }
+    if (!slot) slot = paragraph(text, content, text.lines[index].rtl, text.lines[index].wordSpacing, true, tabular);
     return slot.get();
 }
 
 std::vector<Piece> Pieces(TextLayout& text, const Layer& l, float t, int fps, std::string* shown) {
     if (text.shown.size() > 16 + 2 * text.lines.size()) text.shown.clear();
-    std::string all = text.lines.empty() ? text.content : "";
+    std::string all;
     for (size_t i = 0; i < text.lines.size(); i++) all += (i ? "\n" : "") + text.lines[i].content;
     bool tabular = false;
     *shown = Shown(l, t, fps, all, &tabular);
     std::vector<Piece> pieces;
-    if (text.lines.empty()) {
-        pieces.push_back({Laid(text, 0, *shown, tabular), -text.width / 2, -text.height / 2 + text.padTop, 0, -1});
-        return pieces;
-    }
     size_t base = 0;
     for (size_t i = 0; i < text.lines.size() && base <= shown->size(); i++) {
         const size_t end = std::min(shown->find('\n', base), shown->size());
         Paragraph* p = Laid(text, (int)i, shown->substr(base, end - base), tabular);
-        pieces.push_back({p, LineX(text, text.lines[i], *p), text.lines[i].baseline - text.height / 2 - p->getAlphabeticBaseline(), (int)base, (int)i});
+        pieces.push_back({p, LineX(text, text.lines[i], *p), text.lines[i].baseline - text.height / 2 - Baseline(text, *p), (int)base, (int)i});
         base = end + 1;
     }
     return pieces;
@@ -705,18 +716,32 @@ std::vector<Glyph> Collect(const std::vector<Piece>& pieces) {
                 glyphs.push_back({info->font, info->glyphs[i], at, bounds[i].makeOffset(at.fX, at.fY), piece.base + (int)info->utf8Starts[i],
                                   piece.line >= 0 ? piece.line : line});
                 glyphs.back().advance = widths[i];
+                glyphs.back().font.setBaselineSnap(false);
+                glyphs.back().font.setSubpixel(true);
             }
         });
     }
     return glyphs;
 }
 
-std::vector<int> Units(const std::vector<Glyph>& glyphs, const textanim::Segments& seg, int kind, int* count) {
+std::vector<int> Units(const std::vector<Glyph>& glyphs, const textanim::Segments& seg, int kind, bool letters, int* count) {
     std::vector<int> unit(glyphs.size(), -1);
+    const bool cut = kind == 3 && std::any_of(glyphs.begin(), glyphs.end(), [](const Glyph& g) { return g.part >= 0; });
+    int next = 0, last = -1;
     for (size_t i = 0; i < glyphs.size(); i++) {
         const int o = glyphs[i].offset;
         if (kind == 2) unit[i] = glyphs[i].line;
-        else if (o >= 0 && o < (int)seg.character.size()) unit[i] = kind == 1 ? seg.word[o] : seg.character[o];
+        else if (cut && glyphs[i].part >= 0) {
+            unit[i] = next++;
+            last = -1;
+        } else if (o >= 0 && o < (int)seg.character.size()) {
+            unit[i] = kind == 1 || (letters && seg.word[o] < 0) ? seg.word[o] : seg.character[o];
+            if (cut && unit[i] >= 0) {
+                if (unit[i] != last) next++;
+                last = unit[i];
+                unit[i] = next - 1;
+            }
+        }
     }
     std::vector<int> ids(unit);
     std::sort(ids.begin(), ids.end());
@@ -729,7 +754,7 @@ std::vector<int> Units(const std::vector<Glyph>& glyphs, const textanim::Segment
 
 struct Look {
     SkVector move = {0, 0};
-    float scale = 1, rotation = 0, alpha = 1, blur = 0;
+    float scale = 1, verticalStretch = 1, rotation = 0, alpha = 1, blur = 0;
     SkColor4f tint = {0, 0, 0, 0};
 };
 
@@ -750,17 +775,41 @@ Look Progress(const LayerEffect& e, float t, float v) {
     return k;
 }
 
+const int kCurveShapes[6] = {0, 5, 3, 1, 2, 4};
+
 Look Transform(const LayerEffect& e, float t, float w) {
     w += (w * w * (3 - 2 * w) - w) * std::clamp(e.value("smoothness", t, 0), 0.0f, 1.0f);
     Look k;
     if (const Property* p = e.prop("position")) k.move = {p->anim.get(0, t, 0) * w, p->anim.get(1, t, 0) * w};
-    k.scale = 1 + (e.value("scale", t, 1) - 1) * w;
+    k.scale = 1 + e.value("scaleBy", t, 0) * w;
+    k.verticalStretch = std::max(0.0f, 1 + e.value("stretch", t, 0) * w);
     k.rotation = e.value("rotation", t, 0) * w;
-    k.alpha = 1 + (std::clamp(e.value("opacity", t, 1), 0.0f, 1.0f) - 1) * w;
+    k.alpha = 1 + std::clamp(e.value("alpha", t, 0), -1.0f, 0.0f) * w;
     if (const Property* p = e.prop("tint")) {
         k.tint = {p->anim.get(1, t, 1), p->anim.get(2, t, 1), p->anim.get(3, t, 1), std::clamp(p->anim.get(0, t, 0) * w, 0.0f, 1.0f)};
     }
     return k;
+}
+
+float AlightWeight(const LayerEffect& e, float t, int shape, int rank, int count) {
+    const float overlap = std::max(0.0f, e.value("overlap", t, 0)), span = 1 + overlap, total = count + 1 + 2 * overlap;
+    const float phase = e.value("offset", t, 0);
+    const float from = total * (e.value("start", t, 0) - phase), to = total * (e.value("end", t, 1) - phase) - span;
+    float w = 0;
+    if (shape == textanim::kSquare) {
+        w = std::min(std::clamp((to - rank) / span, 0.0f, 1.0f), std::clamp((rank + span - from) / span, 0.0f, 1.0f));
+    } else {
+        const float middle = (from + to) / 2 - span, half = (to - from + span) / 2;
+        const float d = half > 1e-6f ? (rank - middle) / half : (rank == middle ? 0.0f : 2.0f);
+        if (shape == textanim::kTriangle) w = std::max(0.0f, 1 - std::fabs(d));
+        else if (shape == textanim::kSmooth) w = std::exp(-4.9348022f * d * d);
+        else if (shape == textanim::kRound) w = std::fabs(d) < 1 ? std::sqrt(1 - d * d) : 0;
+        else w = std::clamp(shape == textanim::kRampUp ? (d + 1) / 2 : (1 - d) / 2, 0.0f, 1.0f);
+    }
+    const float in = std::clamp(e.value("easeIn", t, 0), -1.0f, 1.0f), out = std::clamp(e.value("easeOut", t, 0), -1.0f, 1.0f);
+    if (e.value("style", t, 0) >= 0.5f) return 1 - std::pow(1 - std::pow(w, std::pow(1.6f, 1 + in)), std::exp2(out));
+    w = std::pow(w, 1 + 0.8f * in);
+    return 1 - std::pow(1 - w, 1 + 0.8f * out);
 }
 
 SkColor4f Blend(SkColor4f under, SkColor4f over) {
@@ -791,12 +840,14 @@ void Apply(const Layer& l, float t, float seconds, const std::string& shown, con
             continue;
         }
         const bool progress = e.id == "absent.textprogress", shake = e.id == "absent.textshake";
-        if (e.hidden || (!progress && !shake && e.id != "absent.texttransform")) continue;
+        if (e.hidden || (!progress && !shake && e.id != "absent.texttransform") || (progress && e.value("style", t, 0) >= 0.5f)) continue;
         int count = 0, steps = 0;
-        const std::vector<int> unit = Units(*glyphs, seg, Choice(e, "unit", t, 0, 2), &count);
+        const bool alight = !progress && !shake && Choice(e, "version", t, 0, 1) == 1;
+        const std::vector<int> unit = Units(*glyphs, seg, Choice(e, "unit", t, 0, 3), alight, &count);
         const int direction = progress ? Choice(e, "direction", t, 0, 3)
                                        : e.value("randomOrder", t, 0) >= 0.5f ? textanim::kRandom : textanim::kFromStart;
-        const std::vector<int> rank = textanim::Ranks(count, direction, Seed(l, e, t), &steps);
+        std::vector<int> rank = textanim::Ranks(count, direction, Seed(l, e, t), &steps);
+        if (alight && direction == textanim::kRandom) rank = textanim::ShuffledRanks(count, e.value("seed", t, 1));
         std::vector<SkRect> box(count, SkRect::MakeEmpty());
         std::vector<SkPoint> fallback(count);
         for (size_t i = 0; i < glyphs->size(); i++) {
@@ -806,7 +857,7 @@ void Apply(const Layer& l, float t, float seconds, const std::string& shown, con
         }
         const float amount = std::clamp(e.value("progress", t, 1), 0.0f, 1.0f), softness = e.value("softness", t, 0);
         const float start = e.value("start", t, 0), end = e.value("end", t, 1), offset = e.value("offset", t, 0);
-        const int shape = Choice(e, "shape", t, 0, 5), style = Choice(e, "style", t, 1, 4);
+        const int shape = kCurveShapes[Choice(e, "curve", t, 0, 5)], style = Choice(e, "style", t, 1, 4);
         const uint64_t seed = Seed(l, e, t);
         const float speed = e.value("speed", t, 24), cycles = e.value("cycles", t, 1), spread = e.value("spread", t, 30);
         const float size = e.value("amount", t, 4), turn = e.value("rotation", t, 0), letters = e.value("letters", t, 1), every = e.value("every", t, 0.6f);
@@ -822,14 +873,16 @@ void Apply(const Layer& l, float t, float seconds, const std::string& shown, con
             } else {
                 looks[u] = progress ? Progress(e, t, textanim::Reveal(amount, rank[u], steps, softness) *
                                                          (1 - textanim::Reveal(std::clamp(start, 0.0f, 1.0f), rank[u], steps, softness)))
-                                    : Transform(e, t, textanim::RangeWeight(shape, rank[u], count, start + offset, end + offset));
+                                    : Transform(e, t, alight ? AlightWeight(e, t, shape, rank[u], count)
+                                                             : textanim::RangeWeight(shape, rank[u], count, start + offset, end + offset));
+                if (alight && l.alight && e.value("style", t, 0) >= 0.5f) looks[u].alpha = std::sqrt(std::max(looks[u].alpha, 0.0f));
             }
-            const SkPoint c = !progress && Choice(e, "anchor", t, 0, 1) == 1 ? SkPoint{0, 0}
+            const SkPoint c = !progress && Choice(e, "anchorTo", t, 1, 1) == 0 ? SkPoint{0, 0}
                               : box[u].isEmpty() ? fallback[u] : box[u].center();
             matrices[u] = SkMatrix::Translate(-c.fX, -c.fY);
-            matrices[u].postScale(looks[u].scale, looks[u].scale);
+            matrices[u].postScale(looks[u].scale, looks[u].scale * looks[u].verticalStretch);
             matrices[u].postRotate(looks[u].rotation);
-            matrices[u].postTranslate(c.fX + looks[u].move.fX, c.fY + looks[u].move.fY);
+            matrices[u].postTranslate(c.fX + looks[u].move.fX, c.fY * looks[u].verticalStretch + looks[u].move.fY);
         }
         for (size_t i = 0; i < glyphs->size(); i++) {
             if (unit[i] < 0) continue;
@@ -974,9 +1027,96 @@ std::vector<int> WordBreaks(const std::string& text) {
     return out;
 }
 
+std::vector<SkPath> Contours(const SkPath& path) {
+    struct Outline {
+        SkPath path;
+        SkRect box;
+        float area;
+    };
+    std::vector<Outline> outlines;
+    SkPathBuilder b;
+    std::vector<SkPoint> points;
+    const auto finish = [&] {
+        SkPath made = b.detach();
+        if (points.size() > 2) {
+            float area = 0;
+            for (size_t i = 0; i < points.size(); i++) area += points[i].cross(points[(i + 1) % points.size()]);
+            outlines.push_back({made, made.getBounds(), area / 2});
+        }
+        points.clear();
+    };
+    SkPath::Iter it(path, false);
+    SkPoint p[4];
+    for (SkPath::Verb v; (v = it.next(p)) != SkPath::kDone_Verb;) {
+        if (v == SkPath::kMove_Verb) {
+            finish();
+            b.moveTo(p[0]);
+            points.push_back(p[0]);
+        } else if (v == SkPath::kLine_Verb) {
+            b.lineTo(p[1]);
+            points.push_back(p[1]);
+        } else if (v == SkPath::kQuad_Verb) {
+            b.quadTo(p[1], p[2]);
+            points.insert(points.end(), {p[1], p[2]});
+        } else if (v == SkPath::kConic_Verb) {
+            b.conicTo(p[1], p[2], it.conicWeight());
+            points.insert(points.end(), {p[1], p[2]});
+        } else if (v == SkPath::kCubic_Verb) {
+            b.cubicTo(p[1], p[2], p[3]);
+            points.insert(points.end(), {p[1], p[2], p[3]});
+        } else if (v == SkPath::kClose_Verb) {
+            b.close();
+        }
+    }
+    finish();
+    if (outlines.empty()) return {};
+    const float outer = std::max_element(outlines.begin(), outlines.end(), [](const Outline& a, const Outline& c) { return std::fabs(a.area) < std::fabs(c.area); })->area;
+    std::vector<SkPath> pieces;
+    std::vector<int> index(outlines.size(), -1);
+    for (size_t i = 0; i < outlines.size(); i++) {
+        if ((outlines[i].area > 0) != (outer > 0)) continue;
+        index[i] = (int)pieces.size();
+        pieces.push_back(outlines[i].path);
+    }
+    for (size_t i = 0; i < outlines.size(); i++) {
+        if (index[i] >= 0) continue;
+        int best = -1;
+        for (size_t j = 0; j < outlines.size(); j++) {
+            if (index[j] < 0 || !outlines[j].box.contains(outlines[i].box)) continue;
+            if (best < 0 || outlines[j].box.width() * outlines[j].box.height() < outlines[best].box.width() * outlines[best].box.height()) best = (int)j;
+        }
+        if (best >= 0) pieces[index[best]] = SkPathBuilder(pieces[index[best]]).addPath(outlines[i].path).detach();
+        else pieces.push_back(outlines[i].path);
+    }
+    return pieces;
+}
+
+void Cut(const Layer& l, float t, std::vector<Glyph>* glyphs) {
+    if (std::none_of(l.effects.begin(), l.effects.end(), [&](const LayerEffect& e) {
+            return !e.hidden && e.id == "absent.texttransform" && Choice(e, "version", t, 0, 1) == 1 && Choice(e, "unit", t, 0, 3) == 3; })) return;
+    std::vector<Glyph> cut;
+    int part = 0;
+    for (const Glyph& g : *glyphs) {
+        const std::optional<SkPath> path = Colored(g.font) ? std::nullopt : g.font.getPath(g.id);
+        if (!path || path->isEmpty()) {
+            cut.push_back(g);
+            continue;
+        }
+        for (const SkPath& piece : Contours(Simplify(*path).value_or(*path))) {
+            Glyph made = g;
+            made.piece = piece;
+            made.part = part++;
+            made.bounds = piece.getBounds().makeOffset(g.at.fX, g.at.fY);
+            cut.push_back(std::move(made));
+        }
+    }
+    *glyphs = std::move(cut);
+}
+
 std::vector<Glyph> Animate(const Layer& l, float t, int fps) {
     std::string shown;
     std::vector<Glyph> glyphs = Collect(Pieces(*l.text, l, t, fps, &shown));
+    Cut(l, t, &glyphs);
     Apply(l, t, (float)(t * std::max(0, l.endTime - l.startTime) / 1000.0), shown, textanim::Split(shown, WordBreaks(shown)), &glyphs);
     OnPath(l, t, &glyphs);
     return glyphs;
@@ -986,8 +1126,8 @@ bool OnPathBounds(const Layer& layer, float t, SkRect* bounds) {
     if (!PathEffect(layer)) return false;
     SkRect placed = SkRect::MakeEmpty();
     for (const Glyph& g : Animate(layer, t, ProjectFps())) {
-        SkRect box;
-        g.font.getBounds({&g.id, 1}, {&box, 1}, nullptr);
+        SkRect box = g.piece.getBounds();
+        if (g.part < 0) g.font.getBounds({&g.id, 1}, {&box, 1}, nullptr);
         placed.join(g.matrix.mapRect(box.makeOffset(g.at.fX, g.at.fY)));
     }
     if (placed.isEmpty() || !placed.isFinite()) return false;
@@ -1021,7 +1161,12 @@ void DrawGlyphs(SkCanvas* canvas, const std::vector<Glyph>& glyphs, SkColor4f co
         else if (g.blur > 0.05f) paint.setMaskFilter(SkMaskFilter::MakeBlur(kNormal_SkBlurStyle, g.blur));
         canvas->save();
         canvas->concat(g.matrix);
-        canvas->drawGlyphs({&g.id, 1}, {&g.at, 1}, {0, 0}, g.font, paint);
+        if (g.part >= 0) {
+            canvas->translate(g.at.fX, g.at.fY);
+            canvas->drawPath(g.piece, paint);
+        } else {
+            canvas->drawGlyphs({&g.id, 1}, {&g.at, 1}, {0, 0}, g.font, paint);
+        }
         canvas->restore();
     }
     if (opacity < 1) canvas->restore();
@@ -1031,7 +1176,7 @@ bool TextEffect(const std::string& id) {
     return std::any_of(std::begin(kTextIds), std::end(kTextIds), [&](const char* k) { return id == k; });
 }
 bool TextAnimated(const Layer& layer) {
-    return layer.text && std::any_of(layer.effects.begin(), layer.effects.end(), [](const LayerEffect& e) { return !e.hidden && TextEffect(e.id) && e.id != "absent.fontweight"; });
+    return layer.text && std::any_of(layer.effects.begin(), layer.effects.end(), [](const LayerEffect& e) { return !e.hidden && TextEffect(e.id) && e.id != "absent.fontweight" && e.id != "absent.textspacing"; });
 }
 SkPath TextGlyphPath(const Layer& layer, float t, int fps) {
     auto& text = *layer.text;
@@ -1042,7 +1187,8 @@ SkPath TextGlyphPath(const Layer& layer, float t, int fps) {
             if (!(g.alpha > 0.002f) || Colored(g.font)) continue;
             SkMatrix m = SkMatrix::Translate(g.at.fX, g.at.fY);
             m.postConcat(g.matrix);
-            if (auto path = g.font.getPath(g.id)) b.addPath(*path, m);
+            if (g.part >= 0) b.addPath(g.piece, m);
+            else if (auto path = g.font.getPath(g.id)) b.addPath(*path, m);
         }
         return b.detach();
     }
@@ -1069,13 +1215,55 @@ SkPath TextHitPath(const Layer& layer, float t) {
     SkPath path = b.detach();
     return path.isEmpty() ? TextPath(layer, t) : path;
 }
+sk_sp<SkImageFilter> AlightLift(const SkMatrix& m, SkPoint at) {
+    if (!m.isScaleTranslate() || m.getScaleY() == 0) return nullptr;
+    const float y = m.mapPoint(at).fY, lift = y - std::floor(y + 0.5f);
+    if (std::fabs(lift) < 0.01f) return nullptr;
+    return SkImageFilters::MatrixTransform(SkMatrix::Translate(0, lift / m.getScaleY()), SkSamplingOptions(SkFilterMode::kLinear), nullptr);
+}
+sk_sp<SkColorFilter> AlightEdges() {
+    static const sk_sp<SkColorFilter> filter = SkRuntimeEffect::MakeForColorFilter(SkString("half4 main(half4 c) { return half4(c.rgb * c.a, c.a); }")).effect->makeColorFilter(nullptr);
+    return filter;
+}
 void DrawText(SkCanvas* canvas, const Layer& layer, float t, const SkPaint& paint, int fps, TextPart part) {
     auto& text = *layer.text;
     layout(text);
-    if (TextAnimated(layer)) return DrawGlyphs(canvas, Animate(layer, t, fps), paint.getColor4f(), part);
+    if (const LayerEffect* e = layer.effect("absent.drawingprogress"); e && e->value("style", t, 0) >= 0.5f &&
+        (e->value("start", t, 0) > 0 || e->value("end", t, 1) < 1)) {
+        if (part == TextPart::kColor) return;
+        SkPaint fill(paint);
+        fill.setStyle(SkPaint::kFill_Style);
+        fill.setAntiAlias(true);
+        canvas->drawPath(DrawingProgressPath(layer, TextGlyphPath(layer, t, fps), t), fill);
+        return;
+    }
+    if (TextAnimated(layer)) {
+        const std::vector<Glyph> glyphs = Animate(layer, t, fps);
+        const bool alight = layer.alight && part != TextPart::kColor;
+        if (alight) {
+            SkPaint edges;
+            edges.setColorFilter(AlightEdges());
+            if (text.androidLayout && !glyphs.empty()) edges.setImageFilter(AlightLift(canvas->getTotalMatrix(), glyphs[0].matrix.mapPoint(glyphs[0].at)));
+            canvas->saveLayer(nullptr, &edges);
+        }
+        DrawGlyphs(canvas, glyphs, paint.getColor4f(), alight && part == TextPart::kAll ? TextPart::kPlain : part);
+        if (alight) canvas->restore();
+        if (alight && part == TextPart::kAll) DrawGlyphs(canvas, glyphs, paint.getColor4f(), TextPart::kColor);
+        return;
+    }
     if (part != TextPart::kColor) {
         SkPaint tint;
-        tint.setColorFilter(SkColorFilters::Blend(paint.getColor4f(), nullptr, SkBlendMode::kSrcIn));
+        const sk_sp<SkColorFilter> color = SkColorFilters::Blend(paint.getColor4f(), nullptr, SkBlendMode::kSrcIn);
+        tint.setColorFilter(layer.alight ? AlightEdges()->makeComposed(color) : color);
+        if (text.androidLayout) {
+            SkPoint first = {0, 0};
+            bool found = false;
+            EachGlyph(text, [&](const SkFont&, SkGlyphID, float x, float y) {
+                if (!found) first = {x, y};
+                found = true;
+            });
+            if (found) tint.setImageFilter(AlightLift(canvas->getTotalMatrix(), first));
+        }
         const float scale = canvas->getTotalMatrix().getMinScale();
         if (scale > 0) {
             const float room = 2 / scale;

@@ -2,7 +2,7 @@
 title: The home screen
 group: Interface
 order: 1
-summary: Your projects, assets and templates, the tools in the Tools tab (Compress, Trim, Extract Audio, Make a GIF and Video Downloader) and the buttons around them.
+summary: Your projects, assets and templates, the tools in the Tools tab (Compress, Trim, Extract Audio, Make a GIF, Merge, Convert Image and Video Downloader) and the buttons around them.
 ---
 The home screen is the first thing you see after the first start. It lists your projects and has the buttons for creating one, searching and changing settings. On a tablet with a wide enough screen, the top bar becomes a wide header and projects and templates show as a grid, in portrait and in landscape.
 
@@ -55,6 +55,10 @@ The three-dot button on a card (named **More**) has these entries. Tap it to ope
 
 A project whose file is damaged shows **Damaged — restore a version** instead of its facts. Tap it to restore an earlier version, or delete it.
 
+### Selecting several
+
+Hold a card to select it, then tap other cards to add or remove them. The bar at the top shows how many are selected, with **Select all**, **Export**, **Duplicate**, **Send to another device** and **Delete**. **Export** and **Send to another device** work on one project at a time. The X or the back button stops selecting.
+
 ## Search
 
 One search box serves the whole home screen. On the Projects page it looks through project and asset names ("Search projects and assets"); on the Templates page it looks through templates and presets. It ignores capital letters and accents, and every word you type has to appear in the name, in any order.
@@ -69,7 +73,7 @@ The **Templates** page has two chips, **My Templates** and **My Presets**. They 
 
 ## Tools
 
-The **Tools** page has five cards that work on files, outside any project: **Compress**, **Trim**, **Extract Audio**, **Make a GIF** and **Video Downloader**. Tap a card to open it. On a tablet the cards sit side by side, and a tool opens full screen; held sideways, its settings sit in a second column next to the file.
+The **Tools** page has cards that work on files, outside any project. It starts with **Compress**, **Trim**, **Extract Audio**, **Video Downloader** and **Send between devices**; **Add more tools** at the end lists the rest (**Make a GIF**, **Merge**, **Enhance Image**, **Convert Image** and the importer for project links and QR codes), and **Add** puts one on the page. Tap a card to open it. The sliders button at the top right opens **Customize tools**, where you choose which tools show and in which order, on the Tools page and inside a project. Inside a project every tool is listed. On a tablet the cards sit side by side, and a tool opens full screen; held sideways, its settings sit in a second column next to the file.
 
 ![The Tools page: Compress (1) and Video Downloader (2), and the Tools button of the bottom bar (3).](img/tools-tab.webp)
 
@@ -111,6 +115,16 @@ When it is done, the line above the buttons shows the old and the new size and h
 
 If a video has hardly any cut points, Fast can only start at the beginning, and the screen says so: choose Exact to start anywhere.
 
+### Merge
+
+**Merge** joins several videos into one MP4 video, one after the other. Your originals are never changed.
+
+1. Tap **Add videos** and choose one or more videos. Tap it again to add more.
+2. Put them in order with the up and down arrows on each video; the cross takes a video out.
+3. The line above the button gives the size to expect. Tap **Merge**.
+
+When every video has the same codec, picture size, frame rate and sound format (for example clips filmed with the same phone settings), they are joined without re-encoding: it is quick and keeps the bit rate and quality of the originals. Otherwise the line says "These videos differ, so they will be re-encoded.": the result takes the picture size of the first video (other videos fit inside it with black bars), the highest frame rate up to 60 fps and about the bit rate of the originals, and a video without sound is silent for its part.
+
 ### Extract Audio
 
 **Extract Audio** saves the sound of a video as an audio file.
@@ -131,9 +145,18 @@ To take the sound out of a video inside a project instead, use **Extract Audio**
 3. **Size** is the long side of the GIF: 320, 480 (the default) or 720 px. **Frame rate**: 10, 15 (the default) or 24. **Loop**: **Forever** (the default) or **Once**.
 4. The line above the button gives the size to expect and the number of frames, measured on a few sample frames. If the GIF will be over 25 MB it says "This GIF will be big. Try a smaller size or a shorter part." Tap **Make GIF**.
 
-### The result of Trim, Extract Audio and Make a GIF
+### Convert Image
 
-A bar shows the progress, and **Cancel** stops it. When it is done, the line above the buttons shows the size of the new file, and **Result** shows it (a sound shows its name). Tap **Save** to keep it, or **Share** to send it to another app. Videos go to Movies/AbsentMotion, GIFs to Pictures/AbsentMotion and sounds to Music/AbsentMotion. If something goes wrong, the line says what happened, for example "This is too big for this phone. Try a smaller size or a shorter part."
+**Convert Image** turns a picture into PNG, JPG, WebP or GIF.
+
+1. Tap **Choose a picture**.
+2. Under **Convert to**, pick **PNG**, **JPG**, **WebP** or **GIF**, then tap **Convert**.
+
+An animated GIF or WebP stays animated when you convert it to GIF or WebP, with the same frame times; converting it to PNG or JPG keeps its first frame. JPG and GIF have no see-through parts, so transparent areas turn white. A PNG or GIF becomes a lossless WebP; other pictures become a WebP at high quality. Animations can be up to 2048 × 2048 pixels and 3000 frames. The result line shows the new size, and the number of frames for an animation.
+
+### The result of Trim, Merge, Extract Audio, Make a GIF and Convert Image
+
+A bar shows the progress, and **Cancel** stops it. When it is done, the line above the buttons shows the size of the new file, and **Result** shows it (a sound shows its name). Tap **Save** to keep it, or **Share** to send it to another app. Videos go to Movies/AbsentMotion, GIFs and pictures to Pictures/AbsentMotion and sounds to Music/AbsentMotion. If something goes wrong, the line says what happened, for example "This is too big for this phone. Try a smaller size or a shorter part."
 
 ### Video Downloader
 

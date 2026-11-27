@@ -30,9 +30,16 @@ class MoveEffectsTest {
     @Test fun theMoveCategoryHoldsTheMotionEffects() {
         val moves = catalog.listed("move").map { it.key }.toSet()
         assertEquals(setOf("autoshake", "randomdisplace", "randomjitter", "oscillate", "swing", "spin", "pulsesize", "pulseopacity",
-            "stretchaxis", "offset", "rastertransform", "movealongpath", "scaleassist", "parenthelper", "echo", "timequant", "shutterblur"), moves)
+            "stretchaxis", "offset", "rastertransform", "movealongpath", "scaleassist", "parenthelper", "facetrack", "echo", "timequant", "shutterblur"), moves)
         assertEquals(setOf("stretchaxis", "offset", "rastertransform"), catalog.listed("move").filterNot { it.native && it.sksl == null }.map { it.key }.toSet())
         assertEquals("Move", EffectCatalog.Categories["move"])
+    }
+
+    @Test fun faceTrackingIsFoundAsFaceTrackingAndFaceMotion() {
+        for (query in listOf("face tracking", "Face motion", "face")) assertEquals(query, "facetrack", catalog.search(query).first().key)
+        val face = catalog.find("absent.facetrack")!!
+        assertEquals("5.3.2", face.since)
+        assertEquals(listOf(row("Zoom", "float", "1.000000", "0.1..10.0", "%"), row("Position", "point", "0.500000,0.500000", "0.0..1.0"), row("Smoothing", "float", "0.300000", "0.0..1.0", "%")), params("facetrack"))
     }
 
     private fun params(key: String) = catalog.find("absent.$key")!!.params.map { p ->
@@ -46,10 +53,10 @@ class MoveEffectsTest {
         assertEquals(listOf(row("Magnitude", "float", "50.000000", "0.0..2000.0"), row("Frequency", "float", "2.000000", "0.0..16.0", "Hz"),
             row("Evolution", "float", "0.000000", "0.0..2000.0"), row("Seed", "float", "0.000000", "0.0..5.0"), row("Angle", "angle", "45.000000", "-3600.0..3600.0"),
             row("Slack", "float", "0.250000", "0.0..1.0", "%"), row("Z Shake", "float", "0.000000", "0.0..2000.0"),
-            row("Pattern", "choice", "1.000000", "Classic/Standard")), params("autoshake"))
+            row("Pattern", "choice", "1.000000", "Classic/Standard"), row("Style", "choice", "0.000000", "Classic/Standard")), params("autoshake"))
         assertEquals(listOf(row("Magnitude", "float", "50.000000", "0.0..2000.0"), row("Evolution", "float", "0.000000", "0.0..2000.0"),
             row("Seed", "float", "0.000000", "0.0..5.0"), row("Scatter", "float", "0.500000", "0.0..2.0", "%"),
-            row("Speed", "float", "1.000000", "0.0..50.0")), params("randomdisplace"))
+            row("Speed", "float", "1.000000", "0.0..50.0"), row("Style", "choice", "1.000000", "Classic/Standard")), params("randomdisplace"))
         assertEquals(listOf(row("Angle", "angle", "45.000000", "-3600.0..3600.0"), row("Frequency", "float", "30.000000", "1.0..60.0"),
             row("Magnitude", "float", "25.000000", "1.0..2000.0"), row("Seed", "float", "0.000000", "0.0..1.0"), row("Slack", "float", "0.000000", "0.0..1.0", "%"),
             row("Z Jitter", "float", "0.000000", "0.0..2000.0")), params("randomjitter"))
@@ -57,20 +64,23 @@ class MoveEffectsTest {
             row("Frequency", "float", "2.000000", "0.0..16.0", "Hz"), row("Magnitude", "float", "25.000000", "0.0..4000.0"), wave,
             row("Phase", "float", "0.000000", "0.0..1000.0")), params("oscillate"))
         assertEquals(listOf(row("Frequency", "float", "2.000000", "0.1..16.0", "Hz"), row("Angle 1", "angle", "-30.000000", "-3600.0..3600.0"),
-            row("Angle 2", "angle", "30.000000", "-3600.0..3600.0"), row("Phase", "float", "0.000000", "0.0..2.0"), wave), params("swing"))
-        assertEquals(listOf(row("RPM", "float", "60.000000", "-3600.0..3600.0")), params("spin"))
+            row("Angle 2", "angle", "30.000000", "-3600.0..3600.0"), row("Phase", "float", "0.000000", "0.0..2.0"), wave,
+            row("Style", "choice", "0.000000", "Classic/Standard")), params("swing"))
+        assertEquals(listOf(row("RPM", "float", "60.000000", "-3600.0..3600.0"), row("Style", "choice", "0.000000", "Classic/Standard")), params("spin"))
         assertEquals(listOf(row("Frequency", "float", "2.000000", "0.0..16.0", "Hz"), row("Shrink", "float", "0.900000", "0.0..1.0"),
-            row("Grow", "float", "1.100000", "1.0..2.0"), row("Starting Phase", "float", "0.000000", "0.0..2.0"), wave), params("pulsesize"))
+            row("Grow", "float", "1.100000", "1.0..2.0"), row("Starting Phase", "float", "0.000000", "0.0..2.0"), wave,
+            row("Style", "choice", "0.000000", "Classic/Standard/Standard")), params("pulsesize"))
         assertEquals(listOf(row("Frequency", "float", "2.000000", "0.1..16.0", "Hz"), row("Strength", "float", "1.000000", "0.0..1.0", "%"),
             row("Starting Phase", "float", "0.000000", "0.0..2.0"), wave), params("pulseopacity"))
         assertEquals(listOf(row("Scale", "float", "1.000000", "0.01..50.0"), row("Angle", "angle", "0.000000", "-3600.0..3600.0"),
-            row("Mask To Layer", "switch", "false")), params("stretchaxis"))
+            row("Mask To Layer", "switch", "false"), row("Style", "choice", "0.000000", "Classic/Standard")), params("stretchaxis"))
         assertEquals(listOf(row("Offset", "point", "0.000000,0.000000", "-5000.0..5000.0"), row("Feather", "float", "0.000000", "0.0..1.0"),
-            row("Mask To Layer", "switch", "false")), params("offset"))
+            row("Mask To Layer", "switch", "false"), row("Style", "choice", "1.000000", "Classic/Standard")), params("offset"))
         assertEquals(listOf(row("Progress", "float", "0.000000", "0.0..1.0", "%"), row("Orientation", "angle", "0.000000", "-3600.0..3600.0"),
             row("Rotate Automatically", "switch", "true"), row("Inset/Outset", "float", "0.000000", "-500.0..500.0"),
-            row("Offset", "point", "0.000000,0.000000", "-5000.0..5000.0")), params("movealongpath"))
-        assertEquals(listOf(row("Frames/sec", "float", "5.000000", "0.1..120.0")), params("timequant"))
+            row("Offset", "point", "0.000000,0.000000", "-5000.0..5000.0"), row("Legacy Coordinates", "switch", "false"),
+            row("Style", "choice", "1.000000", "Classic/Standard")), params("movealongpath"))
+        assertEquals(listOf(row("Steps/sec", "float", "5.000000", "0.1..120.0"), row("Style", "choice", "1.000000", "Classic/Standard")), params("timequant"))
     }
 
     private fun older(effect: String, vararg values: Pair<String, String>) = XmlNode("effect", mapOf("id" to "absent.$effect", "hidden" to "false"),
@@ -97,7 +107,7 @@ class MoveEffectsTest {
         assertEquals(mapOf("magnitude" to 20f, "frequency" to 6f, "seed" to 1f), values(0))
         assertEquals(mapOf("magnitude" to 50f, "speed" to 1f, "seed" to 1f), values(1))
         assertEquals(mapOf("angle" to 10f, "frequency" to 8f, "magnitude" to 25f, "seed" to 1f), values(2))
-        assertEquals(mapOf("frequency" to 1f, "angle1" to -15f, "angle2" to 15f, "phase" to 0.5f, "wave" to 1f), values(3))
+        assertEquals(mapOf("freq" to 2f, "angle1" to -15f, "angle2" to 15f, "phase" to 0.5f, "wave" to 1f), values(3))
         assertEquals(15f, values(4).getValue("rpm"), 1e-4f)
         assertEquals(mapOf("frequency" to 1f, "shrink" to 0.8f, "grow" to 1.2f, "phase" to 1f, "wave" to 0f), values(5).mapValues { Math.round(it.value * 1000) / 1000f })
         assertEquals(mapOf("scale" to 1.5f, "angle" to 30f), values(6))
@@ -114,6 +124,15 @@ class MoveEffectsTest {
         assertEquals(catalog.listed("move").map { it.instance() }, fresh.scene.node.children.single().children)
     }
 
+    @Test fun savedSwingsKeepTheirSpeedWithAlightsFrequency() {
+        val migration = EffectMigration.parse(File("../shared/assets/effects/foreign.json").readText(), catalog)
+        val saved = older("swing", "frequency" to "2", "angle1" to "-20", "angle2" to "40", "phase" to "0.8", "wave" to "1")
+        val scene = Scene(XmlNode("scene", mapOf("width" to "100", "height" to "100", "fps" to "30", "totalTime" to "1000"),
+            listOf(XmlNode("shape", mapOf("id" to "1", "startTime" to "0", "endTime" to "1000", "s" to ".rect"), listOf(saved)))))
+        val effect = migration.migrate(scene).scene.node.children.single().children.single()
+        assertEquals(mapOf("freq" to 4f, "angle1" to -20f, "angle2" to 40f, "phase" to 0.8f, "wave" to 1f), effect.children.associate { it["name"]!! to it["value"]!!.toFloat() })
+    }
+
     @Test fun aRandomDisplacementFromAlightStaysWhereAlightPutsIt() {
         val migration = EffectMigration.parse(File("../shared/assets/effects/foreign.json").readText(), catalog)
         val alight = XmlNode("effect", mapOf("id" to "com.alightcreative.effects.randomdisplace"), listOf("mag" to "80", "evolution" to "2", "seed" to "1", "scatter" to "0.5")
@@ -122,7 +141,7 @@ class MoveEffectsTest {
             listOf(XmlNode("shape", mapOf("id" to "1", "startTime" to "0", "endTime" to "1000", "s" to ".rect"), listOf(alight)))))
         val effect = migration.migrate(scene).scene.node.children.single().children.single()
         assertEquals("absent.randomdisplace", effect["id"])
-        assertEquals(mapOf("magnitude" to 80f, "evolution" to 2f, "seed" to 1f, "scatter" to 0.5f, "speed" to 0f),
+        assertEquals(mapOf("magnitude" to 80f, "evolution" to 2f, "seed" to 1f, "scatter" to 0.5f, "speed" to 0f, "style" to 1f),
             effect.children.associate { it["name"]!! to it["value"]!!.toFloat() })
         assertEquals("1.000000", catalog.find("absent.randomdisplace")!!.instance().children.single { it["name"] == "speed" }["value"])
     }
@@ -138,7 +157,8 @@ class MoveEffectsTest {
         val echo = catalog.find("absent.echo")!!.params.associateBy { it.id }
         assertEquals(Triple(-60f, 60f, 0.5f), echo.getValue("seconds").range())
         assertEquals(Triple(0f, 20f, 1f), echo.getValue("count").range())
-        assertEquals(listOf("Behind", "Atop"), echo.getValue("composite").options)
+        assertEquals(listOf("Atop", "Behind"), echo.getValue("mode").options)
+        assertEquals("1.000000", echo.getValue("mode").default)
     }
 
     @Test fun trueMotionBlurDefaultsToAHalfOpenShutterAndEightSamples() {
@@ -162,6 +182,18 @@ class MoveEffectsTest {
         assertEquals(2500.0, stepped(keyed).steppedMs(2550.0), 1e-9)
     }
 
+    @Test fun standardTimeQuantizationShowsTheMiddleOfEachStepLikeAlight() {
+        val style = XmlNode("property", mapOf("name" to "style", "type" to "float", "value" to "1"))
+        fun standard(fps: String) = Layer(stepped(fps(fps)).node.let { n ->
+            n.copy(children = n.children.map { e -> e.copy(children = e.children + style) })
+        })
+        val five = standard("5")
+        assertEquals(listOf(1100.0, 1100.0, 1100.0, 1300.0, 1300.0, 2900.0), listOf(1000.0, 1033.0, 1200.0, 1233.0, 1400.0, 2999.0).map(five::steppedMs))
+        val twelve = standard("12")
+        assertEquals(1000.0 + 17.5 * 1000 / 12, twelve.steppedMs(2500.0), 1e-9)
+        assertEquals(1000.0 + 0.5 * 1000 / 12, twelve.steppedMs(1000.0), 1e-9)
+    }
+
     @Test fun timeQuantizationImportsKeyframesAndKeepsTheLegacyFallback() {
         val migration = EffectMigration.parse(File("../shared/assets/effects/foreign.json").readText(), catalog)
         val keyed = XmlNode("property", mapOf("name" to "stepsPerSecond", "type" to "float"), listOf(
@@ -174,11 +206,13 @@ class MoveEffectsTest {
         val result = migration.migrate(scene)
         val effects = result.scene.node.children.single().children
         assertEquals("absent.timequant", effects[0]["id"])
-        val converted = effects[0].children.single()
+        val converted = effects[0].children.first()
         assertEquals("fps", converted["name"])
+        assertEquals(listOf("fps", "style"), effects[0].children.map { it["name"] })
+        assertEquals(1f, effects[0].children[1]["value"]!!.toFloat(), 0f)
         assertEquals(keyed.children.map { it["t"] }, converted.children.map { it["t"] })
         assertEquals(listOf(5f, 10f), converted.children.map { it["v"]!!.toFloat() })
-        assertEquals(5f, effects[1].children.single()["value"]!!.toFloat(), 0f)
+        assertEquals(5f, effects[1].children.first { it["name"] == "fps" }["value"]!!.toFloat(), 0f)
         assertEquals(legacy, effects[2])
         assertEquals(1375.0, Layer(shape.copy(children = listOf(effects[2]))).steppedMs(1399.0), 0.0)
         assertTrue(result.dropped.isEmpty())

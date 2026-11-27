@@ -16,6 +16,103 @@
   "text": "텍스트"
  },
  "effects": {
+  "advancedchromakey": {
+   "description": "최대 네 가지 색을 한 번에 지웁니다. 색마다 지우거나(제외) 다른 키로부터 보호(포함)할 수 있고, 각각 임계값, 페더, 루마 민감도를 따로 정합니다. 마스크 표시는 남는 부분을 빨간색으로 보여 줍니다.",
+   "name": "고급 크로마 키",
+   "params": {
+    "c1active": {
+     "label": "색상 1"
+    },
+    "c1color": {
+     "label": "색상"
+    },
+    "c1feather": {
+     "label": "페더"
+    },
+    "c1luma": {
+     "label": "루마 민감도"
+    },
+    "c1mode": {
+     "label": "모드",
+     "options": [
+      "제외",
+      "포함"
+     ]
+    },
+    "c1threshold": {
+     "label": "임계값"
+    },
+    "c2active": {
+     "label": "색상 2"
+    },
+    "c2color": {
+     "label": "색상"
+    },
+    "c2feather": {
+     "label": "페더"
+    },
+    "c2luma": {
+     "label": "루마 민감도"
+    },
+    "c2mode": {
+     "label": "모드",
+     "options": [
+      "제외",
+      "포함"
+     ]
+    },
+    "c2threshold": {
+     "label": "임계값"
+    },
+    "c3active": {
+     "label": "색상 3"
+    },
+    "c3color": {
+     "label": "색상"
+    },
+    "c3feather": {
+     "label": "페더"
+    },
+    "c3luma": {
+     "label": "루마 민감도"
+    },
+    "c3mode": {
+     "label": "모드",
+     "options": [
+      "제외",
+      "포함"
+     ]
+    },
+    "c3threshold": {
+     "label": "임계값"
+    },
+    "c4active": {
+     "label": "색상 4"
+    },
+    "c4color": {
+     "label": "색상"
+    },
+    "c4feather": {
+     "label": "페더"
+    },
+    "c4luma": {
+     "label": "루마 민감도"
+    },
+    "c4mode": {
+     "label": "모드",
+     "options": [
+      "제외",
+      "포함"
+     ]
+    },
+    "c4threshold": {
+     "label": "임계값"
+    },
+    "showMask": {
+     "label": "마스크 표시"
+    }
+   }
+  },
   "ascii": {
    "description": "레이어를 문자와 기호로 만든 텍스트 아트로 바꿉니다. 밝은 부분에는 더 촘촘한 문자를 사용합니다. 크기는 레이어에서 각 문자의 너비를 정하므로 문자가 레이어와 함께 이동, 회전 및 확대됩니다. 색상은 원본 색상이나 단색을 사용하며, 가장자리 선은 | - / 및 \\ 문자로 윤곽을 그립니다.",
    "name": "ASCII",
@@ -107,6 +204,13 @@
     "slack": {
      "label": "여유"
     },
+    "style": {
+     "label": "스타일",
+     "options": [
+      "클래식",
+      "표준"
+     ]
+    },
     "zshake": {
      "label": "Z 흔들기"
     }
@@ -120,7 +224,7 @@
      "label": "레이어에 마스크"
     },
     "mix": {
-     "label": "혼합"
+     "label": "채우기"
     },
     "spill": {
      "label": "이펙트 외부 확장"
@@ -429,6 +533,13 @@
    "params": {
     "frequency": {
      "label": "빈도"
+    },
+    "style": {
+     "label": "스타일",
+     "options": [
+      "클래식",
+      "표준"
+     ]
     }
    }
   },
@@ -500,14 +611,25 @@
    "description": "부드럽고 균일한 블러를 적용합니다. 도형을 상자로 하면 대신 각 점 주변의 정사각형 영역을 균일하게 평균합니다.",
    "name": "블러",
    "params": {
-    "strength": {
-     "label": "강도"
+    "iterations": {
+     "label": "반복 횟수"
     },
     "shape": {
      "label": "도형",
      "options": [
       "부드럽게",
-      "상자"
+      "상자",
+      "고속 상자"
+     ]
+    },
+    "strength": {
+     "label": "강도"
+    },
+    "style": {
+     "label": "스타일",
+     "options": [
+      "클래식",
+      "표준"
      ]
     }
    }
@@ -607,12 +729,75 @@
       "중심",
       "모서리"
      ]
+    },
+    "alight": {
+     "label": "스타일",
+     "options": [
+      "클래식",
+      "표준"
+     ]
+    },
+    "alZ": {
+     "label": "위치 Z"
+    },
+    "alLight": {
+     "label": "방향"
+    },
+    "alElev": {
+     "label": "고도"
+    },
+    "faceStyle": {
+     "label": "스타일",
+     "options": [
+      "클래식",
+      "표준"
+     ]
+    },
+    "lightStyle": {
+     "label": "스타일",
+     "options": [
+      "클래식",
+      "표준"
+     ]
+    }
+   }
+  },
+  "boxblur": {
+   "description": "주변 픽셀을 고른 정사각형으로 평균 내어 레이어를 흐리게 합니다. 강도로 흐림이 퍼지는 정도를 정하며, 가우시안 흐림이 더 부드럽습니다.",
+   "name": "박스 흐림",
+   "params": {
+    "iterations": {
+     "label": "반복 횟수"
+    },
+    "scale": {
+     "label": "크기"
+    },
+    "shape": {
+     "label": "도형",
+     "options": [
+      "부드럽게",
+      "상자",
+      "고속 상자"
+     ]
+    },
+    "strength": {
+     "label": "강도"
+    },
+    "style": {
+     "label": "스타일",
+     "options": [
+      "클래식",
+      "표준"
+     ]
     }
    }
   },
   "brightnesscontrast": {
+   "aliases": [
+    "밝기 및 대비"
+   ],
    "description": "이미지의 밝기와 대비를 조절합니다.",
-   "name": "밝기 및 대비",
+   "name": "밝기 / 대비",
    "params": {
     "brightness": {
      "label": "밝기"
@@ -679,6 +864,45 @@
     }
    }
   },
+  "cartoon": {
+   "description": "색을 몇 단계로 단순화하고 그림이 급격히 바뀌는 곳에 윤곽선을 그립니다. 강도는 윤곽선이 생기는 가장자리 수를 정합니다.",
+   "name": "카툰",
+   "params": {
+    "strength": {
+     "label": "강도"
+    },
+    "color": {
+     "label": "윤곽선 색상"
+    }
+   }
+  },
+  "channelmixer": {
+   "description": "빨강, 초록, 파랑 채널로 그림을 다시 만듭니다. 각 채널이 자기 색을 더한 뒤, 감마가 각 채널을 휘게 하고 오프셋이 전체를 올리거나 내립니다.",
+   "name": "채널 믹서",
+   "params": {
+    "red": {
+     "label": "빨강"
+    },
+    "green": {
+     "label": "초록"
+    },
+    "blue": {
+     "label": "파랑"
+    },
+    "gammaRed": {
+     "label": "빨강 감마"
+    },
+    "gammaGreen": {
+     "label": "초록 감마"
+    },
+    "gammaBlue": {
+     "label": "파랑 감마"
+    },
+    "offset": {
+     "label": "오프셋"
+    }
+   }
+  },
   "channelremap": {
    "description": "레이어의 다른 채널로 각 색상 채널을 재구성해 가색을 만들거나 휘도를 알파로 옮깁니다.",
    "name": "채널 재매핑 (RGB)",
@@ -686,49 +910,49 @@
     "a": {
      "label": "A",
      "options": [
-      "빨강",
-      "초록",
-      "파랑",
-      "알파",
-      "휘도",
+      "R",
+      "G",
+      "B",
+      "A",
+      "Y",
       "0",
-      "최대"
+      "1"
      ]
     },
     "b": {
      "label": "B",
      "options": [
-      "빨강",
-      "초록",
-      "파랑",
-      "알파",
-      "휘도",
+      "R",
+      "G",
+      "B",
+      "A",
+      "Y",
       "0",
-      "최대"
+      "1"
      ]
     },
     "g": {
      "label": "G",
      "options": [
-      "빨강",
-      "초록",
-      "파랑",
-      "알파",
-      "휘도",
+      "R",
+      "G",
+      "B",
+      "A",
+      "Y",
       "0",
-      "최대"
+      "1"
      ]
     },
     "r": {
      "label": "R",
      "options": [
-      "빨강",
-      "초록",
-      "파랑",
-      "알파",
-      "휘도",
+      "R",
+      "G",
+      "B",
+      "A",
+      "Y",
       "0",
-      "최대"
+      "1"
      ]
     }
    }
@@ -740,49 +964,49 @@
     "a": {
      "label": "A",
      "options": [
-      "색조",
-      "채도",
-      "명도",
-      "알파",
-      "휘도",
+      "H",
+      "S",
+      "V",
+      "A",
+      "Y",
       "0",
-      "최대"
+      "1"
      ]
     },
     "h": {
      "label": "H",
      "options": [
-      "색조",
-      "채도",
-      "명도",
-      "알파",
-      "휘도",
+      "H",
+      "S",
+      "V",
+      "A",
+      "Y",
       "0",
-      "최대"
+      "1"
      ]
     },
     "s": {
      "label": "S",
      "options": [
-      "색조",
-      "채도",
-      "명도",
-      "알파",
-      "휘도",
+      "H",
+      "S",
+      "V",
+      "A",
+      "Y",
       "0",
-      "최대"
+      "1"
      ]
     },
     "v": {
      "label": "V",
      "options": [
-      "색조",
-      "채도",
-      "명도",
-      "알파",
-      "휘도",
+      "H",
+      "S",
+      "V",
+      "A",
+      "Y",
       "0",
-      "최대"
+      "1"
      ]
     }
    }
@@ -797,7 +1021,7 @@
     "color": {
      "label": "색상"
     },
-    "count": {
+    "cells": {
      "label": "개수"
     },
     "offset": {
@@ -832,6 +1056,16 @@
     },
     "tolerance": {
      "label": "허용 범위"
+    },
+    "luma": {
+     "label": "휘도 가중치"
+    },
+    "style": {
+     "label": "스타일",
+     "options": [
+      "클래식",
+      "표준"
+     ]
     }
    }
   },
@@ -850,6 +1084,13 @@
      "options": [
       "선형",
       "광선"
+     ]
+    },
+    "style": {
+     "label": "스타일",
+     "options": [
+      "클래식",
+      "표준"
      ]
     }
    }
@@ -881,6 +1122,13 @@
      "options": [
       "레이어",
       "화면"
+     ]
+    },
+    "style": {
+     "label": "스타일",
+     "options": [
+      "클래식",
+      "표준"
      ]
     }
    }
@@ -946,11 +1194,36 @@
       "클래식",
       "선명하게"
      ]
+    },
+    "alight": {
+     "label": "배치",
+     "options": [
+      "클래식",
+      "표준"
+     ]
+    }
+   }
+  },
+  "coloradjust": {
+   "description": "밝기, 대비, 채도, 활기를 한 번에 조정합니다. 활기는 칙칙한 색을 가장 많이 살립니다.",
+   "name": "색상 조정",
+   "params": {
+    "brightness": {
+     "label": "밝기"
+    },
+    "contrast": {
+     "label": "대비"
+    },
+    "saturation": {
+     "label": "채도"
+    },
+    "vibrance": {
+     "label": "생동감"
     }
    }
   },
   "colorbalance": {
-   "description": "어두운 영역, 중간 영역, 밝은 영역을 각각 지정한 색상으로 조정합니다. 회색을 선택하면 해당 영역은 바뀌지 않습니다.",
+   "description": "어두운 영역, 중간 영역, 밝은 영역을 각각 지정한 색상으로 조정합니다. 회색을 선택하면 해당 영역은 바뀌지 않습니다. 밝기 유지는 색이 바뀌는 동안 각 픽셀의 밝기를 유지합니다.",
    "name": "색상 균형",
    "params": {
     "amount": {
@@ -964,6 +1237,16 @@
     },
     "shadows": {
      "label": "어두운 영역"
+    },
+    "preserve": {
+     "label": "밝기 유지"
+    },
+    "style": {
+     "label": "스타일",
+     "options": [
+      "클래식",
+      "표준"
+     ]
     }
    }
   },
@@ -987,8 +1270,11 @@
    }
   },
   "colorwheels": {
+   "aliases": [
+    "리프트 감마 게인"
+   ],
    "description": "어두운 영역(리프트), 중간 영역(감마), 밝은 영역(게인)의 색조, 적용량과 레벨을 색상 휠로 조정합니다. 오프셋은 모든 톤을 바꾸고, 밝기별 스타일은 픽셀 밝기에 따라 각 휠의 적용 비중을 조절합니다.",
-   "name": "리프트 감마 게인",
+   "name": "컬러 튠",
    "params": {
     "gainAmount": {
      "label": "게인 양"
@@ -1030,7 +1316,8 @@
      "label": "스타일",
      "options": [
       "클래식",
-      "밝기별"
+      "밝기별",
+      "표준"
      ]
     }
    }
@@ -1158,6 +1445,13 @@
      "options": [
       "클래식",
       "겹침"
+     ]
+    },
+    "alight": {
+     "label": "배치",
+     "options": [
+      "클래식",
+      "표준"
      ]
     }
    }
@@ -1315,6 +1609,29 @@
       "중심",
       "모서리"
      ]
+    },
+    "style": {
+     "label": "스타일",
+     "options": [
+      "클래식",
+      "표준"
+     ]
+    },
+    "alight": {
+     "label": "스타일",
+     "options": [
+      "클래식",
+      "표준"
+     ]
+    },
+    "alZ": {
+     "label": "위치 Z"
+    },
+    "alLight": {
+     "label": "방향"
+    },
+    "alElev": {
+     "label": "고도"
     }
    }
   },
@@ -1407,6 +1724,29 @@
       "중심",
       "모서리"
      ]
+    },
+    "style": {
+     "label": "스타일",
+     "options": [
+      "클래식",
+      "표준"
+     ]
+    },
+    "alight": {
+     "label": "스타일",
+     "options": [
+      "클래식",
+      "표준"
+     ]
+    },
+    "alZ": {
+     "label": "위치 Z"
+    },
+    "alLight": {
+     "label": "방향"
+    },
+    "alElev": {
+     "label": "고도"
     }
    }
   },
@@ -1436,6 +1776,13 @@
     },
     "stretch": {
      "label": "늘이기"
+    },
+    "edgeStyle": {
+     "label": "스타일",
+     "options": [
+      "클래식",
+      "표준"
+     ]
     }
    }
   },
@@ -1531,6 +1878,22 @@
       "중심",
       "모서리"
      ]
+    },
+    "alight": {
+     "label": "스타일",
+     "options": [
+      "클래식",
+      "표준"
+     ]
+    },
+    "alZ": {
+     "label": "위치 Z"
+    },
+    "alLight": {
+     "label": "방향"
+    },
+    "alElev": {
+     "label": "고도"
     }
    }
   },
@@ -1552,6 +1915,13 @@
     },
     "threshold": {
      "label": "임계값"
+    },
+    "style": {
+     "label": "스타일",
+     "options": [
+      "클래식",
+      "표준"
+     ]
     }
    }
   },
@@ -1630,6 +2000,22 @@
     },
     "vibrance": {
      "label": "생동감"
+    },
+    "exposure": {
+     "label": "노출"
+    },
+    "threshold": {
+     "label": "임계값"
+    },
+    "knee": {
+     "label": "임계값 부드러움"
+    },
+    "style": {
+     "label": "스타일",
+     "options": [
+      "클래식",
+      "표준"
+     ]
     }
    }
   },
@@ -1645,6 +2031,27 @@
     },
     "strength": {
      "label": "강도"
+    }
+   }
+  },
+  "difference": {
+   "description": "레이어가 뒤에 있는 것과 어떻게 다른지 보여 줍니다. 차이 블렌드 모드와 같지만 효과 목록의 이 위치에서 적용됩니다.",
+   "name": "차이",
+   "params": {
+    "amount": {
+     "label": "양"
+    }
+   }
+  },
+  "differencematte": {
+   "description": "뒤에 있는 레이어와 비슷해 보이는 부분을 숨겨 다른 부분만 남깁니다. 임계값은 남기 위해 얼마나 달라야 하는지 정하고, 페더는 가장자리를 부드럽게 합니다.",
+   "name": "차이 매트",
+   "params": {
+    "threshold": {
+     "label": "임계값"
+    },
+    "feather": {
+     "label": "페더"
     }
    }
   },
@@ -1701,7 +2108,8 @@
      "options": [
       "R",
       "G",
-      "B"
+      "B",
+      "휘도"
      ]
     },
     "ychannel": {
@@ -1709,7 +2117,15 @@
      "options": [
       "R",
       "G",
-      "B"
+      "B",
+      "휘도"
+     ]
+    },
+    "style": {
+     "label": "스타일",
+     "options": [
+      "클래식",
+      "표준"
      ]
     }
    }
@@ -1765,10 +2181,10 @@
     "phase": {
      "label": "위상"
     },
-    "radius": {
+    "dotRadius": {
      "label": "반경"
     },
-    "scale": {
+    "zoom": {
      "label": "크기"
     },
     "seed": {
@@ -1788,11 +2204,18 @@
     },
     "start": {
      "label": "시작"
+    },
+    "style": {
+     "label": "스타일",
+     "options": [
+      "클래식",
+      "표준"
+     ]
     }
    }
   },
   "dropshadow": {
-   "description": "오프셋 X와 오프셋 Y만큼 이동한 부드러운 그림자를 레이어 뒤에 그립니다.",
+   "description": "오프셋 X와 오프셋 Y만큼 이동한 부드러운 그림자를 레이어 뒤에 그립니다. 퍼짐은 그림자가 흐려지기 전에 그림자를 키웁니다.",
    "name": "그림자",
    "params": {
     "blur": {
@@ -1809,6 +2232,9 @@
     },
     "y": {
      "label": "오프셋 Y"
+    },
+    "spread": {
+     "label": "퍼짐"
     }
    }
   },
@@ -1837,11 +2263,11 @@
     "alpha": {
      "label": "알파"
     },
-    "composite": {
+    "mode": {
      "label": "합성",
      "options": [
-      "뒤",
-      "위"
+      "위",
+      "뒤"
      ]
     },
     "count": {
@@ -1849,12 +2275,22 @@
     },
     "seconds": {
      "label": "초"
+    },
+    "style": {
+     "label": "스타일",
+     "options": [
+      "클래식",
+      "표준"
+     ]
     }
    }
   },
   "edgedetect": {
-   "description": "이미지가 변하는 곳은 밝은 선으로, 나머지는 어둡게 표시합니다.",
-   "name": "가장자리 검출",
+   "aliases": [
+    "가장자리 검출"
+   ],
+   "description": "이미지가 변하는 곳은 밝은 선으로, 나머지는 어둡게 표시합니다. 잉크는 흰 바탕에 어두운 선을 그리고, 색상은 가장자리에 그림 자체의 색을 남깁니다.",
+   "name": "가장자리 찾기",
    "params": {
     "strength": {
      "label": "강도"
@@ -1863,7 +2299,8 @@
      "label": "스타일",
      "options": [
       "클래식",
-      "잉크"
+      "잉크",
+      "색상"
      ]
     },
     "spacing": {
@@ -1919,6 +2356,19 @@
     },
     "mask": {
      "label": "레이어에 마스크"
+    },
+    "smoothing": {
+     "label": "매끄럽게"
+    },
+    "strength": {
+     "label": "강도"
+    },
+    "style": {
+     "label": "스타일",
+     "options": [
+      "클래식",
+      "표준"
+     ]
     }
    }
   },
@@ -2090,6 +2540,22 @@
       "중심",
       "모서리"
      ]
+    },
+    "alight": {
+     "label": "스타일",
+     "options": [
+      "클래식",
+      "표준"
+     ]
+    },
+    "alZ": {
+     "label": "위치 Z"
+    },
+    "alLight": {
+     "label": "방향"
+    },
+    "alElev": {
+     "label": "고도"
     }
    }
   },
@@ -2165,8 +2631,11 @@
    }
   },
   "exposure": {
+   "aliases": [
+    "노출"
+   ],
    "description": "스톱, 오프셋, 감마 보정으로 사진의 노출을 재현합니다. 투명한 부분 밝게를 사용하면 흐린 가장자리처럼 반투명한 픽셀을 흰색보다 밝게 할 수 있습니다.",
-   "name": "노출",
+   "name": "노출 / 감마",
    "params": {
     "gamma": {
      "label": "감마"
@@ -2182,6 +2651,24 @@
     }
    }
   },
+  "facetrack": {
+   "aliases": [
+    "얼굴 모션"
+   ],
+   "description": "동영상 레이어용 얼굴 모션입니다. 선택한 얼굴이 화면의 같은 자리에 머물도록 동영상이 이동하고 확대됩니다. 얼굴 선택을 탭한 다음 미리보기에서 얼굴을 탭하세요. 얼굴은 클립 전체에서 한 번만 추적되고 결과가 저장되므로 미리보기와 내보내기에서 바로 사용됩니다. 확대는 얼굴을 유지할 크기(100%는 선택했을 때의 크기), 위치는 화면에서 머물 자리를 정하고, 매끄럽게는 움직임을 더 안정적으로 만듭니다.",
+   "name": "얼굴 트래킹",
+   "params": {
+    "position": {
+     "label": "위치"
+    },
+    "smoothing": {
+     "label": "매끄럽게"
+    },
+    "zoom": {
+     "label": "확대"
+    }
+   }
+  },
   "fade": {
    "description": "설정한 시간에 걸쳐 레이어 시작 부분은 서서히 나타나고 끝부분은 서서히 사라집니다.",
    "name": "페이드 인/아웃",
@@ -2191,14 +2678,21 @@
     },
     "fadeOut": {
      "label": "아웃"
+    },
+    "style": {
+     "label": "스타일",
+     "options": [
+      "클래식",
+      "표준"
+     ]
     }
    }
   },
   "feather": {
-   "description": "레이어의 알파 가장자리를 부드럽게 합니다. 안쪽은 기존 윤곽선 안으로 페이드하고, 알파 블러는 부드러워진 가장자리를 윤곽선 밖으로도 퍼뜨립니다.",
+   "description": "레이어의 알파 가장자리를 부드럽게 하여 윤곽선에서부터 서서히 나타나게 합니다. 반복 횟수를 늘리면 더 부드럽고 깊게 페이드됩니다. 클래식 스타일: 안쪽은 기존 윤곽선 안으로 페이드하고, 알파 블러는 부드러워진 가장자리를 윤곽선 밖으로도 퍼뜨립니다.",
    "name": "페더",
    "params": {
-    "blur": {
+    "strength": {
      "label": "강도"
     },
     "mode": {
@@ -2206,6 +2700,16 @@
      "options": [
       "안쪽",
       "알파 블러"
+     ]
+    },
+    "iter": {
+     "label": "반복 횟수"
+    },
+    "style": {
+     "label": "스타일",
+     "options": [
+      "클래식",
+      "표준"
      ]
     }
    }
@@ -2235,6 +2739,13 @@
     "edgeStrength": {
      "label": "가장자리 강도"
     },
+    "edgeStyle": {
+     "label": "스타일",
+     "options": [
+      "클래식",
+      "표준"
+     ]
+    },
     "feather": {
      "label": "페더"
     },
@@ -2258,6 +2769,13 @@
     },
     "scanStrength": {
      "label": "주사선 강도"
+    },
+    "style": {
+     "label": "스타일",
+     "options": [
+      "클래식",
+      "표준"
+     ]
     },
     "tint": {
      "label": "색조"
@@ -2300,6 +2818,13 @@
      "options": [
       "점멸",
       "일정하게"
+     ]
+    },
+    "wave": {
+     "label": "스타일",
+     "options": [
+      "클래식",
+      "표준"
      ]
     }
    }
@@ -2407,6 +2932,16 @@
       "중심",
       "모서리"
      ]
+    },
+    "style": {
+     "label": "스타일",
+     "options": [
+      "클래식",
+      "표준"
+     ]
+    },
+    "alZ": {
+     "label": "위치 Z"
     }
    }
   },
@@ -2420,6 +2955,9 @@
    }
   },
   "fourcolor": {
+   "aliases": [
+    "4색 그라데이션"
+   ],
    "description": "네 지점에 배치한 네 색상을 레이어 위에 혼합합니다. 지점은 레이어 중심에서 픽셀 단위로 지정합니다.",
    "name": "4색 그라데이션",
    "params": {
@@ -2479,6 +3017,13 @@
       "거리",
       "부드럽게"
      ]
+    },
+    "style": {
+     "label": "스타일",
+     "options": [
+      "클래식",
+      "표준"
+     ]
     }
    }
   },
@@ -2507,6 +3052,9 @@
     "offset": {
      "label": "오프셋"
     },
+    "parallax": {
+     "label": "시차"
+    },
     "scale": {
      "label": "크기"
     },
@@ -2515,6 +3063,13 @@
     },
     "stretch": {
      "label": "늘이기"
+    },
+    "style": {
+     "label": "스타일",
+     "options": [
+      "클래식",
+      "표준"
+     ]
     }
    }
   },
@@ -2633,6 +3188,25 @@
     },
     "threshold3": {
      "label": "범위 3"
+    },
+    "style": {
+     "label": "스타일",
+     "options": [
+      "클래식",
+      "표준"
+     ]
+    }
+   }
+  },
+  "gaussianblur": {
+   "description": "매끄럽고 부드러운 흐림입니다. 강도로 흐림이 퍼지는 정도를 정합니다.",
+   "name": "가우시안 흐림",
+   "params": {
+    "scale": {
+     "label": "크기"
+    },
+    "strength": {
+     "label": "강도"
     }
    }
   },
@@ -2719,14 +3293,26 @@
    }
   },
   "glowscan": {
-   "description": "밝기가 지정 범위에 속하는 부분만 흐리게 하고 빛나게 합니다. 위치에 애니메이션을 적용하면 어두운 영역부터 밝은 영역까지 발광이 이동합니다.",
+   "description": "이미지 밝기가 임계값을 넘는 곳에 빛나는 윤곽선을 그립니다. 윤곽 스캔 같은 효과입니다.",
    "name": "발광 스캔",
    "params": {
+    "alpha": {
+     "label": "알파"
+    },
+    "blend": {
+     "label": "혼합"
+    },
     "blur": {
      "label": "블러"
     },
     "color": {
      "label": "발광 색상"
+    },
+    "feather": {
+     "label": "페더"
+    },
+    "fill": {
+     "label": "채우기"
     },
     "intensity": {
      "label": "강도"
@@ -2734,11 +3320,30 @@
     "position": {
      "label": "위치"
     },
+    "radius": {
+     "label": "반경"
+    },
     "show": {
      "label": "범위만 표시"
     },
+    "smoothing": {
+     "label": "부드럽게"
+    },
     "softness": {
      "label": "부드러움"
+    },
+    "style": {
+     "label": "스타일",
+     "options": [
+      "클래식",
+      "표준"
+     ]
+    },
+    "threshold": {
+     "label": "임계값"
+    },
+    "tint": {
+     "label": "색상"
     },
     "width": {
      "label": "너비"
@@ -2782,6 +3387,9 @@
       "그라데이션",
       "스펙트럼"
      ]
+    },
+    "squeeze": {
+     "label": "조임"
     }
    }
   },
@@ -2839,6 +3447,13 @@
       "상자",
       "타원"
      ]
+    },
+    "look": {
+     "label": "스타일",
+     "options": [
+      "클래식",
+      "표준"
+     ]
     }
    }
   },
@@ -2874,6 +3489,19 @@
     },
     "width": {
      "label": "너비"
+    },
+    "spacing": {
+     "label": "간격"
+    },
+    "smoothing": {
+     "label": "부드럽게"
+    },
+    "style": {
+     "label": "스타일",
+     "options": [
+      "클래식",
+      "표준"
+     ]
     }
    }
   },
@@ -2946,6 +3574,20 @@
     },
     "stagger": {
      "label": "엇갈림"
+    },
+    "style": {
+     "label": "스타일",
+     "options": [
+      "클래식",
+      "표준"
+     ]
+    },
+    "alight": {
+     "label": "배치",
+     "options": [
+      "클래식",
+      "표준"
+     ]
     }
    }
   },
@@ -2980,8 +3622,11 @@
    }
   },
   "halftone": {
+   "aliases": [
+    "하프톤"
+   ],
    "description": "이미지의 어두운 부분에서 커지는 인쇄 점을 만듭니다.",
-   "name": "하프톤",
+   "name": "하프톤 도트",
    "params": {
     "angle": {
      "label": "각도"
@@ -2992,17 +3637,31 @@
     "colored": {
      "label": "컬러 도트"
     },
+    "edgeStyle": {
+     "label": "스타일",
+     "options": [
+      "클래식",
+      "표준"
+     ]
+    },
     "ink": {
      "label": "점 색상"
     },
     "paper": {
      "label": "종이 색상"
     },
+    "phase": {
+     "label": "위상"
+    },
+    "strength": {
+     "label": "강도"
+    },
     "style": {
      "label": "스타일",
      "options": [
       "클래식",
-      "2색"
+      "2색",
+      "표준"
      ]
     }
    }
@@ -3028,6 +3687,20 @@
     },
     "strength": {
      "label": "강도"
+    },
+    "style": {
+     "label": "스타일",
+     "options": [
+      "클래식",
+      "표준"
+     ]
+    },
+    "edgeStyle": {
+     "label": "스타일",
+     "options": [
+      "클래식",
+      "표준"
+     ]
     }
    }
   },
@@ -3123,6 +3796,29 @@
       "중심",
       "모서리"
      ]
+    },
+    "style": {
+     "label": "스타일",
+     "options": [
+      "클래식",
+      "표준"
+     ]
+    },
+    "alight": {
+     "label": "스타일",
+     "options": [
+      "클래식",
+      "표준"
+     ]
+    },
+    "alZ": {
+     "label": "위치 Z"
+    },
+    "alLight": {
+     "label": "방향"
+    },
+    "alElev": {
+     "label": "고도"
     }
    }
   },
@@ -3147,6 +3843,13 @@
     },
     "seed": {
      "label": "시드"
+    },
+    "edgeStyle": {
+     "label": "스타일",
+     "options": [
+      "클래식",
+      "표준"
+     ]
     }
    }
   },
@@ -3205,6 +3908,19 @@
     },
     "stretch": {
      "label": "늘이기"
+    },
+    "lineWidth": {
+     "label": "선 굵기"
+    },
+    "feather": {
+     "label": "페더"
+    },
+    "edgeStyle": {
+     "label": "스타일",
+     "options": [
+      "클래식",
+      "표준"
+     ]
     }
    }
   },
@@ -3266,6 +3982,14 @@
     },
     "stretch": {
      "label": "늘이기"
+    },
+    "alight": {
+     "label": "스타일",
+     "options": [
+      "클래식",
+      "표준",
+      "이미지"
+     ]
     }
    }
   },
@@ -3361,10 +4085,29 @@
       "중심",
       "모서리"
      ]
+    },
+    "alight": {
+     "label": "스타일",
+     "options": [
+      "클래식",
+      "표준"
+     ]
+    },
+    "alZ": {
+     "label": "위치 Z"
+    },
+    "alLight": {
+     "label": "방향"
+    },
+    "alElev": {
+     "label": "고도"
     }
    }
   },
   "highlightshadow": {
+   "aliases": [
+    "밝은 영역 및 어두운 영역"
+   ],
    "description": "각 픽셀의 밝기에 따라 밝은 영역을 복원하거나 강조하고 어두운 영역을 밝히거나 짙게 만듭니다.",
    "name": "밝은 영역 및 어두운 영역",
    "params": {
@@ -3484,6 +4227,29 @@
       "중심",
       "모서리"
      ]
+    },
+    "style": {
+     "label": "스타일",
+     "options": [
+      "클래식",
+      "표준"
+     ]
+    },
+    "alight": {
+     "label": "스타일",
+     "options": [
+      "클래식",
+      "표준"
+     ]
+    },
+    "alZ": {
+     "label": "위치 Z"
+    },
+    "alLight": {
+     "label": "방향"
+    },
+    "alElev": {
+     "label": "고도"
     }
    }
   },
@@ -3618,21 +4384,59 @@
     }
    }
   },
+  "hueshift": {
+   "description": "모든 색을 색상환에서 같은 각도만큼 돌리고 밝기는 그대로 둡니다.",
+   "name": "색조 이동",
+   "params": {
+    "hue": {
+     "label": "색조 이동"
+    }
+   }
+  },
   "innerblur": {
    "description": "레이어의 윤곽선은 선명하게 유지하면서 내부 이미지를 흐리게 합니다.",
    "name": "내부 블러",
    "params": {
     "blur": {
      "label": "강도"
+    },
+    "iterations": {
+     "label": "반복 횟수"
+    },
+    "style": {
+     "label": "스타일",
+     "options": [
+      "클래식",
+      "표준"
+     ]
     }
    }
   },
   "innerbulge": {
-   "description": "레이어의 가장자리는 유지하면서 가운데를 볼록하거나 오목하게 만듭니다.",
+   "description": "중심 주위의 반경 원 안에서 레이어를 볼록하게 하거나 오목하게 만들며, 레이어의 가장자리는 그대로 유지합니다. 페더는 가장자리에서 얼마나 안쪽부터 레이어가 움직이기 시작할지 정하고, 가우시안은 가운데를 고르게 확대한 채 감쇠를 더 짧게 합니다.",
    "name": "내부 오목/볼록",
    "params": {
     "strength": {
      "label": "강도"
+    },
+    "center": {
+     "label": "중심"
+    },
+    "radius": {
+     "label": "반경"
+    },
+    "feather": {
+     "label": "페더"
+    },
+    "gaussian": {
+     "label": "가우시안"
+    },
+    "style": {
+     "label": "스타일",
+     "options": [
+      "클래식",
+      "표준"
+     ]
     }
    }
   },
@@ -3665,6 +4469,13 @@
       "둥글게",
       "각지게"
      ]
+    },
+    "style": {
+     "label": "스타일",
+     "options": [
+      "클래식",
+      "표준"
+     ]
     }
    }
   },
@@ -3677,6 +4488,15 @@
     },
     "invert_alpha": {
      "label": "알파 반전"
+    },
+    "red": {
+     "label": "빨강"
+    },
+    "green": {
+     "label": "초록"
+    },
+    "blue": {
+     "label": "파랑"
     }
    }
   },
@@ -3743,6 +4563,13 @@
     },
     "segments": {
      "label": "분할 수"
+    },
+    "edgeStyle": {
+     "label": "스타일",
+     "options": [
+      "클래식",
+      "표준"
+     ]
     }
    }
   },
@@ -3768,13 +4595,34 @@
     },
     "sweep": {
      "label": "각도"
+    },
+    "style": {
+     "label": "스타일",
+     "options": [
+      "클래식",
+      "표준"
+     ]
     }
    }
   },
   "lensflare": {
-   "description": "이미지 위에 광륜이 있는 밝은 빛을 입힙니다.",
-   "name": "빛 플레어",
+   "aliases": [
+    "빛 플레어"
+   ],
+   "description": "별 모양, 후광, 반사 고리가 있는 밝은 빛을 이미지 위에 얹습니다.",
+   "name": "렌즈 플레어",
    "params": {
+    "alpha": {
+     "label": "알파"
+    },
+    "blendMode": {
+     "label": "블렌딩 모드",
+     "options": [
+      "일반",
+      "곱하기",
+      "스크린"
+     ]
+    },
     "brightness": {
      "label": "밝기"
     },
@@ -3784,8 +4632,21 @@
     "color": {
      "label": "색상"
     },
+    "points": {
+     "label": "꼭짓점"
+    },
     "radius": {
      "label": "반경"
+    },
+    "shine": {
+     "label": "광택"
+    },
+    "style": {
+     "label": "스타일",
+     "options": [
+      "클래식",
+      "표준"
+     ]
     }
    }
   },
@@ -3837,6 +4698,13 @@
     },
     "mask": {
      "label": "레이어에 마스크"
+    },
+    "style": {
+     "label": "스타일",
+     "options": [
+      "클래식",
+      "표준"
+     ]
     }
    }
   },
@@ -3936,6 +4804,20 @@
     },
     "seed": {
      "label": "시드"
+    },
+    "style": {
+     "label": "스타일",
+     "options": [
+      "클래식",
+      "표준"
+     ]
+    },
+    "alight": {
+     "label": "배치",
+     "options": [
+      "클래식",
+      "표준"
+     ]
     }
    }
   },
@@ -4048,6 +4930,21 @@
     },
     "high": {
      "label": "상한 기준값"
+    },
+    "style": {
+     "label": "스타일",
+     "options": [
+      "클래식",
+      "표준"
+     ]
+    },
+    "weighting": {
+     "label": "모드",
+     "options": [
+      "클래식",
+      "루마",
+      "RGB"
+     ]
     }
    }
   },
@@ -4215,6 +5112,9 @@
     "inset": {
      "label": "안쪽/바깥쪽"
     },
+    "legacyCoordinates": {
+     "label": "이전 좌표"
+    },
     "offset": {
      "label": "오프셋"
     },
@@ -4226,6 +5126,13 @@
     },
     "rotate": {
      "label": "자동 회전"
+    },
+    "style": {
+     "label": "스타일",
+     "options": [
+      "클래식",
+      "표준"
+     ]
     }
    }
   },
@@ -4354,6 +5261,25 @@
       "중심",
       "모서리"
      ]
+    },
+    "alight": {
+     "label": "스타일",
+     "options": [
+      "클래식",
+      "표준"
+     ]
+    },
+    "alZ": {
+     "label": "위치 Z"
+    },
+    "alLight": {
+     "label": "방향"
+    },
+    "alElev": {
+     "label": "고도"
+    },
+    "alHeight": {
+     "label": "높이"
     }
    }
   },
@@ -4361,7 +5287,7 @@
    "description": "레이어 이미지를 이동하고 레이어 경계에서 반대편으로 이어 붙입니다.",
    "name": "오프셋",
    "params": {
-    "feather": {
+    "seamFeather": {
      "label": "페더"
     },
     "mask": {
@@ -4369,6 +5295,13 @@
     },
     "offset": {
      "label": "오프셋"
+    },
+    "style": {
+     "label": "스타일",
+     "options": [
+      "클래식",
+      "표준"
+     ]
     }
    }
   },
@@ -4453,12 +5386,12 @@
      "label": "주변광"
     },
     "amount": {
-     "label": "거칠기"
+     "label": "양"
     },
     "blend": {
      "label": "혼합"
     },
-    "blur": {
+    "bevel": {
      "label": "베벨"
     },
     "color": {
@@ -4480,7 +5413,7 @@
      "label": "강도"
     },
     "light": {
-     "label": "조명 색상"
+     "label": "색상"
     },
     "refraction": {
      "label": "굴절"
@@ -4489,7 +5422,7 @@
      "label": "매끄럽게 하기 샘플 수"
     },
     "scale": {
-     "label": "거칠기 크기"
+     "label": "크기"
     },
     "seed": {
      "label": "시드"
@@ -4546,6 +5479,26 @@
     }
    }
   },
+  "outline": {
+   "description": "레이어 모양의 바깥쪽에 채워진 윤곽선을 그립니다. 색상은 윤곽선의 색을, 너비는 두께(픽셀)를 정합니다.",
+   "name": "윤곽선",
+   "params": {
+    "radius": {
+     "label": "너비"
+    },
+    "color": {
+     "label": "색상"
+    },
+    "style": {
+     "label": "스타일",
+     "options": [
+      "윤곽선",
+      "채우기",
+      "띠"
+     ]
+    }
+   }
+  },
   "pagecurl": {
    "description": "레이어의 모서리가 들려 말리면서 뒷면이 보이도록 페이지처럼 넘깁니다. 진행률에 애니메이션을 적용해 페이지를 넘기세요. 모양 따르기를 켜면 보이는 부분의 가장자리에서 페이지가 넘어가므로, 둥근 이미지나 3D 모델이 보이지 않는 상자가 아니라 자신의 가장자리에서 말립니다.",
    "name": "페이지 말기",
@@ -4573,6 +5526,27 @@
     },
     "shine": {
      "label": "광택"
+    },
+    "style": {
+     "label": "스타일",
+     "options": [
+      "클래식",
+      "표준"
+     ]
+    },
+    "roll": {
+     "label": "스타일",
+     "options": [
+      "클래식",
+      "표준"
+     ]
+    },
+    "space": {
+     "label": "스타일",
+     "options": [
+      "클래식",
+      "표준"
+     ]
     }
    }
   },
@@ -4920,8 +5894,28 @@
     "stretch": {
      "label": "늘이기"
     },
+    "threshold": {
+     "label": "기준값"
+    },
     "vignette": {
      "label": "비네트"
+    },
+    "style": {
+     "label": "스타일",
+     "options": [
+      "클래식",
+      "표준"
+     ]
+    },
+    "edgeStyle": {
+     "label": "스타일",
+     "options": [
+      "클래식",
+      "표준"
+     ]
+    },
+    "saturation": {
+     "label": "채도"
     }
    }
   },
@@ -5030,6 +6024,28 @@
       "위쪽을 가운데로",
       "아래쪽을 가운데로"
      ]
+    },
+    "radius": {
+     "label": "반경"
+    },
+    "style": {
+     "label": "스타일",
+     "options": [
+      "클래식",
+      "표준"
+     ]
+    },
+    "angle": {
+     "label": "각도"
+    },
+    "scale": {
+     "label": "크기"
+    },
+    "repeat": {
+     "label": "반복"
+    },
+    "mirror": {
+     "label": "미러"
     }
    }
   },
@@ -5040,26 +6056,26 @@
     "angle": {
      "label": "각도"
     },
-    "angleChannel": {
-     "label": "각도 기준",
+    "phi": {
+     "label": "φ",
      "options": [
+      "Lum",
       "R",
       "G",
       "B",
-      "휘도",
       "알파"
      ]
     },
     "center": {
      "label": "중심"
     },
-    "distanceChannel": {
-     "label": "거리 기준",
+    "rho": {
+     "label": "ρ",
      "options": [
+      "Lum",
       "R",
       "G",
       "B",
-      "휘도",
       "알파"
      ]
     },
@@ -5092,6 +6108,13 @@
     },
     "offset": {
      "label": "오프셋"
+    },
+    "style": {
+     "label": "스타일",
+     "options": [
+      "클래식",
+      "표준"
+     ]
     }
    }
   },
@@ -5138,6 +6161,14 @@
      "options": [
       "사인파",
       "삼각파"
+     ]
+    },
+    "style": {
+     "label": "스타일",
+     "options": [
+      "클래식",
+      "표준",
+      "표준"
      ]
     }
    }
@@ -5275,24 +6306,43 @@
       "중심",
       "모서리"
      ]
+    },
+    "alight": {
+     "label": "스타일",
+     "options": [
+      "클래식",
+      "표준"
+     ]
+    },
+    "alZ": {
+     "label": "위치 Z"
+    },
+    "alLight": {
+     "label": "방향"
+    },
+    "alElev": {
+     "label": "고도"
     }
    }
   },
   "radialblur": {
-   "description": "중심에서 뻗어 나가는 선을 따라 샘플을 평균해 방사형 줌 블러를 적용하며, 강도를 조절할 수 있습니다. 길이를 균일로 하면 번짐이 중심에서 멀어질수록 길어지지 않고 모두 같은 길이가 됩니다.",
+   "description": "중심에서 뻗어 나가는 선을 따라 샘플을 평균해 방사형 줌 블러를 적용하며, 강도를 조절할 수 있습니다. 적응형을 켜면 번짐이 중심에서 멀어질수록 길어지고, 끄면 모든 번짐이 같은 길이가 됩니다.",
    "name": "줌 블러",
    "params": {
-    "amount": {
-     "label": "강도"
+    "adaptive": {
+     "label": "적응형"
     },
     "center": {
      "label": "중심"
     },
-    "streak": {
-     "label": "길이",
+    "zoom": {
+     "label": "강도"
+    },
+    "style": {
+     "label": "스타일",
      "options": [
-      "거리에 따라",
-      "균일"
+      "클래식",
+      "표준"
      ]
     }
    }
@@ -5308,7 +6358,7 @@
      "label": "각도"
     },
     "center": {
-     "label": "중심"
+     "label": "위치"
     },
     "color": {
      "label": "색상"
@@ -5318,6 +6368,13 @@
     },
     "width": {
      "label": "너비"
+    },
+    "alight": {
+     "label": "배치",
+     "options": [
+      "클래식",
+      "표준"
+     ]
     }
    }
   },
@@ -5397,8 +6454,22 @@
     "seed": {
      "label": "시드"
     },
+    "style": {
+     "label": "스타일",
+     "options": [
+      "클래식",
+      "표준"
+     ]
+    },
     "sweep": {
      "label": "회전 범위"
+    },
+    "alight": {
+     "label": "배치",
+     "options": [
+      "클래식",
+      "표준"
+     ]
     }
    }
   },
@@ -5419,10 +6490,17 @@
      "label": "조명"
     },
     "reach": {
-     "label": "길이"
+     "label": "크기"
     },
     "fill": {
      "label": "채우기"
+    },
+    "style": {
+     "label": "스타일",
+     "options": [
+      "클래식",
+      "표준"
+     ]
     }
    }
   },
@@ -5439,8 +6517,8 @@
     "direction": {
      "label": "방향",
      "options": [
-      "시계 방향",
-      "시계 반대 방향",
+      "CW",
+      "CCW",
       "양방향"
      ]
     },
@@ -5480,6 +6558,13 @@
     },
     "speed": {
      "label": "속도"
+    },
+    "style": {
+     "label": "스타일",
+     "options": [
+      "클래식",
+      "표준"
+     ]
     }
    }
   },
@@ -5563,6 +6648,19 @@
     },
     "glossiness": {
      "label": "하이라이트 선명도"
+    },
+    "style": {
+     "label": "스타일",
+     "options": [
+      "클래식",
+      "표준"
+     ]
+    },
+    "alLight": {
+     "label": "방향"
+    },
+    "alElev": {
+     "label": "고도"
     }
    },
    "shortcuts": {
@@ -5600,6 +6698,13 @@
     },
     "scale": {
      "label": "크기"
+    },
+    "style": {
+     "label": "스타일",
+     "options": [
+      "클래식",
+      "표준"
+     ]
     }
    }
   },
@@ -5634,12 +6739,22 @@
     },
     "thresholdAdd": {
      "label": "임계값 추가"
+    },
+    "look": {
+     "label": "스타일",
+     "options": [
+      "클래식",
+      "표준"
+     ]
     }
    }
   },
   "reorient360": {
+   "aliases": [
+    "360° 구 방향 조정"
+   ],
    "description": "360° 파노라마 레이어를 구 안에서 회전해 수평선을 맞추거나 정면 방향을 바꿉니다.",
-   "name": "360° 구 방향 조정",
+   "name": "360º 구 방향 조정",
    "params": {
     "pitch": {
      "label": "피치"
@@ -5673,6 +6788,13 @@
     },
     "time": {
      "label": "시간"
+    },
+    "style": {
+     "label": "스타일",
+     "options": [
+      "클래식",
+      "표준"
+     ]
     }
    }
   },
@@ -5749,6 +6871,13 @@
     "start": {
      "label": "시작"
     },
+    "style": {
+     "label": "스타일",
+     "options": [
+      "클래식",
+      "표준"
+     ]
+    },
     "tangent": {
      "label": "접선"
     }
@@ -5764,7 +6893,7 @@
     "choke": {
      "label": "초크"
     },
-    "feather": {
+    "softness": {
      "label": "페더"
     },
     "lockLuminance": {
@@ -5776,7 +6905,7 @@
     "target": {
      "label": "새 색상"
     },
-    "threshold": {
+    "tolerance": {
      "label": "임계값"
     },
     "match": {
@@ -5849,18 +6978,25 @@
       "B"
      ]
     },
-    "mode": {
+    "split": {
      "label": "모드",
      "options": [
       "밝게",
       "어둡게",
       "마스크",
       "루마",
-      "평균"
+      "루마 알파"
      ]
     },
     "strength": {
      "label": "강도"
+    },
+    "style": {
+     "label": "스타일",
+     "options": [
+      "클래식",
+      "표준"
+     ]
     }
    }
   },
@@ -5868,19 +7004,19 @@
    "description": "레이어의 불투명한 부분 위에 폭이 변하며 꼬이는 리본을 그립니다. 위상을 애니메이션하면 흐르듯 움직이고, 레이어에서 리본 모양을 오려낼 수도 있습니다.",
    "name": "리본",
    "params": {
-    "angle": {
+    "tilt": {
      "label": "각도"
     },
     "color": {
      "label": "색상"
     },
-    "frequency": {
+    "waves": {
      "label": "주파수"
     },
-    "magnitude": {
+    "amplitude": {
      "label": "크기"
     },
-    "offset": {
+    "shift": {
      "label": "오프셋"
     },
     "phase": {
@@ -5889,14 +7025,14 @@
     "punch": {
      "label": "오려내기"
     },
-    "smoothing": {
+    "soften": {
      "label": "부드럽게"
     },
     "tint": {
      "label": "색조"
     },
     "tintAmount": {
-     "label": "색조 양"
+     "label": "틴트 색상"
     },
     "width": {
      "label": "폭"
@@ -5934,14 +7070,26 @@
     "octaves": {
      "label": "옥타브"
     },
-    "roughness": {
-     "label": "거칠기"
+    "strength": {
+     "label": "강도"
     },
-    "scale": {
-     "label": "크기"
+    "detail": {
+     "label": "디테일"
     },
     "seed": {
      "label": "시드"
+    }
+   }
+  },
+  "saturationvibrance": {
+   "description": "색을 더 진하게 또는 옅게 만듭니다. 활기는 흐린 색을 부드럽게 살리고 진한 색은 그대로 둡니다.",
+   "name": "채도 / 활기",
+   "params": {
+    "saturation": {
+     "label": "채도"
+    },
+    "vibrance": {
+     "label": "생동감"
     }
    }
   },
@@ -6227,11 +7375,18 @@
    "description": "3x3 주변 픽셀로 언샤프 마스크를 적용해 세부 묘사를 또렷하게 합니다.",
    "name": "선명하게",
    "params": {
-    "amount": {
+    "sharpness": {
      "label": "강도"
     },
     "radius": {
      "label": "반경"
+    },
+    "style": {
+     "label": "스타일",
+     "options": [
+      "클래식",
+      "표준"
+     ]
     }
    }
   },
@@ -6308,11 +7463,29 @@
     "angle": {
      "label": "조명 각도"
     },
+    "angle_d": {
+     "label": "확산광 각도"
+    },
+    "angle_s": {
+     "label": "반사광 각도"
+    },
     "blur": {
-     "label": "크기"
+     "label": "반지름"
+    },
+    "color_d": {
+     "label": "확산광 색상"
+    },
+    "color_s": {
+     "label": "반사광 색상"
     },
     "depth": {
      "label": "깊이"
+    },
+    "elevation_d": {
+     "label": "확산광 고도"
+    },
+    "elevation_s": {
+     "label": "반사광 고도"
     },
     "highlight": {
      "label": "하이라이트"
@@ -6320,8 +7493,24 @@
     "intensity": {
      "label": "세기"
     },
+    "intensity_d": {
+     "label": "확산광 세기"
+    },
+    "intensity_s": {
+     "label": "반사광 세기"
+    },
     "shadow": {
      "label": "그림자"
+    },
+    "spec": {
+     "label": "반사광 계수"
+    },
+    "style": {
+     "label": "스타일",
+     "options": [
+      "클래식",
+      "표준"
+     ]
     }
    }
   },
@@ -6344,8 +7533,8 @@
     "blend": {
      "label": "혼합"
     },
-    "blur": {
-     "label": "크기"
+    "diffusion": {
+     "label": "확산"
     },
     "brightness": {
      "label": "밝기"
@@ -6360,7 +7549,7 @@
      "label": "하이라이트"
     },
     "opacity": {
-     "label": "불투명도"
+     "label": "알파"
     },
     "outside": {
      "label": "바깥 글로우"
@@ -6370,6 +7559,13 @@
      "options": [
       "균일",
       "레이어"
+     ]
+    },
+    "style": {
+     "label": "스타일",
+     "options": [
+      "클래식",
+      "표준"
      ]
     }
    }
@@ -6418,6 +7614,42 @@
     },
     "screenSpace": {
      "label": "화면 공간"
+    }
+   }
+  },
+  "spectralmap": {
+   "description": "밝기에 따라 사진을 세 가지 색의 스펙트럼으로 다시 칠합니다. 반복은 더 여러 번 돌고, 위상은 옮기며, 압축은 각 띠를 넓힙니다.",
+   "name": "스펙트럼 맵",
+   "params": {
+    "alpha": {
+     "label": "알파"
+    },
+    "blueColor": {
+     "label": "색상 3"
+    },
+    "greenColor": {
+     "label": "색상 2"
+    },
+    "phase": {
+     "label": "위상"
+    },
+    "redColor": {
+     "label": "색상 1"
+    },
+    "repeat": {
+     "label": "반복"
+    },
+    "reverse": {
+     "label": "반전"
+    },
+    "saturation": {
+     "label": "채도"
+    },
+    "scaleBrightness": {
+     "label": "밝기 배율"
+    },
+    "squeeze": {
+     "label": "조임"
     }
    }
   },
@@ -6517,6 +7749,22 @@
       "중심",
       "모서리"
      ]
+    },
+    "alight": {
+     "label": "스타일",
+     "options": [
+      "클래식",
+      "표준"
+     ]
+    },
+    "alZ": {
+     "label": "위치 Z"
+    },
+    "alLight": {
+     "label": "방향"
+    },
+    "alElev": {
+     "label": "고도"
     }
    }
   },
@@ -6546,6 +7794,13 @@
    "params": {
     "rpm": {
      "label": "RPM"
+    },
+    "style": {
+     "label": "스타일",
+     "options": [
+      "클래식",
+      "표준"
+     ]
     }
    }
   },
@@ -6558,6 +7813,13 @@
     },
     "sweep": {
      "label": "각도"
+    },
+    "style": {
+     "label": "스타일",
+     "options": [
+      "클래식",
+      "표준"
+     ]
     }
    }
   },
@@ -6616,8 +7878,11 @@
    }
   },
   "splittone": {
+   "aliases": [
+    "스플릿 토닝"
+   ],
    "description": "검정, 흰색, 밝기는 유지한 채 그림자는 한 색조로, 하이라이트는 다른 색조로 물들입니다. 그림자 레벨은 밝기 곡선을 휘게 하고 하이라이트 레벨은 하이라이트 색이 시작되는 지점을 옮깁니다. 그라데이션 맵 스타일은 각 픽셀의 밝기만으로 색을 정합니다.",
-   "name": "스플릿 토닝",
+   "name": "핫 컬러",
    "params": {
     "highlightAmount": {
      "label": "하이라이트 양"
@@ -6659,7 +7924,7 @@
     "feather": {
      "label": "페더"
     },
-    "saturation": {
+    "sat": {
      "label": "채도"
     },
     "threshold": {
@@ -6732,6 +7997,13 @@
     },
     "shine": {
      "label": "광택"
+    },
+    "edgeStyle": {
+     "label": "스타일",
+     "options": [
+      "클래식",
+      "표준"
+     ]
     }
    }
   },
@@ -6754,20 +8026,17 @@
    }
   },
   "starpolyhedron": {
-   "description": "두 개의 교차한 피라미드로 이루어진 별 위에 레이어를 올립니다.",
+   "description": "레이어를 끝이 앞뒤로 능선까지 솟은 별 위에 놓습니다. 빛과 깊이가 있습니다.",
    "name": "별 다면체",
    "params": {
-    "light": {
-     "label": "조명 각도"
+    "orientA": {
+     "label": "방향 α"
     },
-    "perspective": {
-     "label": "원근"
+    "orientB": {
+     "label": "방향 β"
     },
-    "position": {
-     "label": "위치"
-    },
-    "radius": {
-     "label": "반경"
+    "orientG": {
+     "label": "방향 γ"
     },
     "rotX": {
      "label": "X 회전"
@@ -6778,11 +8047,83 @@
     "rotZ": {
      "label": "Z 회전"
     },
+    "starSize": {
+     "label": "크기"
+    },
+    "starDepth": {
+     "label": "깊이"
+    },
+    "pointLength": {
+     "label": "꼭짓점 길이"
+    },
+    "smoothing": {
+     "label": "매끄럽게"
+    },
+    "points": {
+     "label": "꼭짓점"
+    },
+    "alPos": {
+     "label": "위치"
+    },
+    "alZ": {
+     "label": "위치 Z"
+    },
+    "alScale": {
+     "label": "크기"
+    },
+    "intensity": {
+     "label": "빛 강도"
+    },
+    "alShine": {
+     "label": "광택"
+    },
+    "spec": {
+     "label": "반사광"
+    },
+    "alAmbient": {
+     "label": "주변광"
+    },
+    "alColor": {
+     "label": "색상"
+    },
+    "lightDir": {
+     "label": "방향"
+    },
+    "lightDepth": {
+     "label": "고도"
+    },
+    "alMirror": {
+     "label": "미러"
+    },
+    "alRepeatX": {
+     "label": "X 반복"
+    },
+    "alRepeatY": {
+     "label": "Y 반복"
+    },
+    "alTexAngle": {
+     "label": "텍스처 각도"
+    },
+    "alCrop": {
+     "label": "자르기"
+    },
+    "radius": {
+     "label": "반경"
+    },
+    "position": {
+     "label": "위치"
+    },
     "scale": {
      "label": "크기"
     },
+    "perspective": {
+     "label": "원근"
+    },
     "shading": {
      "label": "셰이딩"
+    },
+    "light": {
+     "label": "조명 각도"
     },
     "shine": {
      "label": "광택"
@@ -6838,6 +8179,13 @@
      "options": [
       "중심",
       "모서리"
+     ]
+    },
+    "style": {
+     "label": "스타일",
+     "options": [
+      "클래식",
+      "표준"
      ]
     }
    }
@@ -6947,6 +8295,29 @@
       "중심",
       "모서리"
      ]
+    },
+    "style": {
+     "label": "스타일",
+     "options": [
+      "클래식",
+      "표준"
+     ]
+    },
+    "alight": {
+     "label": "스타일",
+     "options": [
+      "클래식",
+      "표준"
+     ]
+    },
+    "alZ": {
+     "label": "위치 Z"
+    },
+    "alLight": {
+     "label": "방향"
+    },
+    "alElev": {
+     "label": "고도"
     }
    }
   },
@@ -6962,14 +8333,35 @@
     }
    }
   },
+  "streakstrips": {
+   "description": "레이어를 평행한 띠로 자르고 각 띠에 이미지의 한 줄을 늘려 채웁니다. 깨진 스캔 같은 효과입니다.",
+   "name": "스트릭 스트립",
+   "params": {
+    "alpha": {
+     "label": "알파"
+    },
+    "angle": {
+     "label": "각도"
+    },
+    "count": {
+     "label": "개수"
+    },
+    "maskToLayer": {
+     "label": "레이어에 마스크 적용"
+    },
+    "phase": {
+     "label": "위상"
+    }
+   }
+  },
   "stretch": {
    "description": "선을 따라 레이어를 자르고 두 조각을 벌려, 선 위의 픽셀을 틈 사이로 늘립니다.",
    "name": "구간 늘리기",
    "params": {
-    "angle": {
+    "cutAngle": {
      "label": "각도"
     },
-    "offset": {
+    "shift": {
      "label": "오프셋"
     },
     "relative": {
@@ -6978,7 +8370,7 @@
     "spread": {
      "label": "퍼짐"
     },
-    "stretch": {
+    "span": {
      "label": "늘리기"
     }
    }
@@ -6995,6 +8387,13 @@
     },
     "scale": {
      "label": "크기"
+    },
+    "style": {
+     "label": "스타일",
+     "options": [
+      "클래식",
+      "표준"
+     ]
     }
    }
   },
@@ -7023,8 +8422,24 @@
     "smoothing": {
      "label": "부드럽게"
     },
+    "style": {
+     "label": "스타일",
+     "options": [
+      "클래식",
+      "표준"
+     ]
+    },
     "width": {
      "label": "폭"
+    }
+   }
+  },
+  "strokecolor": {
+   "description": "레이어의 선을 한 가지 색으로 칠합니다. 도형이나 텍스트의 윤곽, 그리고 그림의 모든 펜과 브러시 선입니다.",
+   "name": "선 색상",
+   "params": {
+    "color": {
+     "label": "색상"
     }
    }
   },
@@ -7040,6 +8455,13 @@
     },
     "start": {
      "label": "시작"
+    },
+    "style": {
+     "label": "스타일",
+     "options": [
+      "클래식",
+      "표준"
+     ]
     }
    }
   },
@@ -7053,7 +8475,7 @@
     "angle2": {
      "label": "각도 2"
     },
-    "frequency": {
+    "freq": {
      "label": "주파수"
     },
     "phase": {
@@ -7064,6 +8486,13 @@
      "options": [
       "사인",
       "삼각"
+     ]
+    },
+    "style": {
+     "label": "스타일",
+     "options": [
+      "클래식",
+      "표준"
      ]
     }
    }
@@ -7236,6 +8665,13 @@
       "단어",
       "줄"
      ]
+    },
+    "style": {
+     "label": "스타일",
+     "options": [
+      "클래식",
+      "표준"
+     ]
     }
    },
    "presets": {
@@ -7256,7 +8692,7 @@
      "label": "직접 입력"
     },
     "charset": {
-     "label": "문자",
+     "label": "문자 세트",
      "options": [
       "글자",
       "대문자",
@@ -7368,50 +8804,71 @@
     "wobbly": "뒤뚱뒤뚱"
    }
   },
+  "textspacing": {
+   "description": "텍스트 레이어의 글자 사이와 줄 사이 간격을 바꿉니다. 자간을 높이면 글자가 벌어지고, 0% 미만이면 좁아집니다. 행간은 줄 사이 거리를 정하며 100%가 기본이고 200%는 두 배입니다. 둘 중 하나에 키프레임을 설정하면 간격을 애니메이션할 수 있습니다.",
+   "name": "텍스트 간격",
+   "params": {
+    "letterspacing": {
+     "label": "자간"
+    },
+    "linespacing": {
+     "label": "행간"
+    }
+   }
+  },
   "texttransform": {
-   "description": "범위 안의 글자, 단어 또는 줄을 이동하고, 크기를 바꾸고, 회전하고, 페이드하고, 색을 입힙니다. 기준점은 크기와 회전을 각 구성 요소 기준으로 할지 레이어 중심 기준으로 할지 정합니다. 오프셋으로 범위를 움직이면 변화가 텍스트를 따라 이어집니다.",
+   "description": "범위 안의 글자, 단어 또는 줄을 이동하고, 크기를 바꾸고, 회전하고, 페이드하고, 색을 입힙니다. 기준점은 크기와 회전을 각 구성 요소 기준으로 할지 레이어 중심 기준으로 할지 정합니다. 위상으로 범위를 움직이면 변화가 텍스트를 따라 이어집니다.",
    "name": "텍스트 변형",
    "params": {
-    "anchor": {
+    "anchorTo": {
      "label": "기준점",
      "options": [
-      "구성 요소",
-      "레이어"
+      "레이어",
+      "구성 요소"
      ]
+    },
+    "easeIn": {
+     "label": "이즈 인"
+    },
+    "easeOut": {
+     "label": "이즈 아웃"
     },
     "end": {
      "label": "끝"
     },
     "offset": {
-     "label": "오프셋"
+     "label": "위상"
     },
-    "opacity": {
+    "alpha": {
      "label": "불투명도"
     },
+    "overlap": {
+     "label": "겹침"
+    },
     "position": {
-     "label": "위치"
+     "label": "오프셋"
     },
     "randomOrder": {
      "label": "무작위 순서"
     },
     "rotation": {
-     "label": "회전"
+     "label": "각도"
     },
-    "scale": {
+    "scaleBy": {
      "label": "크기"
     },
     "seed": {
      "label": "시드"
     },
-    "shape": {
+    "curve": {
      "label": "도형",
      "options": [
       "사각형",
+      "부드럽게",
+      "삼각형",
       "상승 경사",
       "하강 경사",
-      "삼각형",
-      "둥글게",
-      "부드럽게"
+      "둥글게"
      ]
     },
     "smoothness": {
@@ -7420,15 +8877,33 @@
     "start": {
      "label": "시작"
     },
+    "stretch": {
+     "label": "늘이기"
+    },
     "tint": {
      "label": "색조"
     },
     "unit": {
-     "label": "기준",
+     "label": "구성 요소",
      "options": [
       "글자",
       "단어",
-      "줄"
+      "줄",
+      "윤곽"
+     ]
+    },
+    "version": {
+     "label": "범위",
+     "options": [
+      "이전 방식",
+      "표준"
+     ]
+    },
+    "style": {
+     "label": "스타일",
+     "options": [
+      "클래식",
+      "표준"
      ]
     }
    },
@@ -7464,7 +8939,7 @@
     "level": {
      "label": "임계값"
     },
-    "softness": {
+    "feather": {
      "label": "페더"
     }
    }
@@ -7518,6 +8993,20 @@
     },
     "stretch": {
      "label": "늘리기"
+    },
+    "style": {
+     "label": "스타일",
+     "options": [
+      "클래식",
+      "표준"
+     ]
+    },
+    "edgeStyle": {
+     "label": "스타일",
+     "options": [
+      "클래식",
+      "표준"
+     ]
     }
    }
   },
@@ -7581,6 +9070,20 @@
     },
     "stretch": {
      "label": "늘리기"
+    },
+    "style": {
+     "label": "스타일",
+     "options": [
+      "클래식",
+      "표준"
+     ]
+    },
+    "edgeStyle": {
+     "label": "스타일",
+     "options": [
+      "클래식",
+      "표준"
+     ]
     }
    }
   },
@@ -7596,7 +9099,8 @@
       "MM:SS",
       "MM:SS.hh",
       "SS.hh",
-      "프레임"
+      "프레임",
+      "MM:SS:FF"
      ]
     },
     "offset": {
@@ -7615,11 +9119,21 @@
    }
   },
   "timequant": {
+   "aliases": [
+    "프레임 레이트"
+   ],
    "description": "끊기거나 스톱모션 같은 영상처럼 이 레이어를 더 낮은 프레임 레이트로 움직이게 합니다.",
-   "name": "프레임 레이트",
+   "name": "시간 양자화",
    "params": {
     "fps": {
-     "label": "프레임/초"
+     "label": "단계/초"
+    },
+    "style": {
+     "label": "스타일",
+     "options": [
+      "클래식",
+      "표준"
+     ]
     }
    }
   },
@@ -7727,6 +9241,22 @@
       "중심",
       "모서리"
      ]
+    },
+    "alight": {
+     "label": "스타일",
+     "options": [
+      "클래식",
+      "표준"
+     ]
+    },
+    "alZ": {
+     "label": "위치 Z"
+    },
+    "alLight": {
+     "label": "방향"
+    },
+    "alElev": {
+     "label": "고도"
     }
    }
   },
@@ -7766,6 +9296,23 @@
     },
     "twist": {
      "label": "비틀기"
+    },
+    "style": {
+     "label": "스타일",
+     "options": [
+      "클래식",
+      "표준"
+     ]
+    },
+    "wrapStyle": {
+     "label": "스타일",
+     "options": [
+      "클래식",
+      "표준"
+     ]
+    },
+    "depth": {
+     "label": "깊이"
     }
    }
   },
@@ -7825,6 +9372,13 @@
     },
     "stretch": {
      "label": "늘리기"
+    },
+    "style": {
+     "label": "스타일",
+     "options": [
+      "클래식",
+      "표준"
+     ]
     }
    }
   },
@@ -7871,6 +9425,16 @@
     },
     "screenSpace": {
      "label": "화면 공간"
+    },
+    "style": {
+     "label": "스타일",
+     "options": [
+      "클래식",
+      "표준"
+     ]
+    },
+    "singleAxis": {
+     "label": "단일 축"
     }
    }
   },
@@ -7893,6 +9457,13 @@
       "레이어",
       "화면"
      ]
+    },
+    "edgeStyle": {
+     "label": "스타일",
+     "options": [
+      "클래식",
+      "표준"
+     ]
     }
    }
   },
@@ -7903,7 +9474,7 @@
     "amount": {
      "label": "양"
     },
-    "radius": {
+    "blurRadius": {
      "label": "강도"
     },
     "showMask": {
@@ -7917,6 +9488,13 @@
      "options": [
       "회색",
       "빨강"
+     ]
+    },
+    "style": {
+     "label": "스타일",
+     "options": [
+      "클래식",
+      "표준"
      ]
     }
    }
@@ -7999,8 +9577,11 @@
    }
   },
   "viewer360": {
+   "aliases": [
+    "360° 뷰어"
+   ],
    "description": "회전과 확대가 가능한 가상 카메라로 360° 파노라마 레이어를 보여줍니다.",
-   "name": "360° 뷰어",
+   "name": "360º 뷰어",
    "params": {
     "fov": {
      "label": "시야각"
@@ -8082,7 +9663,7 @@
     "phase": {
      "label": "위상"
     },
-    "scale": {
+    "cellScale": {
      "label": "크기"
     },
     "seed": {
@@ -8090,8 +9671,84 @@
     }
    }
   },
+  "vortexblur": {
+   "description": "중심 주위로 소용돌이치듯 레이어를 흐리게 합니다. 가운데가 가장 강하고 반경(화면의 비율)에서 사라집니다. 색수차는 중앙 채널을 기준으로 빨강, 초록, 파랑 채널을 벌립니다.",
+   "name": "소용돌이 블러",
+   "params": {
+    "center": {
+     "label": "중심"
+    },
+    "strength": {
+     "label": "강도"
+    },
+    "radius": {
+     "label": "반경"
+    },
+    "aberration": {
+     "label": "색수차"
+    },
+    "centerChannel": {
+     "label": "중앙 채널",
+     "options": [
+      "빨강",
+      "초록",
+      "파랑"
+     ]
+    }
+   }
+  },
+  "warpblur": {
+   "description": "부드러운 프랙탈 노이즈를 따라 레이어를 번지게 해서, 지점마다 길이와 방향이 다른 줄무늬를 만듭니다. 방향은 줄무늬가 흐르는 쪽을 고르고, 단일 축은 줄무늬를 그 방향으로만 제한하며, 편향은 모든 줄무늬를 같은 쪽으로 밉니다.",
+   "name": "워프 블러",
+   "params": {
+    "parallax": {
+     "label": "시차"
+    },
+    "offset": {
+     "label": "오프셋"
+    },
+    "strength": {
+     "label": "강도"
+    },
+    "evolution": {
+     "label": "변화"
+    },
+    "direction": {
+     "label": "방향",
+     "options": [
+      "가로",
+      "세로",
+      "양쪽",
+      "방사형",
+      "나선형",
+      "비틀기"
+     ]
+    },
+    "scale": {
+     "label": "크기"
+    },
+    "stretch": {
+     "label": "늘리기"
+    },
+    "seed": {
+     "label": "시드"
+    },
+    "singleAxis": {
+     "label": "단일 축"
+    },
+    "screenSpace": {
+     "label": "화면 공간"
+    },
+    "octaves": {
+     "label": "옥타브"
+    },
+    "bias": {
+     "label": "편향"
+    }
+   }
+  },
   "wavewarp": {
-   "description": "사인파로 레이어를 휘게 합니다. 간격은 레이어를 지나는 물결의 수를, 크기는 밀어내는 정도를, 각도는 물결이 흐르는 방향을, 워프 각도는 밀어내는 방향을 정합니다. 화면 공간은 물결의 크기를 레이어 대신 화면에 맞춥니다. 교차 크기는 교차 간격으로 크기가 정해지는 두 번째 물결을 더하며, 이 물결은 워프 각도 방향으로 흐르고 각도 방향으로 밀어냅니다. 기준점을 화면 왼쪽 아래로 하면 화면의 짧은 변을 기준으로 그 모서리에서부터 물결을 재며, 이때 위상은 물결을 흐르는 방향으로 밀어 옮깁니다.",
+   "description": "사인파로 레이어를 휘게 합니다. 간격은 레이어를 지나는 물결의 수를, 크기는 밀어내는 정도를, 각도는 물결이 흐르는 방향을, 워프 각도는 밀어내는 방향을 정합니다. 화면 공간은 물결의 크기를 레이어 대신 화면에 맞춥니다. 교차 크기는 교차 간격으로 크기가 정해지는 두 번째 물결을 더하며, 이 물결은 워프 각도 방향으로 흐르고 각도 방향으로 밀어냅니다. 기준점을 화면 왼쪽 아래로 하면 화면의 짧은 변을 기준으로 그 모서리에서부터 물결을 재며, 이때 위상은 물결을 흐르는 방향으로 밀어 옮깁니다. 감쇠는 감쇠 기준점 쪽으로 물결을 약하게 합니다. 기준점은 각도를 따라 레이어 위를 0에서 1로 나타낸 위치입니다. 감쇠 간격은 0보다 크면 기준점 가까이에서, 0보다 작으면 기준점에서 먼 곳에서 물결을 늘립니다.",
    "name": "웨이브 워프",
    "params": {
     "angle": {
@@ -8109,7 +9766,7 @@
     "speed": {
      "label": "속도"
     },
-    "warpAngle": {
+    "warp": {
      "label": "워프 각도"
     },
     "screenSpace": {
@@ -8127,6 +9784,29 @@
       "레이어 모서리",
       "화면 왼쪽 아래"
      ]
+    },
+    "damping": {
+     "label": "감쇠"
+    },
+    "dampingSpace": {
+     "label": "감쇠 간격"
+    },
+    "dampingOrigin": {
+     "label": "감쇠 기준점"
+    },
+    "style": {
+     "label": "스타일",
+     "options": [
+      "클래식",
+      "표준"
+     ]
+    },
+    "axes": {
+     "label": "스타일",
+     "options": [
+      "클래식",
+      "표준"
+     ]
     }
    }
   },
@@ -8141,13 +9821,20 @@
      "label": "끝"
     },
     "feather": {
-     "label": "페더"
+     "label": "부드러움"
     },
     "softness": {
-     "label": "부드러움"
+     "label": "페더"
     },
     "start": {
      "label": "시작"
+    },
+    "style": {
+     "label": "스타일",
+     "options": [
+      "클래식",
+      "표준"
+     ]
     }
    }
   },
@@ -8200,8 +9887,96 @@
       "끔"
      ]
     },
-    "strength": {
+    "zoom": {
      "label": "강도"
+    },
+    "alight": {
+     "label": "배치",
+     "options": [
+      "클래식",
+      "표준"
+     ]
+    }
+   }
+  },
+  "ring": {
+   "description": "레이어를 평평한 면의 링에 감쌉니다. 짧은 파이프처럼 빛과 깊이가 있습니다.",
+   "name": "링",
+   "params": {
+    "orientA": {
+     "label": "방향 α"
+    },
+    "orientB": {
+     "label": "방향 β"
+    },
+    "orientG": {
+     "label": "방향 γ"
+    },
+    "rotX": {
+     "label": "X 회전"
+    },
+    "rotY": {
+     "label": "Y 회전"
+    },
+    "rotZ": {
+     "label": "Z 회전"
+    },
+    "radius": {
+     "label": "반경"
+    },
+    "thickness": {
+     "label": "너비"
+    },
+    "height": {
+     "label": "길이"
+    },
+    "smoothing": {
+     "label": "매끄럽게"
+    },
+    "position": {
+     "label": "위치"
+    },
+    "alZ": {
+     "label": "위치 Z"
+    },
+    "scale": {
+     "label": "크기"
+    },
+    "intensity": {
+     "label": "빛 강도"
+    },
+    "shine": {
+     "label": "광택"
+    },
+    "spec": {
+     "label": "반사광"
+    },
+    "ambient": {
+     "label": "주변광"
+    },
+    "lightColor": {
+     "label": "색상"
+    },
+    "lightDir": {
+     "label": "방향"
+    },
+    "lightDepth": {
+     "label": "고도"
+    },
+    "texMirror": {
+     "label": "미러"
+    },
+    "texRepeatX": {
+     "label": "X 반복"
+    },
+    "texRepeatY": {
+     "label": "Y 반복"
+    },
+    "texAngle": {
+     "label": "텍스처 각도"
+    },
+    "texCrop": {
+     "label": "자르기"
     }
    }
   }
