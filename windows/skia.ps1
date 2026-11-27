@@ -45,7 +45,7 @@ if (-not (Test-Path $gn)) {
     Pop-Location
     $short = $gnRev.Substring(0, 12)
     Set-Content (Join-Path $gnDir 'out/last_commit_position.h') -Encoding ascii -Value "#ifndef OUT_LAST_COMMIT_POSITION_H_`n#define OUT_LAST_COMMIT_POSITION_H_`n#define LAST_COMMIT_POSITION_NUM 0`n#define LAST_COMMIT_POSITION `"0 ($short)`"`n#endif"
-    Run ninja -C (Join-Path $gnDir 'out') gn
+    Run ninja -C (Join-Path $gnDir 'out') gn.exe
 }
 $outDir = Join-Path $skia $Out
 New-Item -ItemType Directory $outDir -Force | Out-Null
