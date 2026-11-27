@@ -62,7 +62,7 @@ android {
 
     buildTypes {
         release {
-            signingConfig = signingConfigs.findByName("debug")
+            signingConfig = signingConfigs.findByName("release") ?: signingConfigs.getByName("debug")
             vcsInfo.include = false
             isMinifyEnabled = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), file("proguard-rules.pro"))
@@ -196,7 +196,7 @@ androidComponents {
 }
 
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
-    if (!name.contains("Test")) compilerOptions.allWarningsAsErrors.set(false)
+    if (!name.contains("Test")) compilerOptions.allWarningsAsErrors.set(true)
 }
 
 tasks.withType<Test>().configureEach {
