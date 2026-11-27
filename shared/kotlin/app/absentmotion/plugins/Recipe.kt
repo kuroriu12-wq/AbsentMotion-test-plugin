@@ -73,8 +73,9 @@ fun parseRecipe(json: String): RecipeParse {
             return value
         }
 
-        val step: RecipeStep? = when (val kind = o.opt("do")) {
-            "addEffect" -> {
+        val kind: Any? = o.opt("do")
+        val step: RecipeStep? = when {
+            kind == "addEffect" -> {
                 val effect = text("effect")
                 var preset: String? = null
                 if (o.has("preset")) {
@@ -95,12 +96,12 @@ fun parseRecipe(json: String): RecipeParse {
                 }
                 RecipeStep.AddEffect(effect, preset, set)
             }
-            "setEffectParam" -> {
+            kind == "setEffectParam" -> {
                 val value = scalar(o.opt("value"))
                 if (value == null) problems += "$label: value is required"
                 RecipeStep.SetEffectParam(text("effect"), text("param"), reference(value ?: ""))
             }
-            "keyframeEffectParam" -> {
+            kind == "keyframeEffectParam" -> {
                 val effect = text("effect")
                 val param = text("param")
                 val at = ArrayList<Float>()

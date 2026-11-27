@@ -190,7 +190,7 @@ class QuickJsSandbox(private val budget: ScriptBudget = ScriptBudget()) : Script
             } else {
                 clip(message, "the script failed")
             }
-            SandboxResult.Failed(reason, e.lineNumber?.toInt(), false)
+            SandboxResult.Failed(reason, e.lineNumber, false)
         } catch (e: Throwable) {
             SandboxResult.Failed(clip(e.message, e.javaClass.simpleName), null, false)
         }
