@@ -162,8 +162,8 @@ class ScriptHostTest {
 
     @Test fun boundsComeFromTheGivenBoxesOrAreNull() {
         val host = ScriptHost(PendingScene(sceneWith(shapeLayer(id = 1), shapeLayer(id = 2))), listOf(1L, 2L), 0, emptyMap(), catalog, bounds = mapOf(1L to floatArrayOf(10f, 20f, 110f, 70f)))
-        succeeded(run(host, "var l = ctx.selection(); ctx.log(JSON.stringify(l[0].bounds())); ctx.log(JSON.stringify(l[1].bounds()));"))
-        assertEquals(listOf("{\"left\":10,\"top\":20,\"right\":110,\"bottom\":70}", "null"), host.log)
+        succeeded(run(host, "var l = ctx.selection(); var b = l[0].bounds(); ctx.log([b.left, b.top, b.right, b.bottom].join(',')); ctx.log(String(l[1].bounds()));"))
+        assertEquals(listOf("10,20,110,70", "null"), host.log)
     }
 
     @Test fun nonFiniteBoundsAreIgnored() {
