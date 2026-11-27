@@ -206,4 +206,29 @@ class Physics2dScriptTest {
         val log = (run(scene(unsized(1, 200f, 100f)), listOf(1)) as ScriptResult.Done).log
         assertTrue(log.toString(), log.any { "no size known" in it })
     }
+
+    @Test fun collisionBoxFollowsTheDrawnTilt() {
+        val platform = body(1, 200f, 300f, ".rect", 200, 20, 6, tilt = -20f)
+        val ball = body(2, 120f, 50f, seconds = 6)
+        val result = done(run(scene(platform, ball), listOf(1, 2), mapOf("pin" to "true", "left" to "false", "right" to "false", "restitution" to "0.2")))
+        val turn = Math.toRadians(20.0)
+        val c = Math.cos(turn)
+        val s = Math.sin(turn)
+        var closest = Double.MAX_VALUE
+        for ((x, y) in path(result, 2)) {
+            val dx = x - 200.0
+            val dy = y - 300.0
+            val lx = dx * c + dy * s
+            val ly = -dx * s + dy * c
+            closest = minOf(closest, Math.hypot(maxOf(Math.abs(lx) - 100.0, 0.0), maxOf(Math.abs(ly) - 10.0, 0.0)))
+        }
+        assertTrue("closest $closest", closest > 19.0)
+        assertEquals(-20f, turns(result, 1).first(), 0.01f)
+    }
+
+    @Test fun spinningBoxTurnsTheWayTheSpinInputSays() {
+        val result = done(run(scene(body(1, 200f, 200f, ".rect", 40, 40, 2)), listOf(1), mapOf("gravity" to "0", "floor" to "false", "left" to "false", "right" to "false", "spin" to "90")))
+        val turn = turns(result, 1)
+        assertTrue("turn ${turn.last()}", turn.last() < -80f)
+    }
 }
