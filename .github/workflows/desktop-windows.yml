@@ -1,0 +1,80 @@
+name: desktop-windows
+
+on:
+  workflow_dispatch:
+    inputs:
+      ffamp:
+        description: Build FFamp's codec libraries and link FFamp (needs NASM; the experimental media reader)
+        type: boolean
+        default: false
+      msi:
+        description: Also build the per-user MSI
+        type: boolean
+        default: false
+      tests:
+        description: Run the desktop tests before packaging
+        type: boolean
+        default: false
+
+jobs:
+  windows-x64:
+    runs-on: windows-2022
+    timeout-minutes: 300
+    env:
+      FFMPEG_TAG: autobuild-2026-10-31-12-59
+      FFMPEG_ZIP: ffmpeg-n9.0.2-39-g7adfbe40dc-win64-gpl-shared-9.0
+    steps:
+      - name: Keep line endings as they are
+        run: |
+          git config --global core.autocrlf false
+          git config --global core.longpaths true
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          submodules: recursive
+          token: ${{ secrets.FFAMP_TOKEN }}
+      - name: Install Ninja and NASM, use JDK 21
+        run: |
+          "JAVA_HOME=$env:JAVA_HOME_21_X64" | Add-Content $env:GITHUB_ENV
+          python -m pip install ninja
+          choco install nasm -y --no-progress
+          Add-Content $env:GITHUB_PATH 'C:\Program Files\NASM'
+      - name: Build Skia for Windows
+        run: |
+          ./windows/skia.ps1
+          "SKIA_DIR=$env:GITHUB_WORKSPACE/third_party/skia" | Add-Content $env:GITHUB_ENV
+      - name: Fetch FFmpeg
+        run: |
+          $base = "https://github.com/BtbN/FFmpeg-Builds/releases/download/$env:FFMPEG_TAG"
+          Invoke-WebRequest "$base/$env:FFMPEG_ZIP.zip" -OutFile ffmpeg.zip
+          Invoke-WebRequest "$base/checksums.sha256" -OutFile checksums.sha256
+          $line = Get-Content checksums.sha256 | Where-Object { $_ -match [regex]::Escape("$env:FFMPEG_ZIP.zip") } | Select-Object -First 1
+          if (-not $line) { throw 'the FFmpeg archive is not in checksums.sha256' }
+          $want = ($line -split '\s+')[0].ToLower()
+          $got = (Get-FileHash ffmpeg.zip -Algorithm SHA256).Hash.ToLower()
+          if ($got -ne $want) { throw "FFmpeg SHA-256 is $got, expected $want" }
+          Expand-Archive ffmpeg.zip -DestinationPath ffmpeg
+          "FFMPEG_DIR=$env:GITHUB_WORKSPACE/ffmpeg/$env:FFMPEG_ZIP" | Add-Content $env:GITHUB_ENV
+      - name: Build FFamp's codec libraries
+        if: ${{ inputs.ffamp }}
+        shell: bash
+        run: |
+          third_party/FFamp/third_party/build_windows.sh "$GITHUB_WORKSPACE/build/ffamp-windows"
+          echo "FFAMP_DEPS=$GITHUB_WORKSPACE/build/ffamp-windows" >> "$GITHUB_ENV"
+      - name: Desktop tests
+        if: ${{ inputs.tests }}
+        working-directory: pc
+        run: ./gradlew.bat test --no-daemon
+      - name: Build the app and the one-file setup
+        working-directory: pc
+        run: ./gradlew.bat createDistributable packageAmpack --no-daemon
+      - name: Build the MSI
+        if: ${{ inputs.msi }}
+        working-directory: pc
+        run: ./gradlew.bat packageMsi --no-daemon
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: windows-x64
+          path: |
+            pc/build/compose/binaries/main/ampack/*
+            pc/build/compose/binaries/main/msi/*.msi
+          if-no-files-found: error
