@@ -5,7 +5,10 @@ What only Windows uses: the native build (`build.ps1`, using `native/windows.cma
 (`../pc/native/gpu_vulkan.cpp`, shared with Linux).
 
 Needs Visual Studio Build Tools with clang-cl (C and C++ both go through clang-cl) and Skia built for Windows (`SKIA_DIR`,
-`out/win-x64`). `build.ps1` copies Skia's `icudtl.dat` next to `amdesktop.dll`; Skia's ICU loader looks there after the
+`out/win-ft-x64`). `skia.ps1` makes that build from the pinned Skia source with `skia-args.gn` (Ganesh and Vulkan, Skia's own
+FreeType, the shared C runtime); it needs Python, Ninja and LLVM with clang-cl, and takes the same patches and dependencies
+as `tools/build_skia.sh`. The `desktop-windows` workflow (run by hand from the Actions tab) does all of this on a Windows
+runner and uploads the one-file setup (and the MSI when asked). `build.ps1` copies Skia's `icudtl.dat` next to `amdesktop.dll`; Skia's ICU loader looks there after the
 program folder, so text shaping works in the app, the tests and `gradlew run`.
 
 Set `FFMPEG_DIR` to an FFmpeg shared build with development files (`include`, `lib` and `bin`; the GPL build
@@ -16,7 +19,7 @@ the GPU through D3D11 when it can (`../pc/native/video_copy.cpp`), and `build.ps
 and the installer ships them, so it needs no FFmpeg on `PATH`. Without `FFMPEG_DIR` the engine is built without its decoder
 and the app runs the `ffmpeg` program on `PATH` for every frame instead, which is much slower.
 
-Set `FFAMP_DEPS` to the folder `../third_party/FFamp/third_party/build_windows.sh` made, with NASM on `PATH`: FFamp
+Set `FFAMP_DEPS` (optional; without it FFamp is left out and the app hides the Media reader setting) to the folder `../third_party/FFamp/third_party/build_windows.sh` made, with NASM on `PATH`: FFamp
 (`../third_party/FFamp`) is linked into `amdesktop.dll` next to FFmpeg. The app reads with FFmpeg unless Settings >
 Playback > Media reader is set to FFamp (experimental) before the start; then a file FFamp cannot open or describe is still
 read with FFmpeg, and the camera always uses FFmpeg. FFamp decodes through Media Foundation (on the GPU when it can) and

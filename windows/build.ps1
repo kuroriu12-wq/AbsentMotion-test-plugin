@@ -1,8 +1,7 @@
 $ErrorActionPreference = 'Stop'
 if (-not $env:JAVA_HOME) { throw 'JAVA_HOME must point to JDK 21' }
 if (-not (Select-String -Path (Join-Path $env:JAVA_HOME 'release') -Pattern '^IMPLEMENTOR="JetBrains' -Quiet -ErrorAction SilentlyContinue)) { Write-Warning 'JAVA_HOME is not the JetBrains Runtime 21, so the app falls back to the system title bar' }
-if (-not $env:SKIA_DIR) { throw 'SKIA_DIR must point to Skia built for Windows (out/win-x64)' }
-if (-not $env:FFAMP_DEPS) { throw 'FFAMP_DEPS must point to the folder third_party/FFamp/third_party/build_windows.sh made' }
+if (-not $env:SKIA_DIR) { throw 'SKIA_DIR must point to Skia built for Windows (out/win-ft-x64, made by windows/skia.ps1)' }
 $vswhere = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio/Installer/vswhere.exe'
 $vs = & $vswhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
 if (-not $vs) { throw 'Visual C++ Build Tools were not found' }
@@ -23,7 +22,9 @@ function Place($from, $name) {
     $old = Get-Item $to -ErrorAction SilentlyContinue
     if (-not $old -or $old.Length -ne $from.Length -or $old.LastWriteTimeUtc -ne $from.LastWriteTimeUtc) { Copy-Item $from.FullName $to -Force }
 }
-Place (Get-Item (Join-Path $env:SKIA_DIR 'out/win-x64/icudtl.dat')) 'icudtl.dat'
+$icu = @('out/win-ft-x64', 'out/win-x64') | ForEach-Object { Join-Path $env:SKIA_DIR "$_/icudtl.dat" } | Where-Object { Test-Path $_ } | Select-Object -First 1
+if (-not $icu) { throw 'icudtl.dat was not found in the Skia build folder' }
+Place (Get-Item $icu) 'icudtl.dat'
 $ffmpeg = '^(av|sw)\w+-\d+\.dll$|^ff(mpeg|probe)\.exe$'
 $wanted = @{}
 $ffbin = if ($env:FFMPEG_DIR) { Join-Path $env:FFMPEG_DIR 'bin' } else { $null }
