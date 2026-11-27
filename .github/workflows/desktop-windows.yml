@@ -1,9 +1,6 @@
 name: desktop-windows
 
 on:
-  push:
-    branches:
-      - feat/windows-ci
   workflow_dispatch:
     inputs:
       ffamp:
